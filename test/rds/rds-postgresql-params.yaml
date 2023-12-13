@@ -1,0 +1,22 @@
+# Postgresql DB with custom parameter group
+---
+Type: "aws/rds-postgresql"
+Stage: "01-test"
+Persist: false
+
+Configuration:
+  PGDB:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      EngineVersion: "9.5.2"
+      DBName: pgdb
+      MasterUserPassword: Pa$$w0rd99
+      MasterUsername: root
+      DBParameterGroupName:
+        Ref: 'PGParams'
+  PGParams:
+    Type: "AWS::RDS::DBParameterGroup"
+    Properties:
+      Family: "postgres9.5"
+      Parameters:
+        log_min_duration_statement: 1000

@@ -1,0 +1,37 @@
+# Amazon MQ Component
+---
+Type: aws/amq
+Stage: 00-test
+IngressPoint: true
+Persist: true
+
+Configuration:
+  AMQ:
+    Type: "AWS::AmazonMQ::Broker"
+    Security:
+      - Source: "autoscale-amzn.InstanceRole"
+        Allow: admin
+      - Source: "autoscale-amzn.AsgSecurityGroup"
+        Allow: "TCP:8162"
+    Properties:
+      AutoMinorVersionUpgrade: true
+      HostInstanceType: "mq.t2.micro"
+      EngineVersion: "5.15.0"
+      SubnetIds: "@a-private"
+      DeploymentMode: "SINGLE_INSTANCE"
+      MaintenanceWindowStartTime:
+        DayOfWeek: "Monday"
+        TimeOfDay: "22:30"
+        TimeZone: "Australia/Sydney"
+      Users:
+        - Username: "AmqUser"
+          Password: "@app.AmqUsers"
+          ConsoleAccess: true
+
+
+  AMQConfiguration:
+    Type: "AWS::AmazonMQ::Configuration"
+    Properties:
+      EngineType: ACTIVEMQ
+      EngineVersion: "5.15.0"
+      Data: !include/xml platform/amq/config.xml

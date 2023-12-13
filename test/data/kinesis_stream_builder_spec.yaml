@@ -1,0 +1,30 @@
+_process_kinesis_stream:
+  component_name: "my-component"
+  stream:
+    MyStream:
+      Type: "AWS::Kinesis::Stream"
+      Properties:
+        ShardCount: 2
+        Pipeline::RetentionPeriod: 3
+
+  OutputTemplate:
+    Resources:
+      MyStream:
+        Type: AWS::Kinesis::Stream
+        Properties:
+          ShardCount: 2
+          Name: ams01-c031-99-dev-master-5-my-component-MyStream
+          StreamEncryption:
+            EncryptionType: KMS
+            KeyId: arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+    Outputs:
+      MyStreamArn:
+        Description: Kinesis stream ARN
+        Value:
+          Fn::GetAtt:
+          - MyStream
+          - Arn
+      MyStreamName:
+        Description: Kinesis stream name
+        Value:
+          Ref: MyStream

@@ -1,0 +1,71 @@
+# Windows 2019 autoscale component
+# - Runs RDS-RD-Server and Web-Server (Bastion-style)
+---
+Type: "aws/autoscale"
+Stage: "01-test"
+Persist: true
+
+Configuration:
+  # Bake instance configuration
+  Features:
+    Type: Pipeline::Features
+    Properties:
+      Features:
+        CodeDeploy: disabled
+        Datadog: enabled
+        Qualys:
+          Enabled: true
+          Recipients: ["csi@qantas.com.au"]
+
+  BakeInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: "@win2019-latest"
+      InstanceType: m4.large
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          Deploy: [Bootstrap, BootstrapNoProfile, ContextInclude, ContextIncludeNoProfile]
+        Bootstrap:
+          commands:
+            01-test-file-execution:
+              command: 'powershell.exe -File c:\\windows\\temp\\payload\\bootstrap.ps1'
+        BootstrapNoProfile:
+          commands:
+            01-test-file-execution-noprofile:
+              command: 'powershell.exe -File c:\\windows\\temp\\payload\\bootstrap.ps1 -noprofile'
+        ContextInclude:
+          commands:
+            01-test-context-include:
+              command: 'powershell.exe -File c:\\windows\\temp\\payload\\context-include.ps1'
+        ContextIncludeNoProfile:
+          commands:
+            01-test-context-include-noprofile:
+              command: 'powershell.exe -File c:\\windows\\temp\\payload\\context-include.ps1 -noprofile'
+
+  # Autoscaling Group configuration
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Security:
+      - Source: alb.SecurityGroup
+        Allow: TCP:80
+    Properties:
+      MinSize: 1
+      MaxSize: 1
+      TargetGroupARNs:
+        - "@alb.GroupCArn"
+
+  # Launch Configuration configuration
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      InstanceType: m4.large
+      SpotPrice: "@ondemand"
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          commands:
+            01-test-context-include:
+              command: 'powershell.exe -File c:\\windows\\temp\\TmpDeployDir\\context-include.ps1'
+            01-test-context-include-noprofile:
+              command: 'powershell.exe -File c:\\windows\\temp\\TmpDeployDir\\context-include.ps1 -noprofile'

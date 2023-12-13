@@ -1,0 +1,149 @@
+---
+Instance:
+  Type: AWS::EC2::Instance
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::EC2::Instance:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Type: List
+          ItemType: Common.SecurityItem
+          Required: false
+        Metadata:
+          Configurable: true
+          Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html
+          PrimitiveType: Json
+          Required: false
+        CreationPolicy:
+          Configurable: true
+          Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-creationpolicy.html
+          Required: false
+          Type: Common.CreationPolicy
+        Properties:
+          AvailabilityZone:
+            Configurable: true
+          BlockDeviceMappings:
+            Configurable: true
+          CpuOptions:
+            Required: false
+            ItemType: CpuOptions
+          EbsOptimized:
+            Configurable: true
+          Tenancy:
+            Configurable: true
+            Type: Enum
+            Required: false
+            EnumValues: [dedicated , default]
+          ImageId:
+            Configurable: true
+            Required: false
+          InstanceInitiatedShutdownBehavior:
+            Configurable: true
+          InstanceType:
+            Configurable: true
+          KeyName:
+            Configurable: true
+          Monitoring:
+            Configurable: true
+          SourceDestCheck:
+            Configurable: true
+          SubnetId:
+            Configurable: true
+          Pipeline::WindowsOUPath:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=65925739#aws/instance-AWS::EC2::Instance"
+            PrimitiveType: String
+            Required: false
+    PropertyTypes:
+      AWS::EC2::Instance.BlockDeviceMapping:
+        Properties:
+          DeviceName:
+            Configurable: true
+          Ebs:
+            Configurable: true
+          VirtualName:
+            Configurable: true
+      AWS::EC2::Instance.CpuOptions:
+        Properties:
+          CoreCount:
+            Configurable: true
+            Required: false
+          ThreadsPerCore:
+            Configurable: true
+            Required: false
+      AWS::EC2::Instance.Ebs:
+        Properties:
+          Iops:
+            Configurable: true
+          SnapshotId:
+            Configurable: true
+          VolumeSize:
+            Configurable: true
+          VolumeType:
+            Configurable: true
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features
+
+Scheduledaction:
+  Type: Pipeline::EC2::ScheduledAction
+  Cardinality: 0-2
+  Specification:
+    ResourceTypes:
+      Pipeline::EC2::ScheduledAction:
+        Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=65925739"
+        Properties:
+          Recurrence:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=65925739"
+            PrimitiveType: String
+            Regex: ^([0-9,\-*\/]+) ([0-9,\-*\/]+) ([0-9,\-*?\/LW]+) ([0-9A-Z,\-*?\/]+) ([1-7A-Z,\-*?\/L]+)$
+            Required: true
+          Action:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=65925739"
+            PrimitiveType: String
+            Required: true
+            EnumValues: [ start, stop ]
+
+BackupPolicy:
+  Type: Pipeline::Instance::BackupPolicy
+  Cardinality: 0-10
+  Specification:
+    ResourceTypes:
+      Pipeline::Instance::BackupPolicy:
+        Properties:
+          Consistent:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+          Recurrence:
+            Configurable: true
+            PrimitiveType: String
+            Regex: ^([0-9,\-*\/]+) ([0-9,\-*\/]+) ([0-9,\-*?\/LW]+) ([0-9A-Z,\-*?\/]+) ([1-7A-Z,\-*?\/L]+)$
+            Required: true
+          Target:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+            PrimitiveType: String
+            Regex: ^@origin|@dr|@nonp|@ams[0-9]{2}-(origin|dr([0-9])?)-(prod|nonp|dev)$
+            Required: false
+          RetentionPeriod:
+            Configurable: true
+            PrimitiveType: String
+            Regex: ^PT|[0-9]+Y|[0-9]+D|[0-9]+H|[0-9]+M|[0-9]+S$
+            Required: true
+          CopyTargets:
+            Configurable: true
+            Type: List
+            ItemType: Common.CopyTarget

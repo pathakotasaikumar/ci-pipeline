@@ -1,0 +1,98 @@
+# Simple autoscale component running httpd
+---
+Type: aws/alb
+Stage: "00-test"
+Persist: true
+IngressPoint: true
+
+Configuration:
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: ipv4
+
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - TargetGroupArn: GroupA
+          Type: forward
+
+  RuleA:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: GroupA
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - "/autoscale-win2012/*"
+      ListenerArn:
+        Ref: Listener
+      Priority: 1
+
+  RuleB:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: GroupB
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - "/autoscale-win2016/*"
+      ListenerArn:
+        Ref: Listener
+      Priority: 2
+
+  RuleC:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: redirect
+          RedirectConfig:
+            Host: "#{host}"
+            Path: "/#{path}"
+            Port: 443
+            Protocol: "HTTPS"
+            Query: "#{query}"
+            StatusCode: HTTP_301
+      Conditions:
+        - Field: path-pattern
+          Values:
+            - "/redirect-action/*"
+      ListenerArn:
+        Ref: Listener
+      Priority: 3
+
+  GroupA:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      HealthCheckIntervalSeconds: 60
+      HealthCheckPath: "/autoscale-win2012/index.html"
+      UnhealthyThresholdCount: 6
+
+  GroupB:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      HealthCheckIntervalSeconds: 60
+      HealthCheckPath: "/autoscale-win2016/index.html"
+      UnhealthyThresholdCount: 6
+
+  GroupC:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      HealthCheckIntervalSeconds: 60
+      HealthCheckPath: "/autoscale-win2019/index.html"
+      UnhealthyThresholdCount: 6

@@ -1,0 +1,32 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    Configuration:
+      Minimal:
+        FileSystem:
+          Type: AWS::EFS::FileSystem
+          Security:
+            - Source: test-instance.SecurityGroup
+              Allow: TCP:2049
+  Output:
+    _process_queue:
+      Minimal:
+        Resources:
+          FileSystem:
+            Type: AWS::EFS::FileSystem
+            Properties:
+              PerformanceMode: generalPurpose
+              ThroughputMode: bursting
+              Encrypted: true
+              KmsKeyId: arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+        Outputs:
+          FileSystemId:
+            Description: EFS file system id
+            Value:
+              Ref: FileSystem
+          FileSystemEndpoint:
+            Description: EFS file system endpoint
+            Value:
+              Fn::Sub: "${FileSystem}.efs.${AWS::Region}.amazonaws.com"

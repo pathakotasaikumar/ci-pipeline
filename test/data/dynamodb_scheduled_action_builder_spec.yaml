@@ -1,0 +1,117 @@
+UnitTest:
+  Input:
+    _parse_dynamodb_scheduled_action:
+      Valid:
+        -
+          TableScheduleUp:
+            Type: Pipeline::DynamoDB::ScheduledAction
+            Properties:
+              TableName: MyTable
+              SetReadCapacity: 5
+              SetWriteCapacity: 5
+              Recurrence: "30 8 ? * *"
+        -
+          TableScheduleDown:
+            Type: Pipeline::DynamoDB::ScheduledAction
+            Properties:
+              TableName: MyTable
+              SetReadCapacity: 5
+              SetWriteCapacity: 5
+              Recurrence: "0 22 ? * *"
+        -
+          TableScheduleUp:
+            Type: Pipeline::DynamoDB::ScheduledAction
+            Properties:
+              TableName: MyTable
+              SetReadCapacity: 10
+              SetWriteCapacity: 10
+              Recurrence: "30 8 ? * *"
+        -
+          TableScheduleDown:
+            Type: Pipeline::DynamoDB::ScheduledAction
+            Properties:
+              TableName: MyTable
+              SetReadCapacity: 10
+              SetWriteCapacity: 10
+              Recurrence: "0 22 ? * *"
+      Invalid:
+        -
+          ScheduleUp:
+            Type: Pipeline::DynamoDB::ScheduledAction
+            Properties:
+              TableName: MyTable
+              SetReadCapacity: "10"
+              SetWriteCapacity: "10"
+              Recurrence: rate(5)
+        -
+          ScheduleDown:
+            Type: Pipeline::DynamoDB::ScheduledAction
+            Properties:
+              TableName: MyTable
+              SetReadCapacity: 5
+              SetWriteCapacity: 5
+              Recurrence: "0 22 ? * ?"
+        -
+          TableScheduleDown:
+            Type: Pipeline::DynamoDB::ScheduledAction
+            Properties:
+              TableName: MyTable
+              SetReadCapacity: "10"
+              SetWriteCapacity: 10
+              Recurrence: "0 22 ? * *"
+        -
+          TableScheduleDown:
+            Type: Pipeline::DynamoDB::ScheduledAction
+            Properties:
+              TableName: MyTable
+              SetReadCapacity: 10
+              SetWriteCapacity: "10"
+              Recurrence: "0 22 ? * *"
+        -
+          TableScheduleDown:
+            Type: Pipeline::DynamoDB::ScheduledAction
+            Properties:
+              SetReadCapacity: 10
+              SetWriteCapacity: 10
+              Recurrence: "0 22 ? * *"
+
+  Output:
+    _parse_dynamodb_scheduled_action:
+      Valid:
+        -
+          TableScheduleUp:
+            schedule_expression: cron(30 8 ? * * *)
+            inputs:
+              TableName:
+                Ref: MyTable
+              SetReadCapacity: 5
+              SetWriteCapacity: 5
+        -
+          TableScheduleDown:
+            schedule_expression: cron(0 22 ? * * *)
+            inputs:
+              TableName:
+                Ref: MyTable
+              SetReadCapacity: 5
+              SetWriteCapacity: 5
+        -
+          TableScheduleUp:
+            schedule_expression: cron(30 8 ? * * *)
+            inputs:
+              TableName:
+                Ref: MyTable
+              SetReadCapacity: 10
+              SetWriteCapacity: 10
+        -
+          TableScheduleDown:
+            schedule_expression: cron(0 22 ? * * *)
+            inputs:
+              TableName:
+                Ref: MyTable
+              SetReadCapacity: 10
+              SetWriteCapacity: 10
+
+
+
+
+

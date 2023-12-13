@@ -1,0 +1,28 @@
+# DynamoDB table component for ondemand
+---
+Type: aws/dynamodb-table
+Stage: 00-test
+Persist: true
+
+Configuration:
+  MyTable:
+    Type: AWS::DynamoDB::Table
+    Security:
+      - Source: test-instance.InstanceRole
+        Allow: write
+      - Source: emr.InstanceRole
+        Allow: write
+      - Source: lambda.ExecutionRole
+        Allow: write
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: hashKey
+          AttributeType: S
+        - AttributeName: rangeKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: hashKey
+          KeyType: HASH
+        - AttributeName: rangeKey
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST

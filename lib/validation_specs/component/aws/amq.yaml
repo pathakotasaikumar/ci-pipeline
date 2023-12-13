@@ -1,0 +1,85 @@
+---
+AMQBroker:
+  Type: AWS::AmazonMQ::Broker
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::AmazonMQ::Broker:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Required: false
+          Type: List
+          ItemType: Common.SecurityItem
+        Properties:
+          AutoMinorVersionUpgrade:
+            Configurable: true
+          SubnetIds:
+            Configurable: true
+            Required: false
+            Default: "@private"
+          DeploymentMode:
+            Configurable: true
+          MaintenanceWindowStartTime:
+            Configurable: true
+          Users:
+            Configurable: true
+          Logs:
+            Configurable: false
+          BrokerName:
+            Configurable: false
+          EngineType:
+            Configurable: false
+          PubliclyAccessible:
+            Configurable: false
+          HostInstanceType:
+            Configurable: true
+            Required: false
+          Configuration:
+            Configurable: false
+          EngineVersion:
+            Configurable: true
+            Required: false
+          SecurityGroups:
+            Configurable: false
+    PropertyTypes:
+      AWS::AmazonMQ::Broker.User:
+        Properties:
+          Username:
+            Configurable: true
+          ConsoleAccess:
+            Configurable: true
+            Required: false
+          Password:
+            Configurable: true
+      AWS::AmazonMQ::Broker.MaintenanceWindow:
+        Properties:
+          DayOfWeek:
+            Configurable: true
+          TimeOfDay:
+            Configurable: true
+          TimeZone:
+            Configurable: true
+
+AMQConfiguraiton:
+  Type: AWS::AmazonMQ::Configuration
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::AmazonMQ::Configuration:
+        Properties:
+          EngineVersion:
+            Configurable: true
+            Required: true
+          Description:
+            Configurable: true
+            Required: false
+          EngineType:
+            Configurable: true
+          Data:
+            Configurable: true
+          Name:
+            Configurable: true
+            Required: false
+
+

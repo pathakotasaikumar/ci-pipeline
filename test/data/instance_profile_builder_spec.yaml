@@ -1,0 +1,17 @@
+UnitTest:
+  Output:
+    _process_instance_profile:
+      Resources:
+        InstanceProfile:
+          Type: AWS::IAM::InstanceProfile
+          Properties:
+            Path: "/"
+            Roles:
+            - "InstanceRoleName-123"
+      Outputs:
+        InstanceProfileName:
+          Description: Instance profile Name
+          Value: { "Ref": "InstanceProfile" }
+        InstanceProfileArn:
+          Description: Instance profile ARN
+          Value: { "Fn::GetAtt": [ "InstanceProfile", "Arn" ] }

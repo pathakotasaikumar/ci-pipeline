@@ -1,0 +1,284 @@
+{
+  "IntegrationTest": {
+    "Output": {
+      "Volume1": {
+        "Resources": {
+          "VolumeAttachmentLambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Handler": "index.handler",
+              "Role": "arn:aws:iam:ap-southeast-2:111111111111:role/VolumeExecutionRole",
+              "Runtime": "python3.9",
+              "Code": {
+                "ZipFile": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "import boto3, json, logging, time\n",
+                      "logger = logging.getLogger()\n",
+                      "logger.setLevel(logging.INFO)\n",
+                      "\n",
+                      "def complete_asg_lifecycle(hookname, asg, actiontoken, instanceid, result):\n",
+                      "  try:\n",
+                      "    asg_client = boto3.client('autoscaling')\n",
+                      "    asg_response = asg_client.complete_lifecycle_action(\n",
+                      "      LifecycleHookName=hookname,\n",
+                      "      AutoScalingGroupName=asg,\n",
+                      "      LifecycleActionToken=actiontoken,\n",
+                      "      LifecycleActionResult=result,\n",
+                      "      InstanceId=instanceid)\n",
+                      "    logger.info(asg_response[u'ResponseMetadata'][u'HTTPStatusCode'])\n",
+                      "  except Exception as e:\n",
+                      "    logger.error(e)\n",
+                      "\n",
+                      "def attach_volume(volume, instance, device):\n",
+                      "  logger.info(\"Attaching %s to %s as %s\", volume, instance, device)\n",
+                      "  try:\n",
+                      "    ec2 = boto3.client('ec2')\n",
+                      "    ec2_response = ec2.attach_volume(VolumeId=volume,InstanceId=instance,Device=device)\n",
+                      "    logger.info(ec2_response[u'ResponseMetadata'][u'HTTPStatusCode'])\n",
+                      "  except Exception as e:\n",
+                      "    logger.error(e)\n",
+                      "    return 1\n",
+                      "\n",
+                      "def handler(event, context):\n",
+                      "  logger.info(json.dumps(event))\n",
+                      "  message = json.loads(event[u'Records'][0][u'Sns'][u'Message'])\n",
+                      "  logger.info(message)\n",
+                      "\n",
+                      "  instance = message['EC2InstanceId']\n",
+                      "  metadata = message['NotificationMetadata']\n",
+                      "  asgname = message['AutoScalingGroupName']\n",
+                      "  actiontoken = message['LifecycleActionToken']\n",
+                      "  lifecyclehookname = message['LifecycleHookName']\n",
+                      "\n",
+                      "  logger.info(\"EC2 Instance ID: %s\" % instance)\n",
+                      "  logger.info(\"Notification Metadata: %s\" % metadata)\n",
+                      "\n",
+                      "  for attachment in json.loads(metadata):\n",
+                      "    volume = attachment['VolumeId']\n",
+                      "    device = attachment['Device']\n",
+                      "    if attach_volume(volume, instance, device) == 1:\n",
+                      "      logger.info(\"Abandoning lifecycle hook\")\n",
+                      "      complete_asg_lifecycle(lifecyclehookname, asgname, actiontoken, instance, \"ABANDON\")\n",
+                      "      return\n",
+                      "\n",
+                      "  logger.info(\"Completing lifecycle hook\")\n",
+                      "  complete_asg_lifecycle(lifecyclehookname, asgname, actiontoken, instance, \"CONTINUE\")"
+                    ]
+                  ]
+                }
+              },
+              "Timeout": 300,
+              "KmsKeyArn": "arn:aws:kms:ap-southeast-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+            }
+          },
+          "VolumeAttachmentTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+              "Subscription": [
+                {
+                  "Endpoint": {
+                    "Fn::GetAtt": [
+                      "VolumeAttachmentLambda",
+                      "Arn"
+                    ]
+                  },
+                  "Protocol": "lambda"
+                }
+              ]
+            }
+          },
+          "VolumeAttachmentLifecycleHook": {
+            "Type": "AWS::AutoScaling::LifecycleHook",
+            "Properties": {
+              "AutoScalingGroupName": {
+                "Ref": "AutoScalingGroup"
+              },
+              "DefaultResult": "ABANDON",
+              "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
+              "NotificationTargetARN": {
+                "Ref": "VolumeAttachmentTopic"
+              },
+              "RoleARN": "arn:aws:iam:ap-southeast-2:111111111111:role/VolumeNotificationRole",
+              "HeartbeatTimeout": 60,
+              "NotificationMetadata": "[{\"VolumeId\":\"vol-123456780\",\"Device\":\"/dev/xvdm\"},{\"VolumeId\":\"vol-123456780\",\"Device\":\"/dev/xvdn\"}]"
+            }
+          },
+          "VolumeAttachmentLambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "Action": "lambda:InvokeFunction",
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "VolumeAttachmentLambda",
+                  "Arn"
+                ]
+              },
+              "Principal": "sns.amazonaws.com",
+              "SourceArn": {
+                "Ref": "VolumeAttachmentTopic"
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "VolumeAttachmentLambdaName": {
+            "Description": "Name of the function",
+            "Value": {
+              "Ref": "VolumeAttachmentLambda"
+            }
+          },
+          "VolumeAttachmentLambdaArn": {
+            "Description": "Arn of the function",
+            "Value": {
+              "Fn::GetAtt": [
+                "VolumeAttachmentLambda",
+                "Arn"
+              ]
+            }
+          }
+        }
+      },
+      "Network1": {
+        "Resources": {
+          "NetworkAttachmentLambda": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Handler": "index.handler",
+              "Role": "arn:aws:iam:ap-southeast-2:111111111111:role/NetworkExecutionRole",
+              "Runtime": "python3.9",
+              "Code": {
+                "ZipFile": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "import boto3, json, logging, time\n",
+                      "logger = logging.getLogger()\n",
+                      "logger.setLevel(logging.INFO)\n",
+                      "\n",
+                      "def complete_asg_lifecycle(hookname, asg, actiontoken, instanceid, result):\n",
+                      "  try:\n",
+                      "    asg_client = boto3.client('autoscaling')\n",
+                      "    asg_response = asg_client.complete_lifecycle_action(\n",
+                      "      LifecycleHookName=hookname,\n",
+                      "      AutoScalingGroupName=asg,\n",
+                      "      LifecycleActionToken=actiontoken,\n",
+                      "      LifecycleActionResult=result,\n",
+                      "      InstanceId=instanceid)\n",
+                      "    logger.info(asg_response[u'ResponseMetadata'][u'HTTPStatusCode'])\n",
+                      "  except Exception as e:\n",
+                      "    logger.error(e)\n",
+                      "\n",
+                      "def attach_eni(interface, instance, device):\n",
+                      "  logger.info(\"Attaching %s to %s as %s\", interface, instance, device)\n",
+                      "  try:\n",
+                      "    ec2 = boto3.client('ec2')\n",
+                      "    ec2_response = ec2.attach_network_interface(NetworkInterfaceId=interface,InstanceId=instance,DeviceIndex=device)\n",
+                      "    logger.info(ec2_response[u'ResponseMetadata'][u'HTTPStatusCode'])\n",
+                      "  except Exception as e:\n",
+                      "    logger.error(e)\n",
+                      "    return 1\n",
+                      "\n",
+                      "def handler(event, context):\n",
+                      "  logger.info(json.dumps(event))\n",
+                      "  message = json.loads(event[u'Records'][0][u'Sns'][u'Message'])\n",
+                      "  logger.info(message)\n",
+                      "\n",
+                      "  instance = message['EC2InstanceId']\n",
+                      "  metadata = message['NotificationMetadata']\n",
+                      "  asgname = message['AutoScalingGroupName']\n",
+                      "  actiontoken = message['LifecycleActionToken']\n",
+                      "  lifecyclehookname = message['LifecycleHookName']\n",
+                      "\n",
+                      "  logger.info(\"EC2 Instance ID: %s\" % instance)\n",
+                      "  logger.info(\"Notification Metadata: %s\" % metadata)\n",
+                      "\n",
+                      "  for attachment in json.loads(metadata):\n",
+                      "    interface = attachment['NetworkInterfaceId']\n",
+                      "    device = int(attachment['DeviceIndex'])\n",
+                      "    if attach_eni(interface, instance, device) == 1:\n",
+                      "      logger.info(\"Abandoning lifecycle hook\")\n",
+                      "      complete_asg_lifecycle(lifecyclehookname, asgname, actiontoken, instance, \"ABANDON\")\n",
+                      "      return\n",
+                      "\n",
+                      "  logger.info(\"Completing lifecycle hook\")\n",
+                      "  complete_asg_lifecycle(lifecyclehookname, asgname, actiontoken, instance, \"CONTINUE\")"
+                    ]
+                  ]
+                }
+              },
+              "Timeout": 300,
+              "KmsKeyArn": "arn:aws:kms:ap-southeast-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+            }
+          },
+          "NetworkAttachmentTopic": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+              "Subscription": [
+                {
+                  "Endpoint": {
+                    "Fn::GetAtt": [
+                      "NetworkAttachmentLambda",
+                      "Arn"
+                    ]
+                  },
+                  "Protocol": "lambda"
+                }
+              ]
+            }
+          },
+          "NetworkAttachmentLifecycleHook": {
+            "Type": "AWS::AutoScaling::LifecycleHook",
+            "Properties": {
+              "AutoScalingGroupName": {
+                "Ref": "AutoScalingGroup"
+              },
+              "DefaultResult": "ABANDON",
+              "LifecycleTransition": "autoscaling:EC2_INSTANCE_LAUNCHING",
+              "NotificationTargetARN": {
+                "Ref": "NetworkAttachmentTopic"
+              },
+              "RoleARN": "arn:aws:iam:ap-southeast-2:111111111111:role/NetworkNotificationRole",
+              "HeartbeatTimeout": 60,
+              "NotificationMetadata": "[{\"NetworkInterfaceId\":\"eni-123456780\",\"DeviceIndex\":\"1\"}]"
+            }
+          },
+          "NetworkAttachmentLambdaPermission": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "Action": "lambda:InvokeFunction",
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "NetworkAttachmentLambda",
+                  "Arn"
+                ]
+              },
+              "Principal": "sns.amazonaws.com",
+              "SourceArn": {
+                "Ref": "NetworkAttachmentTopic"
+              }
+            }
+          }
+        },
+        "Outputs": {
+          "NetworkAttachmentLambdaName": {
+            "Description": "Name of the function",
+            "Value": {
+              "Ref": "NetworkAttachmentLambda"
+            }
+          },
+          "NetworkAttachmentLambdaArn": {
+            "Description": "Arn of the function",
+            "Value": {
+              "Fn::GetAtt": [
+                "NetworkAttachmentLambda",
+                "Arn"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

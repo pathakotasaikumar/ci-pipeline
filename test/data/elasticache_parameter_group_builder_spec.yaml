@@ -1,0 +1,23 @@
+_process_elasticache_parameter_group:
+  parameter_group:
+    MyParameterGroup:
+      Type: AWS::ElastiCache::ParameterGroup
+      Properties:
+        CacheParameterGroupFamily: redis
+        Properties:
+          chunk_size_growth_factor: "1.02"
+
+  OutputTemplate:
+    Resources:
+      MyParameterGroup:
+        Type: AWS::ElastiCache::ParameterGroup
+        Properties:
+          CacheParameterGroupFamily: redis
+          Description: ElastiCache parameter group MyParameterGroup
+          Properties:
+            chunk_size_growth_factor: '1.02'
+    Outputs:
+      MyParameterGroupName:
+        Description: ElastiCache Parameter Group Name
+        Value:
+          Ref: MyParameterGroup

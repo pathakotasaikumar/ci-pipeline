@@ -1,0 +1,21 @@
+---
+Type: aws/ecs-task
+Stage: "01-test"
+Persist: false
+Configuration:
+  ECSTask:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+      - Image: 221295517176.dkr.ecr.ap-southeast-2.amazonaws.com/mesosphere/aws-cli
+        Name: ECSTask
+        Command:
+        - "--endpoint-url"
+        - https://sts.ap-southeast-2.amazonaws.com
+        - sts
+        - get-caller-identity
+        PseudoTerminal: true
+  ECSEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(5 minutes)

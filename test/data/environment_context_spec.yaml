@@ -1,0 +1,9 @@
+---
+sample_variables:
+  bamboo_skip_alm: true
+  bamboo_force_teardown_of_released_build: true
+  bamboo_splunk_token_password: dummy-pass
+
+dump_variables:
+  bamboo_skip_alm: true
+  bamboo_force_teardown_of_released_build: true

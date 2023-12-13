@@ -1,0 +1,61 @@
+# RHEL6 single instance used to run tests against the rest of the components.
+# Note: other components should have security rules allowing access to this component.
+# This component will test:
+# - autoscale-rhel6 (HTTP connectivity)
+# - rds-mysql (MySQL client connectivity)
+# - sqs (AWS SQS functionality)
+# - volume-rhel6 (AWS CLI attach/detach)
+# - attach_volume and detach_volume scripts
+# - kms_decrypt script
+# - attach_eni and detach_eni scripts
+---
+Type: aws/instance
+Stage: 03-test
+Persist: false
+IngressPoint: true
+
+Configuration:
+  Features:
+    Type: Pipeline::Features
+    Properties:
+      Features:
+        Datadog: enabled
+        CustomTags:
+          Enabled: true
+          Tags:
+            Domain: Cloud
+            Support: cloud@qantas.com.au
+            Role: pipeline-regression-app
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          Deploy: ["ToolInstall", "Test"]
+        ToolInstall:
+          commands:
+            test:
+              command: bash tools_install.sh
+              cwd: /root/payload
+        Install:
+          commands:
+            install:
+              command: bash install_package.sh
+              cwd: /root/payload
+        Test:
+          commands:
+            test:
+              command: bash test.sh
+              cwd: /root/payload
+    Properties:
+      AvailabilityZone: "@a"
+      ImageId: "@rhel7-latest"
+      InstanceType: m4.large
+
+Environments:
+  DEV:
+    Configuration:
+      Instance:
+        Properties:
+          KeyName: pipeline

@@ -1,0 +1,22 @@
+---
+UnitTest:
+  ComponentName: Test-Component
+  ComponentDefinition:
+    Valid:
+      AuroraMinimal:
+        Type: "aws/rds-aurora-postgresql"
+        Stage: "01-test"
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          MyDBCluster:
+            Type: "AWS::RDS::DBCluster"
+            InboundRules:
+              - Source: "Webservers.SecurityGroup"
+                Allow: "ALL:*"
+          MyDBInstance1:
+            Type: "AWS::RDS::DBInstance"
+          MyDBInstance2:
+            Type: "AWS::RDS::DBInstance"
+          MyDBInstance3:
+            Type: "AWS::RDS::DBInstance"

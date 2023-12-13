@@ -1,0 +1,104 @@
+_process_dynamodb_table:
+  table_definition:
+    MyTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "PartitionKey"
+            AttributeType: "S"
+          - AttributeName: "SortKey"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "PartitionKey"
+            KeyType: "HASH"
+          - AttributeName: "SortKey"
+            KeyType: "RANGE"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 3
+          WriteCapacityUnits: 1
+
+  OutputTemplateCurrent:
+    Resources:
+      MyTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+          AttributeDefinitions:
+          - AttributeName: PartitionKey
+            AttributeType: S
+          - AttributeName: SortKey
+            AttributeType: S
+          KeySchema:
+          - AttributeName: PartitionKey
+            KeyType: HASH
+          - AttributeName: SortKey
+            KeyType: RANGE
+          TableName: ams01-c031-99-dev-master-5-checkpoint-db-MyTable
+          ProvisionedThroughput:
+            ReadCapacityUnits: 3
+            WriteCapacityUnits: 1
+    Outputs:
+      MyTableArn:
+        Description: Table ARN
+        Value:
+          Fn::Join:
+          - ''
+          - - 'arn:aws:dynamodb:'
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":table/"
+            - Ref: MyTable
+      MyTableName:
+        Description: Table Name
+        Value:
+          Ref: MyTable
+       
+  table_definition_ondemand:
+    MyTable:
+      Type: "AWS::DynamoDB::Table"
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "PartitionKey"
+            AttributeType: "S"
+          - AttributeName: "SortKey"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "PartitionKey"
+            KeyType: "HASH"
+          - AttributeName: "SortKey"
+            KeyType: "RANGE"
+        BillingMode: PAY_PER_REQUEST
+
+  OutputTemplateOndemand:
+    Resources:
+      MyTable:
+        Type: AWS::DynamoDB::Table
+        Properties:
+          AttributeDefinitions:
+          - AttributeName: PartitionKey
+            AttributeType: S
+          - AttributeName: SortKey
+            AttributeType: S
+          KeySchema:
+          - AttributeName: PartitionKey
+            KeyType: HASH
+          - AttributeName: SortKey
+            KeyType: RANGE
+          TableName: ams01-c031-99-dev-master-5-checkpoint-db-MyTable
+          BillingMode: PAY_PER_REQUEST
+    Outputs:
+      MyTableArn:
+        Description: Table ARN
+        Value:
+          Fn::Join:
+          - ''
+          - - 'arn:aws:dynamodb:'
+            - Ref: AWS::Region
+            - ":"
+            - Ref: AWS::AccountId
+            - ":table/"
+            - Ref: MyTable
+      MyTableName:
+        Description: Table Name
+        Value:
+          Ref: MyTable

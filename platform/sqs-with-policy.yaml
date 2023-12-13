@@ -1,0 +1,27 @@
+# SQS Queue component
+---
+Type: aws/sqs
+Stage: 00-test
+Persist: true
+
+Configuration:
+  MyQueue:
+    Type: AWS::SQS::Queue
+    Security:
+      - Source: srv-func-test.ExecutionRole
+        Allow: write
+    Properties:
+      MessageRetentionPeriod: 600
+
+  NotifySNS:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: "@srv-sns.DataLoaderArn"
+      DeliveryPolicy:
+        healthyRetryPolicy:
+          numRetries: 20
+          minDelayTarget: 10
+          maxDelayTarget: 30
+          numMinDelayRetries: 3
+          numMaxDelayRetries: 17
+          numNoDelayRetries: 0

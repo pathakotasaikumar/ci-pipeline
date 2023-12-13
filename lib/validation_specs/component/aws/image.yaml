@@ -1,0 +1,87 @@
+---
+BakeInstance:
+  Type: AWS::EC2::Instance
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::EC2::Instance:
+        CreationPolicy:
+          Configurable: true
+          Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-creationpolicy.html
+          Required: false
+          Type: Common.CreationPolicy
+        Metadata:
+          Configurable: true
+          Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html
+          PrimitiveType: Json
+          Required: false
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Type: List
+          ItemType: Common.SecurityItem
+          Required: false
+        Properties:
+          AvailabilityZone:
+            Configurable: true
+          BlockDeviceMappings:
+            Configurable: true
+          CpuOptions:
+            Required: false
+            ItemType: CpuOptions
+          EbsOptimized:
+            Configurable: true
+          ImageId:
+            Configurable: true
+            Required: false
+          Tenancy:
+            Configurable: true
+            Type: Enum
+            Required: false
+            EnumValues: [dedicated , default]
+          InstanceType:
+            Configurable: true
+          KeyName:
+            Configurable: true
+          Pipeline::CustomImagePrefix:
+            Configurable: true
+            PrimitiveType: String
+          Pipeline::EncryptImage:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=70035497"
+            PrimitiveType: Boolean
+            Required: false
+          SubnetId:
+            Configurable: true
+          Pipeline::WindowsOUPath:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+    PropertyTypes:
+      AWS::EC2::Instance.BlockDeviceMapping:
+        Properties:
+          DeviceName:
+            Configurable: true
+          Ebs:
+            Configurable: true
+          VirtualName:
+            Configurable: true
+      AWS::EC2::Instance.CpuOptions:
+        Properties:
+          CoreCount:
+            Configurable: true
+            Required: false
+          ThreadsPerCore:
+            Configurable: true
+            Required: false
+      AWS::EC2::Instance.Ebs:
+        Properties:
+          Iops:
+            Configurable: true
+          SnapshotId:
+            Configurable: true
+          VolumeSize:
+            Configurable: true
+          VolumeType:
+            Configurable: true
+

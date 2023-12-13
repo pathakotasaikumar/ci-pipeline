@@ -1,0 +1,27 @@
+# Kinesis stream component
+---
+Type: aws/kinesis-stream
+Stage: 00-test
+Persist: true
+
+Configuration:
+  Features:
+    Type: Pipeline::Features
+    Properties:
+      Features:
+        Datadog : enabled
+  MyStream:
+    Type: AWS::Kinesis::Stream
+    Security:
+      - Source:
+          - test-instance.InstanceRole
+          - emr.InstanceRole
+        Allow: write
+    Properties:
+      ShardCount: 1
+      StreamEncryption:
+        KeyId: "arn:aws:kms:ap-southeast-2:695837244598:key/2e8babd3-2349-4c46-9852-99ba402250fe"
+      Pipeline::RetentionPeriod: 48
+
+  LogCollector:
+    Type: AWS::Logs::Destination

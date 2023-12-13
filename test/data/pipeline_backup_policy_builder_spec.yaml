@@ -1,0 +1,36 @@
+UnitTest:
+  Input:
+    _process_backup_policy:
+      Valid:
+        -
+          BackupPolicy1:
+            schedule_expression: cron(30 8 ? * * *)
+            inputs:
+              Fn::Sub:
+              - '{"type":"aws/rds","source":{"id":"${resource_id}","consistent":"false","target_alias":"@ams01-origin-nonp","account_id":"012345678912","region":"ap-southeast-2","name":"ams01-c031-99-dev-master-5-db_instance","key_alias":"alias/ams01-c031-99-nonp"},"targets":[{"account_alias":"@ams01-dr-nonp","retention_period":"PT12M"},{"account_alias":"@ams01-origin-nonp","retention_period":"PT7D"}],"tags":{"AMSID":"AMS01","EnterpriseAppID":"C031","ApplicationServiceID":"99","Environment":"DEV","AsbpType":"QDA","Name":"ams01-c031-99-dev-master-5-db_instance","Branch":"master","Build":"5"}}'
+              - resource_id: a1234567890
+
+  Output:
+    _process_backup_policy:
+      Valid:
+        -
+          Resources:
+            BackupPolicy1:
+              Type: AWS::Events::Rule
+              Properties:
+                Description: Cloudwatch event rule - BackupPolicy1
+                Targets:
+                - Id: BackupPolicy
+                  Input:
+                    Fn::Sub:
+                    - '{"type":"aws/rds","source":{"id":"${resource_id}","consistent":"false","target_alias":"@ams01-origin-nonp","account_id":"012345678912","region":"ap-southeast-2","name":"ams01-c031-99-dev-master-5-db_instance","key_alias":"alias/ams01-c031-99-nonp"},"targets":[{"account_alias":"@ams01-dr-nonp","retention_period":"PT12M"},{"account_alias":"@ams01-origin-nonp","retention_period":"PT7D"}],"tags":{"AMSID":"AMS01","EnterpriseAppID":"C031","ApplicationServiceID":"99","Environment":"DEV","AsbpType":"QDA","Name":"ams01-c031-99-dev-master-5-db_instance","Branch":"master","Build":"5"}}'
+                    - resource_id: a1234567890
+                  Arn:
+                    Fn::Join:
+                    - ":"
+                    - - arn:aws:sns
+                      - Ref: AWS::Region
+                      - Ref: AWS::AccountId
+                      - dummy_sns_topic
+                ScheduleExpression: cron(30 8 ? * * *)
+          Outputs: {}

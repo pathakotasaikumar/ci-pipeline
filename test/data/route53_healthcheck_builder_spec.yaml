@@ -1,0 +1,31 @@
+_process_route53_healthcheck:
+  template:
+    Resources: {}
+    Outputs: {}
+  healthchecks:
+    PrimaryHealthCheck:
+        Type: AWS::Route53::HealthCheck
+        Properties:
+          HealthCheckConfig:
+            Type: CLOUDWATCH_METRIC
+            InsufficientDataHealthStatus: Unhealthy
+            AlarmIdentifier:
+              Name: "@api1.UnhealthyAlarmName"
+              Region: ap-southeast-2
+  result:
+    -
+      Resources:
+        PrimaryHealthCheck:
+          Type: AWS::Route53::HealthCheck
+          Properties:
+            HealthCheckConfig:
+              Type: CLOUDWATCH_METRIC
+              InsufficientDataHealthStatus: Unhealthy
+              AlarmIdentifier:
+                Name: Alarm1234567890
+                Region: ap-southeast-2
+      Outputs:
+        PrimaryHealthCheckHealthCheckId:
+          Description: Route 53 Health Check ID
+          Value:
+            Ref: PrimaryHealthCheck

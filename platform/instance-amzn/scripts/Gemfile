@@ -1,0 +1,3 @@
+source 'http://nexus.qcpaws.qantas.com.au/nexus/repository/gems-all/'
+gem 'aws-sdk'
+gem 'json'

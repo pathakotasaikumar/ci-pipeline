@@ -1,0 +1,53 @@
+# MySQL RDS database component
+# - With database 'testdb'
+---
+Type: aws/rds-mysql
+Stage: 01-test
+Persist: false
+
+Configuration:
+  Database:
+    Type: AWS::RDS::DBInstance
+    Security:
+      # Allow access by test-instance
+      - Source: test-instance.SecurityGroup
+        Allow: ALL:*
+      - Source: mysql.SecurityGroup
+        Allow: ALL:*
+    Properties:
+      AllocatedStorage: 100
+      DBInstanceClass: db.m5.large
+      DBName: testdb
+      MultiAZ: false
+      EngineVersion: 5.7
+      StorageType: io1
+      EnablePerformanceInsights: false
+      Iops: 1000
+      
+  MySqlReplica1:
+    Type: AWS::RDS::DBInstance
+    Security:
+      # Allow access to database from pricing
+      - Source: mysql.SecurityGroup
+        Allow: ALL:*
+    Properties:
+      SourceDBInstanceIdentifier: Database
+      AllocatedStorage: 100
+      DBInstanceClass: db.m5.large
+      EngineVersion: 5.7
+      StorageType: io1
+      Iops: 1000
+
+Actions:
+  PreRelease:
+    - Action: Snapshot
+      Stage: "02"
+
+Environments:
+  REG:
+    Configuration:
+      Database:
+        Properties:
+          Pipeline::SourceSnapshot:
+            ase: REG
+            

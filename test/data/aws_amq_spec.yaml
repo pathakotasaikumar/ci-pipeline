@@ -1,0 +1,516 @@
+---
+UnitTest:
+  Input:
+    ComponentName: amq
+    Valid:
+      Broker:
+        Type: "aws/amq"
+        Stage: "00-test"
+        Persist: true
+        IngressPoint: true
+        Configuration:
+          AMQ:
+            Type: "AWS::AmazonMQ::Broker"
+            Properties:
+              AutoMinorVersionUpgrade: true
+              SubnetIds: "@a-private, @b-private"
+              DeploymentMode: "ACTIVE_STANDBY_MULTI_AZ"
+              MaintenanceWindowStartTime:
+                DayOfWeek: "Monday"
+                TimeOfDay: "22:30"
+                TimeZone: "Australia/Sydney"
+              Users:
+                - Username: "TestUser"
+                  Password: "@amq.TestUser"
+          AMQConfiguration:
+            Type: "AWS::AmazonMQ::Configuration"
+            Properties:
+              EngineType: ACTIVEMQ
+              EngineVersion: "5.15.0"
+      SingleInstanceBroker:
+        Type: "aws/amq"
+        Stage: "00-test"
+        Persist: true
+        IngressPoint: true
+        Configuration:
+          AMQ:
+            Type: "AWS::AmazonMQ::Broker"
+            Properties:
+              AutoMinorVersionUpgrade: true
+              SubnetIds: "@a-private, @b-private"
+              DeploymentMode: "SINGLE_INSTANCE"
+              MaintenanceWindowStartTime:
+                DayOfWeek: "Monday"
+                TimeOfDay: "22:30"
+                TimeZone: "Australia/Sydney"
+              Users:
+                - Username: "Test"
+                  Password: "@app.Test"
+                  ConsoleAccess: true
+          AMQConfiguration:
+            Type: "AWS::AmazonMQ::Configuration"
+            Properties:
+              EngineType: ACTIVEMQ
+              EngineVersion: "5.15.0"
+      ParameterTest:
+        Type: "aws/amq"
+        Stage: "00-test"
+        Persist: true
+        IngressPoint: true
+        Configuration:
+          AMQ:
+            Type: "AWS::AmazonMQ::Broker"
+            Properties:
+              AutoMinorVersionUpgrade: true
+              SubnetIds: "@a-private, @b-private"
+              DeploymentMode: "SINGLE_INSTANCE"
+              MaintenanceWindowStartTime:
+                DayOfWeek: "Monday"
+                TimeOfDay: "22:30"
+                TimeZone: "Australia/Sydney"
+              Users:
+                - Username: "test"
+                  Password: "Test"
+                  ConsoleAccess: true
+          AMQConfiguration:
+            Type: "AWS::AmazonMQ::Configuration"
+            Properties:
+              EngineType: ACTIVEMQ
+              EngineVersion: "5.15.0"
+      InvalidPassword:
+        Type: "aws/amq"
+        Stage: "00-test"
+        Persist: true
+        IngressPoint: true
+        Configuration:
+          AMQ:
+            Type: "AWS::AmazonMQ::Broker"
+            Properties:
+              AutoMinorVersionUpgrade: true
+              SubnetIds: "@a-private, @b-private"
+              DeploymentMode: "SINGLE_INSTANCE"
+              MaintenanceWindowStartTime:
+                DayOfWeek: "Monday"
+                TimeOfDay: "22:30"
+                TimeZone: "Australia/Sydney"
+              Users:
+                - Username: "TestUser"
+                  Password: "TestUser"
+                  ConsoleAccess: true
+          AMQConfiguration:
+            Type: "AWS::AmazonMQ::Configuration"
+            Properties:
+              EngineType: ACTIVEMQ
+              EngineVersion: "5.15.0"
+      BrokerwithSecurityRules:
+        Type: "aws/amq"
+        Stage: "00-test"
+        Persist: true
+        IngressPoint: true
+        Configuration:
+          AMQ:
+            Type: "AWS::AmazonMQ::Broker"
+            Security:
+              - Source: "test-app.SecurityGroup"
+                Allow: "ALL:*"
+              - Source: "test-app.InstanceRole"
+                Allow: create
+              - Source: "test-app.InstanceRole"
+                Allow: admin
+            Properties:
+              AutoMinorVersionUpgrade: true
+              SubnetIds: "@a-private, @b-private"
+              DeploymentMode: "SINGLE"
+              MaintenanceWindowStartTime:
+                DayOfWeek: "Monday"
+                TimeOfDay: "22:30"
+                TimeZone: "Australia/Sydney"
+              User:
+                Username: "TestUser"
+                Password: "@amq.TestUser"
+          AMQConfiguration:
+            Type: "AWS::AmazonMQ::Configuration"
+            Properties:
+              EngineType: ACTIVEMQ
+              EngineVersion: "5.15.0"
+      BrokerwithoutSecurityRules:
+        Type: "aws/amq"
+        Stage: "00-test"
+        Persist: true
+        IngressPoint: true
+        Configuration:
+          AMQ:
+            Type: "AWS::AmazonMQ::Broker"
+            Properties:
+              AutoMinorVersionUpgrade: true
+              SubnetIds: "@a-private, @b-private"
+              DeploymentMode: "SINGLE"
+              MaintenanceWindowStartTime:
+                DayOfWeek: "Monday"
+                TimeOfDay: "22:30"
+                TimeZone: "Australia/Sydney"
+              User:
+                Username: "TestUser"
+                Password: "@amq.TestUser"
+          AMQConfiguration:
+            Type: "AWS::AmazonMQ::Configuration"
+            Properties:
+              EngineType: ACTIVEMQ
+              EngineVersion: "5.15.0"
+
+    _build_template:
+      single_broker:
+        Type: "aws/amq"
+        Stage: "01-amq"
+        Persist: true
+        Configuration:
+          AMQ:
+            Type: "AWS::AmazonMQ::Broker"
+            Properties:
+              AutoMinorVersionUpgrade: true
+              SubnetIds: "@a-private, @b-private"
+              DeploymentMode: "SINGLE_INSTANCE"
+              MaintenanceWindowStartTime:
+                DayOfWeek: "Monday"
+                TimeOfDay: "22:30"
+                TimeZone: "Australia/Sydney"
+              Users:
+                Username: "TestUser"
+                Password: "@app.TestUser"
+
+          AMQConfiguration:
+            Type: "AWS::AmazonMQ::Configuration"
+            Properties:
+              EngineType: ACTIVEMQ
+              EngineVersion: "5.15.0"
+              Data: |
+                  <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                  <broker xmlns="http://activemq.apache.org/schema/core" start="false">
+                      <destinationPolicy>
+                          <policyMap>
+                              <policyEntries>
+                                  <policyEntry topic=">">
+                                      <pendingMessageLimitStrategy>
+                                          <constantPendingMessageLimitStrategy limit="3000"/>
+                                      </pendingMessageLimitStrategy>
+                                  </policyEntry>
+                                  <policyEntry queue="&gt;">
+                                      <deadLetterStrategy>
+                                          <individualDeadLetterStrategy queuePrefix="DLQ." useQueueForQueueMessages="true"/>
+                                      </deadLetterStrategy>
+                                  </policyEntry>
+                              </policyEntries>
+                          </policyMap>
+                      </destinationPolicy>
+                      <plugins/>
+                  </broker>
+      multiAZ_broker:
+        Type: "aws/amq"
+        Stage: "01-amq"
+        Persist: true
+        Configuration:
+          AMQ:
+            Type: "AWS::AmazonMQ::Broker"
+            Properties:
+              AutoMinorVersionUpgrade: true
+              SubnetIds: "@a-private, @b-private"
+              DeploymentMode: "ACTIVE_STANDBY_MULTI_AZ"
+              MaintenanceWindowStartTime:
+                DayOfWeek: "Monday"
+                TimeOfDay: "22:30"
+                TimeZone: "Australia/Sydney"
+              Users:
+                Username: "TestUser"
+                Password: "@app.TestUser"
+
+    Invalid:
+      WrongResource:
+        Type: "aws/amq"
+        Stage: "01-amq"
+        Configuration:
+          A$mq:
+            Type: "AWS::AmazonMQ::Broker"
+      MultipleAMQDefinition:
+        Type: "aws/amq"
+        Stage: "01-amq"
+        Configuration:
+          Broker1:
+            Type: "AWS::AmazonMQ::Broker"
+          Broker2:
+            Type: "AWS::AmazonMQ::Broker"
+      UnsupportedResourceType:
+        Type: "aws/amq"
+        Stage: "01-amq"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+      InvalidNilType:
+        Type: "aws/amq"
+        Stage: "00-test"
+        Configuration:
+          AMQ:
+            Type: test
+            Properties:
+              AutoMinorVersionUpgrade: true
+      UnspportedSourceSecurityRules:
+        Type: "aws/amq"
+        Stage: "00-test"
+        Persist: true
+        IngressPoint: true
+        Configuration:
+          AMQ:
+            Type: "AWS::AmazonMQ::Broker"
+            Security:
+              - Source: "test-app.Instance"
+                Allow: "ALL:*"
+              - Source: "test-app.Execution"
+                Allow: create
+            Properties:
+              AutoMinorVersionUpgrade: true
+              SubnetIds: "@a-private, @b-private"
+              DeploymentMode: "SINGLE"
+              MaintenanceWindowStartTime:
+                DayOfWeek: "Monday"
+                TimeOfDay: "22:30"
+                TimeZone: "Australia/Sydney"
+              User:
+                Username: "TestUser"
+                Password: "@amq.TestUser"
+      NilResourceType:
+        Type: "aws/amq"
+        Stage: "00-test"
+        Configuration:
+          AMQ:
+            Type:
+            Properties:
+              AutoMinorVersionUpgrade: true
+
+  # Test result to validate
+  TestResult:
+    SecurityItems:
+      - Type: SecurityGroup
+        Name: SecurityGroup
+        Component: amq
+    SecurityRules:
+      - !ruby/object:IpSecurityRule
+        sources:
+        - test-app.SecurityGroup
+        destination: amq.SecurityGroup
+        ports:
+        - !ruby/object:IpPort
+          spec: ALL:*
+          protocol: "-1"
+          from: 0
+          to: 65535
+        name:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - test-app.InstanceRole
+        resources:
+          - "*"
+        actions:
+          - "mq:CreateUser"
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - test-app.InstanceRole
+        resources:
+          - "*"
+        actions:
+          - "mq:CreateUser"
+          - "mq:DeleteUser"
+        condition:
+# Outputs
+  Output:
+    _build_template:
+      single_broker:
+        Default:
+          Resources:
+            AMQ:
+              Type: "AWS::AmazonMQ::Broker"
+              Properties:
+                AutoMinorVersionUpgrade: true
+                DeploymentMode: SINGLE_INSTANCE
+                SubnetIds:
+                  - subnet-123
+                EngineType: ActiveMQ
+                EngineVersion: 5.15.0
+                HostInstanceType: mq.t2.micro
+
+                PubliclyAccessible: 'false'
+                SecurityGroups:
+                  - sg-12345
+                Logs:
+                  General: 'true'
+                  Audit: 'true'
+                BrokerName: "ams01-c031-99-dev-master-5-amq-AMQ"
+                MaintenanceWindowStartTime:
+                  DayOfWeek: Monday
+                  TimeOfDay: '22:30'
+                  TimeZone: Australia/Sydney
+                Configuration:
+                  Id: "amq-config-id"
+                  Revision: "amq-config-id"
+          Outputs:
+            AMQBrokerId:
+              Description: AMQ Amazon MQ Broker Id
+              Value:
+                Ref: AMQ
+            AMQBrokerArn:
+              Description: AMQ Amazon MQ Broker Arn
+              Value:
+                Fn::GetAtt:
+                  - AMQ
+                  - Arn
+            AMQPrimaryBrokerEndpoint:
+              Description: AMQ Amazon MQ Primary Endpoint
+              Value:
+                Fn::Sub:
+                  - "${broker_name}-1.mq.${AWS::Region}.amazonaws.com"
+                  - broker_name:
+                      Ref: AMQ
+      multiAZ_broker:
+        Default:
+          Resources:
+            AMQ:
+              Type: "AWS::AmazonMQ::Broker"
+              Properties:
+                AutoMinorVersionUpgrade: true
+                DeploymentMode: "ACTIVE_STANDBY_MULTI_AZ"
+                SubnetIds:
+                  - subnet-123
+                  - subnet-456
+                EngineType: ActiveMQ
+                EngineVersion: 5.15.0
+                HostInstanceType: mq.t2.micro
+
+                PubliclyAccessible: 'false'
+                SecurityGroups:
+                  - sg-12345
+                Logs:
+                  General: 'true'
+                  Audit: 'true'
+                BrokerName: "ams01-c031-99-dev-master-5-amq-AMQ"
+                MaintenanceWindowStartTime:
+                  DayOfWeek: Monday
+                  TimeOfDay: '22:30'
+                  TimeZone: Australia/Sydney
+                Configuration:
+                  Id: "amq-config-id"
+                  Revision: "amq-config-id"
+          Outputs:
+            AMQBrokerId:
+              Description: AMQ Amazon MQ Broker Id
+              Value:
+                Ref: AMQ
+            AMQBrokerArn:
+              Description: AMQ Amazon MQ Broker Arn
+              Value:
+                Fn::GetAtt:
+                  - AMQ
+                  - Arn
+            AMQPrimaryBrokerEndpoint:
+              Description: AMQ Amazon MQ Primary Endpoint
+              Value:
+                Fn::Sub:
+                  - "${broker_name}-1.mq.${AWS::Region}.amazonaws.com"
+                  - broker_name:
+                      Ref: AMQ
+            AMQSecondaryBrokerEndpoint:
+              Description: AMQ Amazon MQ Secondary Endpoint
+              Value:
+                Fn::Sub:
+                  - "${broker_name}-2.mq.${AWS::Region}.amazonaws.com"
+                  - broker_name:
+                      Ref: AMQ
+      amq_configuration:
+        Default:
+          Resources:
+            AMQConfiguration:
+              Type: AWS::AmazonMQ::Configuration
+              Properties:
+                Name: "ams01-c031-99-dev-master-amq-AMQConfiguration"
+                Description: Configuration file for AMQConfiguration
+                EngineType: ACTIVEMQ
+                EngineVersion: 5.15.0
+                Data:
+                  Fn::Base64: |
+                    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                    <broker xmlns="http://activemq.apache.org/schema/core" start="false">
+                        <destinationPolicy>
+                            <policyMap>
+                                <policyEntries>
+                                    <policyEntry topic=">">
+                                        <pendingMessageLimitStrategy>
+                                            <constantPendingMessageLimitStrategy limit="3000"/>
+                                        </pendingMessageLimitStrategy>
+                                    </policyEntry>
+                                    <policyEntry queue="&gt;">
+                                        <deadLetterStrategy>
+                                            <individualDeadLetterStrategy queuePrefix="DLQ." useQueueForQueueMessages="true"/>
+                                        </deadLetterStrategy>
+                                    </policyEntry>
+                                </policyEntries>
+                            </policyMap>
+                        </destinationPolicy>
+                        <plugins/>
+                    </broker>
+          Outputs:
+            AMQConfigurationId:
+              Description: "AMQConfiguration AMQ Configuration Id"
+              Value:
+                Ref:
+                  AMQConfiguration
+            AMQConfigurationRevision:
+              Description: "AMQConfiguration AMQ Configuration Revision"
+              Value:
+                Fn::GetAtt:
+                  - AMQConfiguration
+                  - Revision
+            AMQConfigurationArn:
+              Description: AMQConfiguration AMQ Configuration Arn
+              Value:
+                Fn::GetAtt:
+                  - AMQConfiguration
+                  - Arn
+
+      parameterTest:
+        Resources:
+          AMQ:
+            Type: "AWS::AmazonMQ::Broker"
+            Properties:
+              AutoMinorVersionUpgrade: true
+              DeploymentMode: SINGLE_INSTANCE
+              SubnetIds:
+                - subnet-123
+              EngineType: ActiveMQ
+              EngineVersion: 5.15.0
+              HostInstanceType: mq.t2.micro
+
+              PubliclyAccessible: 'false'
+              SecurityGroups:
+                - sg-12345
+              BrokerName: "ams01-c031-99-dev-master-5-amq-AMQ"
+              MaintenanceWindowStartTime:
+                DayOfWeek: Monday
+                TimeOfDay: '22:30'
+                TimeZone: Australia/Sydney
+              Logs:
+                General: 'true'
+                Audit: 'true'
+              Configuration:
+                Id:
+                  Ref: AMQConfiguration
+                Revision:
+                  Fn::GetAtt:
+                    - AMQConfiguration
+                    - Revision
+        Parameters:
+          AMQTestUserUsername:
+            NoEcho: true
+            Description: AMQ User Name for TestUser
+            Type: String
+          AMQTestUserPassword:
+            NoEcho: true
+            Description: AMQ password for TestUser
+            Type: String

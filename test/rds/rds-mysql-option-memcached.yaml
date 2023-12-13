@@ -1,0 +1,26 @@
+# MySQL with Option Group
+---
+Type: "aws/rds-mysql"
+Stage: "01-test"
+Persist: false
+
+Configuration:
+  MySQL:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      Engine: mysql
+      EngineVersion: "5.6.29"
+      MultiAZ: false
+      MasterUsername: root
+      MasterUserPassword: Pa$$w0rd99
+      DBName: mydb
+      OptionGroupName:
+        Ref: 'SQLOptionGroup'  
+  SQLOptionGroup:  
+    Type: "AWS::RDS::OptionGroup"
+    Properties:
+      EngineName: mysql
+      MajorEngineVersion: "5.6"
+      OptionGroupDescription: "Options for mySQL"
+      OptionConfigurations:
+        - OptionName: "MEMCACHED"

@@ -1,0 +1,5 @@
+[deployment-client]
+phoneHomeIntervalInSecs = 300
+
+[target-broker:deploymentServer]
+targetUri = https://splunkds.qcpaws.qantas.com.au:8089

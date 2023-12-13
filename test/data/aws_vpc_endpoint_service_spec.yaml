@@ -1,0 +1,44 @@
+---
+UnitTest:
+  Input:
+    initialize:
+      correct:
+        Type: aws/vpc-endpoint-service
+        Stage: 01-endpoint
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Features:
+            Type: Pipeline::Features
+            Properties:
+              Features:
+                CustomTags:
+                  Enabled: true
+                  Tags:
+                    TestFeature: dummy
+          MyEndpoint:
+            Type: AWS::EC2::VPCEndpointService
+            Properties:
+              NetworkLoadBalancerArns:
+              - "@nlb.NLBArn"
+      invalid-resource:
+        Type: aws/ecs-task
+        Stage: 01-ecstask
+        Configuration:
+          MyEndpoint:
+            Type: AWS::EC2::VPCEndpointServicePermissions
+            Properties:
+              NetworkLoadBalancerArns:
+              - "@nlb.NLBArn"
+
+  Output:
+    SecurityItems: []
+    SecurityRules: []
+    _full_template:
+      Resources:
+        MyEndpoint:
+          Type: AWS::EC2::VPCEndpointService
+          Properties:
+            AcceptanceRequired: true
+            NetworkLoadBalancerArns:
+            - "MyNLBArn"

@@ -1,0 +1,564 @@
+---
+UnitTest:
+  ComponentName: Test-Component
+  ComponentDefinition:
+    Valid:
+      OracleMinimal:
+        Type: "aws/rds-oracle"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBName: mydb1234
+              MasterUsername: root
+              AssociatedRoles:
+                - FeatureName: S3_INTEGRATION
+                  RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+              MasterUserPassword: Pa$$w0rd99
+      OracleMinimalSe1:
+        Type: "aws/rds-oracle"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBName: mydb1234
+              Engine: oracle-se1
+              AssociatedRoles:
+                - FeatureName: S3_INTEGRATION
+                  RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+              MasterUsername: root
+              MasterUserPassword: Pa$$w0rd99
+      OracleSnapshot:
+        Type: "aws/rds-oracle"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            DeletionPolicy: Snapshot
+            Properties:
+              DBName: mydb1234
+              AssociatedRoles:
+                - FeatureName: S3_INTEGRATION
+                  RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+              MasterUsername: root
+              MasterUserPassword: Pa$$w0rd99
+      OracleOverride:
+        Type: "aws/rds-oracle"
+        Stage: "001"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from pricing
+              - Source: "rds-oracle-pricingdb.SecurityGroup"
+                Allow: "ALL:*"
+            Properties:
+              AllowMajorVersionUpgrade: true
+              AutoMinorVersionUpgrade: false
+              Engine: "oracle-ee"
+              EngineVersion: "12.1.0.1.v1"
+              DBName: "pricing"
+              StorageType: io1
+              DBInstanceClass: "db.t3.large"
+              AssociatedRoles: 
+                - FeatureName: S3_INTEGRATION
+                  RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+              AllocatedStorage: 10
+              MultiAZ: false
+              MasterUsername: "root2"
+              MasterUserPassword: "Password1234"
+              LicenseModel: "bring-your-own-license"
+              Port: 1522
+              KmsKeyId: kms-dummy
+              PreferredBackupWindow: "16:00-17:00"
+              BackupRetentionPeriod: "0"
+              StorageEncrypted: true
+        Environments:
+          STG:
+            Configuration:
+              Database:
+                Properties:
+                  DBInstanceClass: "db.t3.large"
+                  BackupRetentionPeriod: "7"
+          PROD:
+            Configuration:
+              Database:
+                Properties:
+                  DBInstanceClass: "db.t3.large"
+                  AllocatedStorage: 100
+                  MultiAZ: true
+                  BackupRetentionPeriod: "14"
+      OracleSpecificSnapshot:
+        Type: "aws/rds-oracle"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              AllocatedStorage: '100'
+              AssociatedRoles:
+                - FeatureName: S3_INTEGRATION
+                  RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+              DBSnapshotIdentifier: Snapshot-old
+      OracleLatestSnapshot:
+        Type: "aws/rds-oracle"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBSnapshotIdentifier: latest
+              AssociatedRoles:
+                - FeatureName: S3_INTEGRATION
+                  RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+      OracleFullBuild:
+        Type: aws/rds-oracle
+        Stage: 01-test
+        IngressPoint: true
+        Configuration:
+          Database:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              AllocatedStorage: 10
+              AutoMinorVersionUpgrade: true
+              Engine: oracle-ee
+              EngineVersion: 11.2.0.4.v20
+              DBName: testdb
+              DBInstanceClass: db.t2.medium
+              MasterUsername: myadmin
+              MultiAZ: false
+              AssociatedRoles:
+                - FeatureName: S3_INTEGRATION
+                  RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+              KmsKeyId: kms-dummy
+              EnableCloudwatchLogExports:
+                - audit
+          SubscriptionFilter:
+            Type: AWS::Logs::SubscriptionFilter
+            Properties:
+              DestinationArn: "@lambda.DeployArn"
+    Invalid:
+      Engine:
+        Type: "aws/rds-oracle"
+        Stage: "001"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              Engine: "oracle-buzz"
+      DBName:
+        Type: "aws/rds-oracle"
+        Stage: "001"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              Engine: "oracle-ee"
+      BadName:
+        Type: "aws/rds-oracle"
+        Stage: "001"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              Engine: "oracle-ee"
+              DBName: "verylongname"
+
+      Environments:
+        STG:
+          Configuration:
+            Database:
+              Properties:
+                DBInstanceClass: "db.t3.large"
+                BackupRetentionPeriod: "7"
+        PROD:
+          Configuration:
+            Database:
+              Properties:
+                DBInstanceClass: "db.t3.large"
+                AllocatedStorage: 100
+                MultiAZ: true
+                BackupRetentionPeriod: "14"
+  TestResult:
+    OracleMinimal:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            PubliclyAccessible: false
+            CopyTagsToSnapshot: true
+            VPCSecurityGroups:
+            - sg123
+            Engine: oracle-ee
+            LicenseModel: bring-your-own-license
+            AssociatedRoles:
+                - FeatureName: S3_INTEGRATION
+                  RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            DBParameterGroupName:
+              Ref: DummyParameterGroup
+            OptionGroupName:
+              Ref: DummyOptionGroup
+            AllocatedStorage: '100'
+            StorageType: gp2
+            DBInstanceClass: db.t3.medium
+            Port: '1521'
+            DBName: mydb1234
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            MultiAZ: true
+            StorageEncrypted: true
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            BackupRetentionPeriod: '30'
+            KmsKeyId: kms-dummy
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+    OracleMinimalSe1:
+          Parameters:
+            DatabaseMasterUsername:
+              NoEcho: true
+              Description: 'The database admin account username'
+              Type: 'String'
+            DatabaseMasterUserPassword:
+              NoEcho: true
+              Description: 'The database admin account password'
+              Type: 'String'
+          Resources:
+            Database:
+              Type: AWS::RDS::DBInstance
+              DeletionPolicy: Snapshot
+              Properties:
+                DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+                PubliclyAccessible: false
+                CopyTagsToSnapshot: true
+                AssociatedRoles:
+                - FeatureName: S3_INTEGRATION
+                  RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+                VPCSecurityGroups:
+                - sg123
+                Engine: oracle-se1
+                LicenseModel: license-included
+                DBSubnetGroupName:
+                  Ref: DBSubnetGroup
+                AllocatedStorage: '100'
+                StorageType: gp2
+                DBInstanceClass: db.t3.medium
+                Port: '1521'
+                DBName: mydb1234
+                MasterUsername:
+                  Ref: DatabaseMasterUsername
+                MasterUserPassword:
+                  Ref: DatabaseMasterUserPassword
+                MultiAZ: true
+                StorageEncrypted: true
+                AllowMajorVersionUpgrade: false
+                AutoMinorVersionUpgrade: true
+                BackupRetentionPeriod: '30'
+                KmsKeyId: kms-dummy
+          Outputs:
+            DatabaseEndpointAddress:
+              Description: RDS instance Database endpoint
+              Value:
+                Fn::GetAtt:
+                - Database
+                - Endpoint.Address
+            DatabaseEndpointPort:
+              Description: RDS instance Database port
+              Value:
+                Fn::GetAtt:
+                - Database
+                - Endpoint.Port
+            DatabaseArn:
+                Description: RDS instance Database ARN
+                Value:
+                  Fn::Join:
+                  - ":"
+                  - - arn:aws:rds
+                    - Ref: AWS::Region
+                    - Ref: AWS::AccountId
+                    - db
+                    - Ref: Database
+    OracleSnapshot:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            AllocatedStorage: '100'
+            DBSubnetGroupName:
+                  Ref: DBSubnetGroup
+            PubliclyAccessible: false
+            CopyTagsToSnapshot: true
+            AssociatedRoles:
+                - FeatureName: S3_INTEGRATION
+                  RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+            VPCSecurityGroups:
+            - sg123
+            Engine: oracle-ee
+            LicenseModel: bring-your-own-license
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            StorageType: gp2
+            DBInstanceClass: db.t3.medium
+            Port: '1521'
+            DBName: mydb1234
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            MultiAZ: true
+            StorageEncrypted: true
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            BackupRetentionPeriod: '30'
+            KmsKeyId: kms-dummy
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+    OracleOverride:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            Engine: oracle-ee
+            LicenseModel: bring-your-own-license
+            DBName: pricing
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            AllocatedStorage: 10
+            AssociatedRoles:
+              - FeatureName: S3_INTEGRATION
+                RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+            AllowMajorVersionUpgrade: true
+            AutoMinorVersionUpgrade: false
+            BackupRetentionPeriod: '0'
+            DBInstanceClass: db.t3.large
+            EngineVersion: 12.1.0.1.v1
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            MultiAZ: false
+            Port: 1522
+            PreferredBackupWindow: 16:00-17:00
+            StorageType: io1
+            KmsKeyId: kms-dummy
+            StorageEncrypted: true
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+          Description: RDS instance Database ARN
+          Value:
+            Fn::Join:
+            - ":"
+            - - arn:aws:rds
+              - Ref: AWS::Region
+              - Ref: AWS::AccountId
+              - db
+              - Ref: Database
+    OracleSpecificSnapshot:
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            CopyTagsToSnapshot: true
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            Engine: oracle-ee
+            StorageEncrypted: true
+            LicenseModel: bring-your-own-license
+            Port: '1521'
+            StorageType: gp2
+            AssociatedRoles:
+                - FeatureName: S3_INTEGRATION
+                  RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+            DBSnapshotIdentifier: Snapshot-old
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            AllocatedStorage: '100'
+            BackupRetentionPeriod: '30'
+            MultiAZ: true
+          DeletionPolicy: Snapshot
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+          Description: RDS instance Database ARN
+          Value:
+            Fn::Join:
+            - ":"
+            - - arn:aws:rds
+              - Ref: AWS::Region
+              - Ref: AWS::AccountId
+              - db
+              - Ref: Database
+    OracleLatestSnapshot:
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            CopyTagsToSnapshot: true
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            Engine: oracle-ee
+            StorageEncrypted: true
+            LicenseModel: bring-your-own-license
+            Port: '1521'
+            StorageType: gp2
+            AssociatedRoles:
+                - FeatureName: S3_INTEGRATION
+                  RoleArn : arn:aws:iam::123456789012:role/service-role/AMSxx-dev-OracleRole
+            DBSnapshotIdentifier: lastest-snap-xx
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            BackupRetentionPeriod: '30'
+            MultiAZ: true
+          DeletionPolicy: Snapshot
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+          Description: RDS instance Database ARN
+          Value:
+            Fn::Join:
+            - ":"
+            - - arn:aws:rds
+              - Ref: AWS::Region
+              - Ref: AWS::AccountId
+              - db
+              - Ref: Database
+  FullBuildOutputs:
+    SecurityItems:
+      - Type: SecurityGroup
+        Name: SecurityGroup
+        Component: Test-Component
+        DefaultIpIngress: true
+    SecurityRules: []

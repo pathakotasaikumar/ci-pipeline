@@ -1,0 +1,46 @@
+_process_emr_instance_group_configs:
+  instance_group_config_definitions:
+    Permanent:
+      Type: "AWS::EMR::InstanceGroupConfig"
+      Properties:
+        InstanceCount: 2
+    SpotGroup:
+      Type: "AWS::EMR::InstanceGroupConfig"
+      Properties:
+        BidPrice: "0.1"
+        InstanceCount: 5
+        InstanceType: "m3.large"
+        Market: "SPOT"
+  cluster_name: "MyCluster"
+
+  OutputTemplate:
+    Resources:
+      Permanent:
+        Type: AWS::EMR::InstanceGroupConfig
+        Properties:
+          Name: ams01-c031-99-dev-master-5-cluster-Permanent
+          InstanceCount: 2
+          InstanceRole: TASK
+          InstanceType: m3.xlarge
+          JobFlowId:
+            Ref: MyCluster
+      SpotGroup:
+        Type: AWS::EMR::InstanceGroupConfig
+        Properties:
+          Name: ams01-c031-99-dev-master-5-cluster-SpotGroup
+          InstanceCount: 5
+          InstanceRole: TASK
+          InstanceType: m3.large
+          JobFlowId:
+            Ref: MyCluster
+          Market: SPOT
+          BidPrice: '0.1'
+    Outputs:
+      PermanentId:
+        Description: EMR instance group config id
+        Value:
+          Ref: Permanent
+      SpotGroupId:
+        Description: EMR instance group config id
+        Value:
+          Ref: SpotGroup

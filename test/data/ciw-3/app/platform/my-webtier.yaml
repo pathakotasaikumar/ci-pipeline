@@ -1,0 +1,111 @@
+---
+Type: "aws/autoscale"
+Stage: "01-all"
+IngressPoint: true
+Persist: true
+
+Configuration:
+  LoadBalancer:
+    Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+    Properties:
+      Scheme: "internal"
+      Listeners:
+        - LoadBalancerPort: "80"
+          InstancePort: "8080"
+          Protocol: "HTTP"
+      HealthCheck:
+        HealthyThreshold: "2"
+        Interval: "10"
+        Target: "HTTP:8080/fpetest/health"
+        Timeout: "5"
+        UnhealthyThreshold: "2"
+
+  AutoScalingGroup:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      MinInstances: 1
+      MaxInstances: 1
+      HealthCheckGracePeriod: 600
+
+  BakeInstance:
+    Type: "AWS::EC2::Instance"
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          Deploy: [ "Configure" ]
+        Configure:
+          commands:
+            bootstrap:
+              command: 'bash bootstrap.sh'
+              cwd: '/root/payload'
+    Properties:
+      InstanceType: "t2.medium"
+      KeyName: "191027"
+
+  LaunchConfiguration:
+    Type: "AWS::AutoScaling::LaunchConfiguration"
+    Properties:
+      InstanceType: "t2.medium"
+      KeyName: "191027"
+
+  AlarmHighCpu:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmActions:
+        - Ref: "ScaleUpPolicy"
+      ComparisonOperator: "GreaterThanThreshold"
+      EvaluationPeriods: 2
+      MetricName: "CPUUtilization"
+      Period: 60
+      Statistic: "Average"
+      Threshold: 75
+
+  ScaleUpPolicy:
+    Type: "AWS::AutoScaling::ScalingPolicy"
+    Properties:
+      AdjustmentType: "ChangeInCapacity"
+      ScalingAdjustment: 2
+      AutoScalingGroupName:
+        Ref: "AutoScalingGroup"
+      Cooldown: 300
+
+  AlarmLowCpu:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmActions:
+        - Ref: "ScaleDownPolicy"
+      ComparisonOperator: "LessThanThreshold"
+      EvaluationPeriods: 4
+      MetricName: "CPUUtilization"
+      Period: 60
+      Statistic: "Average"
+      Threshold: 35
+
+  ScaleDownPolicy:
+    Type: "AWS::AutoScaling::ScalingPolicy"
+    Properties:
+      AdjustmentType: "ChangeInCapacity"
+      ScalingAdjustment: -2
+      AutoScalingGroupName:
+        Ref: "AutoScalingGroup"
+      Cooldown: 60
+
+Environments:
+  STG:
+    Configuration:
+      LaunchConfiguration:
+        Properties:
+          InstanceType: "t2.medium"
+      AutoScalingGroup:
+        Properties:
+          MinInstances: 2
+          MaxInstances: 2
+  PROD:
+    Configuration:
+      LaunchConfiguration:
+        Properties:
+          InstanceType: "t2.medium"
+      AutoScalingGroup:
+        Properties:
+          MinInstances: 2
+          MaxInstances: 8

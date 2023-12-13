@@ -1,0 +1,68 @@
+---
+Stream:
+  Type: AWS::Kinesis::Stream
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::Kinesis::Stream:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Required: false
+          Type: List
+          ItemType: Common.SecurityItem
+        Properties:
+          ShardCount:
+            Configurable: true
+          StreamEncryption:
+            Configurable: true
+            Required: false
+          Pipeline::RetentionPeriod:
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=66730893#aws/kinesis-stream-AWS::Kinesis::Stream"
+            Configurable: true
+            PrimitiveType: Integer
+            Required: false
+    PropertyTypes:
+      AWS::Kinesis::Stream.StreamEncryption:
+        Properties:
+          EncryptionType:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+          KeyId:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features
+
+LogDestination:
+  Type: AWS::Logs::Destination
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::Logs::Destination:
+        Properties:
+          DestinationName:
+            Configurable: true
+            Required: false
+          DestinationPolicy:
+            Configurable: true
+            Required: false
+          RoleArn:
+            Configurable: true
+            Required: false
+          TargetArn:
+            Configurable: true
+            Required: false

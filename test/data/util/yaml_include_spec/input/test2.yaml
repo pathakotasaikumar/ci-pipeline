@@ -1,0 +1,40 @@
+---
+Type: aws/instance
+Stage: 01-test
+IngressPoint: true
+Persist: false
+Configuration:
+  Instance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          commands:
+            bootstrap:
+              command: bash bootstrap.sh
+              cwd: /root/payload
+    Properties:
+      AvailabilityZone: "@a"
+      ImageId: amazon-latest
+      InstanceType: c3.large
+
+Actions:
+  PreRelease:
+    - Action: HTTPRequest
+      Stage: 00-test-endpoint
+      Parameters:
+        Type: get
+        URL: http://@api.DeployDnsName/qcp-pipeline-dev/build
+        SSL: false
+        ValidResponseCodes:
+          - 200
+        StopOnError: true
+
+    - Action: RegisterApi
+      Stage: 01-register-api
+      Parameters:
+        Basepath: qcp-pipeline-dev
+        Payload:
+          swagger: !include/json unknown.json
+          apiConf: !include/yaml unknown.yaml
+          apiConfText: !include/yaml unknown.txt

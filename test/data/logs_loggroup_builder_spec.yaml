@@ -1,0 +1,28 @@
+
+_process_logs_loggroup:
+  Input:
+    LogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        RetentionInDays: 1
+        LogGroupName: DummyGroup
+
+  Output:
+    Resources:
+      LogGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+          RetentionInDays: 1
+          LogGroupName: DummyGroup
+
+    Outputs:
+      LogGroupArn:
+        Description: LogGroup LogGroup ARN
+        Value:
+          Fn::GetAtt:
+          - LogGroup
+          - Arn
+      LogGroupName:
+        Description: LogGroup LogGroup Name
+        Value:
+          Ref: LogGroup

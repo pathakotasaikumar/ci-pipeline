@@ -1,0 +1,14 @@
+---
+Type: aws/lambda-layer
+Stage: 00-test
+Persist: false
+IngressPoint: false
+
+Configuration:
+  TestLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      CompatibleRuntimes:
+        - python3.9
+      Content: package.zip
+      Description: Test Layer

@@ -1,0 +1,245 @@
+UnitTest:
+  TopLevelPropertyMethod:
+    InvalidType:
+      Type: "aws/instance"
+      Stage: "02-test"
+      Persist: false
+      IngressPoint: true
+      TestPoint: true
+    Invalid:
+      Type: 12232
+      Stage: "02-test"
+      Persist: false
+      IngressPoint: true
+  ValidateMethod:
+    Valid:
+      Type: "aws/instance"
+      Stage: "02-test"
+      Persist: false
+      IngressPoint: true
+      Configuration:
+        Instance:
+          Type: "AWS::EC2::Instance"
+          Metadata:
+            AWS::CloudFormation::Init:
+              configSets:
+                Deploy: [ "Install", "Test" ]
+              Install:
+                packages:
+                  yum:
+                    mysql: []
+              Test:
+                commands:
+                  test:
+                    command: 'bash test.sh'
+                    cwd: '/rootcd/artefacts/path'
+          Properties:
+            ImageId: "@rhel6-latest"
+            InstanceType: "t2.medium"
+    Invalid:
+      Type: "aws/instance"
+      Stage: "02-test"
+      Persist: false
+      IngressPoint: true
+      Configuration:
+        Instance:
+          Type: Null
+          Properties:
+            ImageId: "@rhel6-latest"
+            InstanceType: "t2.medium"
+        Features:
+          Type: Pipeline::Features
+          Properties:
+            Datagod: true
+  CardinalityTest:
+    Valid:
+      Instance:
+        Instance:
+          Type: AWS::EC2::Instance
+          Metadata:
+            AWS::CloudFormation::Init:
+              configSets:
+                Deploy:
+                - Install
+                - Test
+              Install:
+                packages:
+                  yum:
+                    mysql: []
+                    postgresql: []
+                    nc: []
+              Test:
+                commands:
+                  test:
+                    command: bash test.sh
+                    cwd: "/root/payload"
+          Properties:
+            AvailabilityZone: "@a"
+            ImageId: "@rhel6-latest"
+            InstanceType: m4.large
+      BackupPolicy:
+        CardinalityBackupPolicy:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy2:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy3:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@nonp"
+              RetentionPeriod: PT15M
+    Invalid:
+      Instance:
+        Instance:
+          Type: AWS::EC2::Instance
+          Metadata:
+            AWS::CloudFormation::Init:
+              configSets:
+                Deploy:
+                - Install
+                - Test
+              Install:
+                packages:
+                  yum:
+                    mysql: []
+                    postgresql: []
+                    nc: []
+              Test:
+                commands:
+                  test:
+                    command: bash test.sh
+                    cwd: "/root/payload"
+          Properties:
+            AvailabilityZone: "@a"
+            ImageId: "@rhel6-latest"
+            InstanceType: m4.large
+      BackupPolicy:
+        CardinalityBackupPolicy1:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy2:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy3:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy4:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy5:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy6:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy7:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy8:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy9:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy10:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy11:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+  PolicyTest:
+    Valid:
+      BackupPolicy:
+        CardinalityBackupPolicy:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy2:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy3:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@nonp"
+              RetentionPeriod: PT15M

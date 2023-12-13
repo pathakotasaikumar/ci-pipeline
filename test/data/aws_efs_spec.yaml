@@ -1,0 +1,81 @@
+---
+._build_template:
+
+  Input:
+    Type: "aws/sqs"
+    Stage: "001-datatier"
+    Configuration:
+      FileSystem:
+        Type: AWS::EFS::FileSystem
+
+  Output:
+    Resources:
+      FileSystem:
+        Type: AWS::EFS::FileSystem
+        Properties:
+          PerformanceMode: generalPurpose
+          ThroughputMode: bursting
+          Encrypted: true
+          KmsKeyId: arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+      MountTargetsubnet20008945:
+        Type: AWS::EFS::MountTarget
+        Properties:
+          FileSystemId:
+            Ref: FileSystem
+          SubnetId: subnet-20008945
+          SecurityGroups:
+          - sg-app-security
+          -
+    Outputs:
+      FileSystemId:
+        Description: EFS file system id
+        Value:
+          Ref: FileSystem
+      FileSystemEndpoint:
+        Description: EFS file system endpoint
+        Value:
+          Fn::Sub: "${FileSystem}.efs.${AWS::Region}.amazonaws.com"
+      MountTargetsubnet20008945Id:
+        Description: EFS mount target id
+        Value:
+          Ref: MountTargetsubnet20008945
+  Output-Route53:
+    Resources:
+      FileSystem:
+        Type: AWS::EFS::FileSystem
+        Properties:
+          PerformanceMode: generalPurpose
+          ThroughputMode: bursting
+          Encrypted: true
+          KmsKeyId: arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+      MountTargetsubnet20008945:
+        Type: AWS::EFS::MountTarget
+        Properties:
+          FileSystemId:
+            Ref: FileSystem
+          SubnetId: subnet-20008945
+          SecurityGroups:
+          - sg-app-security
+          -
+      DeployDns:
+        Type: AWS::Route53::RecordSet
+        Properties:
+          HostedZoneName: ams01.nonp.aws.qcp.
+          Name: efs.master-5.dev.c031-99.ams01.nonp.aws.qcp
+          Type: CNAME
+          TTL: '60'
+          ResourceRecords:
+          - Fn::Sub: "${FileSystem}.efs.${AWS::Region}.amazonaws.com"
+    Outputs:
+      FileSystemId:
+        Description: EFS file system id
+        Value:
+          Ref: FileSystem
+      FileSystemEndpoint:
+        Description: EFS file system endpoint
+        Value:
+          Fn::Sub: "${FileSystem}.efs.${AWS::Region}.amazonaws.com"
+      MountTargetsubnet20008945Id:
+        Description: EFS mount target id
+        Value:
+          Ref: MountTargetsubnet20008945

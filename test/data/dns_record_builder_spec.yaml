@@ -1,0 +1,199 @@
+UnitTest:
+  Input:
+    process_release_r53_dns_record:
+      Template:
+        Resources: {}
+        Outputs: {}
+    Valid:
+      Type: "aws/autoheal"
+      Stage: "02-test"
+      Persist: false
+      Configuration:
+        VolumeAttachment1:
+          Type: "Pipeline::Autoheal::VolumeAttachment"
+          Properties:
+            VolumeId: "@volume1.MyVolumeId"
+            Device: "/dev/xvdm"
+        VolumeAttachment2:
+          Type: "Pipeline::Autoheal::VolumeAttachment"
+          Properties:
+            VolumeId: "@volume2.MyVolumeId"
+            Device: "/dev/xvdn"
+        Interface1:
+          Type: "Pipeline::Autoheal::NetworkInterfaceAttachment"
+          Properties:
+            NetworkInterfaceId: "@eni1.MyEniId"
+            DeviceIndex: 1
+        BakeInstance:
+          Type: "AWS::EC2::Instance"
+          Properties:
+            ImageId: "@rhel6-latest"
+            InstanceType: "m3.medium"
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+          Properties:
+            Scheme: "internal"
+            Listeners:
+              - LoadBalancerPort: "80"
+                InstancePort: "80"
+                Protocol: "HTTP"
+            HealthCheck:
+              HealthyThreshold: "2"
+              Interval: "10"
+              Target: "TCP:22"
+              Timeout: "5"
+              UnhealthyThreshold: "2"
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+          Properties:
+            MinSize: 0
+            MaxSize: 1
+            HealthCheckGracePeriod: 600
+            VPCZoneIdentifier: "@a-private"
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: "m3.medium"
+            ImageId: "@test"
+        TerminatingHook:
+          Type: AWS::AutoScaling::LifecycleHook
+          Properties:
+            DefaultResult: CONTINUE
+            HeartbeatTimeout: 30
+            LifecycleTransition: autoscaling:EC2_INSTANCE_TERMINATING
+            NotificationTargetARN: "@lifecycle-queue.QueueArn"
+        AlarmLowCpu:
+          Type: AWS::CloudWatch::Alarm
+          Properties:
+            AlarmActions:
+              - ScaleDownPolicy
+            ComparisonOperator: LessThanThreshold
+            EvaluationPeriods: 4
+            MetricName: CPUUtilization
+            Period: 60
+            Statistic: Average
+            Threshold: 35
+        HalfHourlyBackupPolicy:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0 0 ? * *
+            RetentionPeriod: PT1H
+            CopyTargets:
+              - Target: "@dr"
+                RetentionPeriod: PT1H
+        Features:
+          Type: Pipeline::Features
+          Properties:
+            Features:
+              Datadog : enabled
+        ScheduledActionUp:
+          Type: "AWS::AutoScaling::ScheduledAction"
+          Properties:
+          MinSize: 1
+          MaxSize: 1
+          Recurrence: "0 20 * * 0-4"
+    ValidWithWildcard-qcpaws:
+      Type: "aws/autoheal"
+      Stage: "02-test"
+      Persist: false
+      Configuration:
+        VolumeAttachment1:
+          Type: "Pipeline::Autoheal::VolumeAttachment"
+          Properties:
+            VolumeId: "@volume1.MyVolumeId"
+            Device: "/dev/xvdm"
+        VolumeAttachment2:
+          Type: "Pipeline::Autoheal::VolumeAttachment"
+          Properties:
+            VolumeId: "@volume2.MyVolumeId"
+            Device: "/dev/xvdn"
+        Interface1:
+          Type: "Pipeline::Autoheal::NetworkInterfaceAttachment"
+          Properties:
+            NetworkInterfaceId: "@eni1.MyEniId"
+            DeviceIndex: 1
+        BakeInstance:
+          Type: "AWS::EC2::Instance"
+          Properties:
+            ImageId: "@rhel6-latest"
+            InstanceType: "m3.medium"
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+          Properties:
+            Scheme: "internal"
+            Listeners:
+              - LoadBalancerPort: "80"
+                InstancePort: "80"
+                Protocol: "HTTP"
+                SSLCertificateId: "@wildcard-qcpaws"
+            HealthCheck:
+              HealthyThreshold: "2"
+              Interval: "10"
+              Target: "TCP:22"
+              Timeout: "5"
+              UnhealthyThreshold: "2"
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+          Properties:
+            MinSize: 0
+            MaxSize: 1
+            HealthCheckGracePeriod: 600
+            VPCZoneIdentifier: "@a-private"
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: "m3.medium"
+            ImageId: "@test"
+        TerminatingHook:
+          Type: AWS::AutoScaling::LifecycleHook
+          Properties:
+            DefaultResult: CONTINUE
+            HeartbeatTimeout: 30
+            LifecycleTransition: autoscaling:EC2_INSTANCE_TERMINATING
+            NotificationTargetARN: "@lifecycle-queue.QueueArn"
+        AlarmLowCpu:
+          Type: AWS::CloudWatch::Alarm
+          Properties:
+            AlarmActions:
+              - ScaleDownPolicy
+            ComparisonOperator: LessThanThreshold
+            EvaluationPeriods: 4
+            MetricName: CPUUtilization
+            Period: 60
+            Statistic: Average
+            Threshold: 35
+        HalfHourlyBackupPolicy:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0 0 ? * *
+            RetentionPeriod: PT1H
+            CopyTargets:
+              - Target: "@dr"
+                RetentionPeriod: PT1H
+        Features:
+          Type: Pipeline::Features
+          Properties:
+            Features:
+              Datadog : enabled
+        ScheduledActionUp:
+          Type: "AWS::AutoScaling::ScheduledAction"
+          Properties:
+          MinSize: 1
+          MaxSize: 1
+          Recurrence: "0 20 * * 0-4"
+  Output:
+    process_release_r53_dns_record:
+      -
+        Resources:
+          testReleaseDns:
+            Type: AWS::Route53::RecordSet
+            Properties:
+              Name: ChangeInCapacity
+              AutoScalingGroupName:
+                Ref: AutoScalingGroup
+              Type: 'CNAME'
+              TTL: '60'
+              HostedZoneName: ams01.nonp.aws.qcp.
+              ResourceRecords:
+                - www.google.com
+        Outputs: {}

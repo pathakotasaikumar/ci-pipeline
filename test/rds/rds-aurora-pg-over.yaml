@@ -1,0 +1,49 @@
+Type: aws/rds-aurora
+Stage: "02-example"
+Persist: false
+IngressPoint: false
+Configuration:
+  MyExampleCluster2:
+    Type: AWS::RDS::DBCluster
+    InboundRules:
+      - Source: "ApplicationTier.SecurityGroup"
+        Allow: "ALL:*"
+    Properties:
+      DBName: "example2"
+      DBClusterParameterGroupName: AuroraParams
+      MasterUsername: dbadmin
+      Port: 3306
+  AuroraParams:
+    Type: AWS::RDS::DBClusterParameterGroup
+    Properties:
+      Family: "aurora5.6"
+      Parameters:
+        "character_set_database" : "utf32"
+Environments:
+  DEV:
+    Configuration:
+      MyExampleCluster2:
+        Properties:
+          StorageEncrypted: false
+          DBSnapshotIdentifier: latest
+      MyDBInstance1:
+        Type: AWS::RDS::DBInstance
+        Properties:
+          DBInstanceClass: db.t2.medium
+  PROD:
+    Configuration:
+      MyExampleCluster2:
+        Properties:
+          StorageEncrypted: true
+      MyDBInstance1:
+        Type: AWS::RDS::DBInstance
+        Properties:
+          DBInstanceClass: db.r3.xlarge
+      MyDBInstance2:
+        Type: AWS::RDS::DBInstance
+        Properties:
+          DBInstanceClass: db.r3.xlarge
+      MyDBInstance3:
+        Type: AWS::RDS::DBInstance
+        Properties:
+          DBInstanceClass: db.r3.xlarge

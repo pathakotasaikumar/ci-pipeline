@@ -1,0 +1,57 @@
+# Windows 2012 single instance used to test Windows 2012 scripts
+# Note: other components should have security rules allowing access to this component.
+# This component will test:
+# - volume-win2012 attach/detach via AWS CLI
+# - attach_volume and detach_volume scripts
+# - kms_decrypt script
+# - attach_eni and detach_eni scripts
+---
+Type: aws/instance
+Stage: 01-test
+Persist: false
+IngressPoint: true
+
+Configuration:
+  Features:
+    Type: Pipeline::Features
+    Properties:
+      Features:
+        Datadog: enabled
+        Qualys:
+          Enabled: true
+          Recipients: ["csi@qantas.com.au"]
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          commands:
+            01-test-context-include:
+              command: 'powershell.exe -File c:\\windows\\temp\\payload\\context-include.ps1'
+            01-test-context-include-noprofile:
+              command: 'powershell.exe -File c:\\windows\\temp\\payload\\context-include.ps1 -noprofile'
+    Properties:
+      AvailabilityZone: "@a"
+      ImageId: "@win2012-latest"
+      InstanceType: m4.large
+
+
+  InstancePowerUp:
+    Type: Pipeline::EC2::ScheduledAction
+    Properties:
+      Recurrence: "0 6 * * ?"
+      Action : start
+
+  InstancePowerDown:
+    Type: Pipeline::EC2::ScheduledAction
+    Properties:
+      Recurrence: "0 18 * * ?"
+      Action: stop
+
+Environments:
+  DEV:
+    Configuration:
+      Instance:
+        Properties:
+          KeyName: pipeline

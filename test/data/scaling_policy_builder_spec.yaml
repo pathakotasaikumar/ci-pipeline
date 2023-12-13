@@ -1,0 +1,121 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    Configurations:
+      -
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+        ScaleUpPolicy:
+          Type: "AWS::AutoScaling::ScalingPolicy"
+          Properties:
+            DummyKey: DummyValue
+            # AdjustmentType: "ChangeInCapacity" # Auto Default
+            # ScalingAdjustment: 2
+            # AutoScalingGroupName:
+            #   Ref: "AutoScalingGroup"
+            # Cooldown: 300
+        ScaleDownPolicy:
+          Type: "AWS::AutoScaling::ScalingPolicy"
+          Properties:
+            AdjustmentType: "ExactCapacity" # should pick up
+            AutoScalingGroupName:
+              Ref: "AutoScalingGroup"
+            Cooldown: '560' # should pick up
+            ScalingAdjustment : '5' # should pick up
+      -
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+        ScaleUpPolicy:
+          Type: "AWS::AutoScaling::ScalingPolicy"
+          Properties:
+            AdjustmentType: "ChangeInCapacity"
+            AutoScalingGroupName:
+              Ref: "AutoScalingGroup"
+            PolicyType: "StepScaling"
+            EstimatedInstanceWarmup: "60"
+            StepAdjustments:
+              -
+                MetricIntervalLowerBound: "0"
+                MetricIntervalUpperBound: "50"
+                ScalingAdjustment: "1"
+              -
+                MetricIntervalLowerBound: "50"
+                ScalingAdjustment: "2"
+        ScaleDownPolicy:
+          Type: "AWS::AutoScaling::ScalingPolicy"
+          Properties:
+            AdjustmentType: "ChangeInCapacity"
+            AutoScalingGroupName:
+              Ref: "AutoScalingGroup"
+            PolicyType: "StepScaling"
+            EstimatedInstanceWarmup: "60"
+            StepAdjustments:
+              -
+                MetricIntervalLowerBound: "0"
+                MetricIntervalUpperBound: "50"
+                ScalingAdjustment: "1"
+              -
+                MetricIntervalLowerBound: "50"
+                ScalingAdjustment: "2"
+
+
+  Output:
+    _process_scaling_policies:
+      -
+        Resources:
+          ScaleUpPolicy:
+            Type: AWS::AutoScaling::ScalingPolicy
+            Properties:
+              AdjustmentType: ChangeInCapacity
+              PolicyType: "SimpleScaling"
+              AutoScalingGroupName:
+                Ref: AutoScalingGroup
+              Cooldown: '300'
+              ScalingAdjustment: '1'
+          ScaleDownPolicy:
+            Type: AWS::AutoScaling::ScalingPolicy
+            Properties:
+              PolicyType: "SimpleScaling"
+              AdjustmentType: ExactCapacity
+              AutoScalingGroupName:
+                Ref: AutoScalingGroup
+              Cooldown: '560'
+              ScalingAdjustment: '5'
+        Outputs: {}
+      -
+        Resources:
+          ScaleUpPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              AutoScalingGroupName:
+                Ref: "AutoScalingGroup"
+              PolicyType: "StepScaling"
+              EstimatedInstanceWarmup: "60"
+              StepAdjustments:
+                -
+                  MetricIntervalLowerBound: "0"
+                  MetricIntervalUpperBound: "50"
+                  ScalingAdjustment: "1"
+                -
+                  MetricIntervalLowerBound: "50"
+                  ScalingAdjustment: "2"
+          ScaleDownPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              AutoScalingGroupName:
+                Ref: "AutoScalingGroup"
+              PolicyType: "StepScaling"
+              EstimatedInstanceWarmup: "60"
+              StepAdjustments:
+                -
+                  MetricIntervalLowerBound: "0"
+                  MetricIntervalUpperBound: "50"
+                  ScalingAdjustment: "1"
+                -
+                  MetricIntervalLowerBound: "50"
+                  ScalingAdjustment: "2"
+        Outputs: {}

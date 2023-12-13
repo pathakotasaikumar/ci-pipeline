@@ -1,0 +1,199 @@
+---
+RecordSet:
+  Type: AWS::Route53::RecordSet
+  Cardinality: 0-99
+  Specification:
+    ResourceTypes:
+      AWS::Route53::RecordSet:
+        Properties:
+          HostedZoneName:
+            Configurable: false
+          Name:
+            Configurable: false
+          Type:
+            Configurable: true
+          TTL:
+            Configurable: true
+          ResourceRecords:
+            Configurable: true
+          Comment:
+            Configurable: true
+          Failover:
+            Configurable: true
+          SetIdentifier:
+            Configurable: true
+          AliasTarget:
+            Configurable: true
+            Type: AliasTarget
+            Required: false
+          GeoLocation:
+            Configurable: true
+          Region:
+            Configurable: true
+          Weight:
+            Configurable: true
+          HealthCheckId:
+            Configurable: true
+    PropertyTypes:
+      AWS::Route53::RecordSet.AliasTarget:
+        Properties:
+          DNSName:
+            Configurable: true
+          EvaluateTargetHealth:
+            Configurable: true
+
+
+HealthCheck:
+  Type: AWS::Route53::HealthCheck
+  Cardinality: 0-99
+  Specification:
+    ResourceTypes:
+      AWS::Route53::HealthCheck:
+        Properties:
+          HealthCheckConfig:
+            Configurable: true
+            Type: HealthCheckConfig
+    PropertyTypes:
+      AWS::Route53::HealthCheck.HealthCheckConfig:
+        Documentation: "http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-healthcheck-healthcheckconfig.html"
+        Properties:
+          AlarmIdentifier:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+            UpdateType: Immutable
+          ChildHealthChecks:
+            Configurable: true
+            PrimitiveType: List
+            Required: false
+            UpdateType: Immutable
+          EnableSNI:
+            Configurable: true
+            PrimitiveType: Boolean
+            Required: false
+            UpdateType: Immutable
+          FailureThreshold:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: false
+            UpdateType: Immutable
+          FullyQualifiedDomainName:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+            UpdateType: Immutable
+          HealthThreshold:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: false
+            UpdateType: Immutable
+          InsufficientDataHealthStatus:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+            UpdateType: Immutable
+          Inverted:
+            Configurable: true
+            PrimitiveType: Boolean
+            Required: false
+            UpdateType: Immutable
+          IPAddress:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+            UpdateType: Immutable
+          MeasureLatency:
+            Configurable: true
+            PrimitiveType: Boolean
+            Required: false
+            UpdateType: Immutable
+          Port:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: false
+            UpdateType: Immutable
+          RequestInterval:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: false
+            UpdateType: Immutable
+          ResourcePath:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+            UpdateType: Immutable
+          SearchString:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+            UpdateType: Immutable
+          Type:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+            UpdateType: Immutable
+
+      AWS::Route53::HealthCheck.AlarmIdentifier:
+        Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-healthcheck-alarmidentifier.html
+        Properties:
+          Name:
+            Configurable: true
+            Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-healthcheck-alarmidentifier.html#cfn-route53-healthcheck-alarmidentifier-name
+            PrimitiveType: String
+            Required: true
+            UpdateType: Mutable
+          Region:
+            Configurable: true
+            Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-route53-healthcheck-alarmidentifier.html#cfn-route53-healthcheck-alarmidentifier-region
+            PrimitiveType: String
+            Required: true
+            UpdateType: Mutable
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features
+
+Alarm:
+  Type: AWS::CloudWatch::Alarm
+  Cardinality: 0-5
+  Specification:
+    ResourceTypes:
+      AWS::CloudWatch::Alarm:
+        Properties:
+          AlarmActions:
+            Configurable: true
+            AllowSingular: true
+          ComparisonOperator:
+            Configurable: true
+          Dimensions:
+            Configurable: true
+          EvaluationPeriods:
+            Configurable: true
+          MetricName:
+            Configurable: true
+          Namespace:
+            Default: AWS/EC2
+            Configurable: true
+          Period:
+            Configurable: true
+          Statistic:
+            Configurable: true
+          Threshold:
+            Configurable: true
+          Units:
+            Configurable: true
+    PropertyTypes:
+      AWS::CloudWatch::Alarm.Dimension:
+        Properties:
+          Name:
+            Configurable: true
+          Value:
+            Configurable: true

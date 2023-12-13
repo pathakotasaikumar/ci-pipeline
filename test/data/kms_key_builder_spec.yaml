@@ -1,0 +1,146 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    Definition:
+      Key:
+        Type: AWS::KMS::Key
+        Properties:
+          Description: Application Service Key
+          EnableKeyRotation: true
+  Output:
+    _process_kms_key:
+      Resources:
+        Key:
+          Type: AWS::KMS::Key
+          Properties:
+            Description: Application Service Key
+            EnableKeyRotation: true
+            KeyPolicy:
+              Version: '2012-10-17'
+              Id: DefaultOwnAccount
+              Statement:
+                - 
+                  Sid: Allow use of the key by resources
+                  Effect: Allow
+                  Principal:
+                    AWS:
+                      Fn::Join:
+                          - ''
+                          - - 'arn:aws:iam::'
+                            - Ref: AWS::AccountId
+                            - ":root"
+                  Action:
+                  - kms:*
+                  Resource: "*"
+                - 
+                  Sid: Do not allow anyone to schedule key for deletion
+                  Effect: Deny
+                  Principal:
+                    AWS: "*"
+                  Action: kms:ScheduleKeyDeletion
+                  Resource: "*"
+                - 
+                  Sid: Allow DR Account to decrypt resources
+                  Effect: Allow
+                  Principal:
+                    AWS: arn:aws:iam::123123123:root
+                  Action: 
+                    - kms:Decrypt
+                    - kms:ReEncryptFrom
+                    - kms:DescribeKey
+                    - kms:GenerateDataKeyWithoutPlaintext
+                    - kms:CreateGrant
+                    - kms:ReEncryptTo 
+                  Resource: "*"
+      Outputs:
+        KeyName:
+          Description: KMS key name
+          Value:
+            Ref: Key
+        KeyArn:
+          Description: KMS key ARN
+          Value:
+            Fn::Join:
+            - ''
+            - - 'arn:aws:kms:'
+              - Ref: AWS::Region
+              - ":"
+              - Ref: AWS::AccountId
+              - ":key/"
+              - Ref: Key
+                        
+    _process_kms_key_prod:
+      Resources:
+        Key:
+          Type: AWS::KMS::Key
+          Properties:
+            Description: Application Service Key
+            EnableKeyRotation: true
+            KeyPolicy:
+              Version: '2012-10-17'
+              Id: DefaultOwnAccount
+              Statement:
+                - 
+                  Sid: Allow use of the key by resources
+                  Effect: Allow
+                  Principal:
+                    AWS:
+                      Fn::Join:
+                          - ''
+                          - - 'arn:aws:iam::'
+                            - Ref: AWS::AccountId
+                            - ":root"
+                  Action:
+                  - kms:*
+                  Resource: "*"
+                - 
+                  Sid: Do not allow anyone to schedule key for deletion
+                  Effect: Deny
+                  Principal:
+                    AWS: "*"
+                  Action: kms:ScheduleKeyDeletion
+                  Resource: "*"
+                - 
+                  Sid: Allow DR Account to decrypt resources
+                  Effect: Allow
+                  Principal:
+                    AWS: arn:aws:iam::123123123:root
+                  Action: 
+                    - kms:Decrypt
+                    - kms:ReEncryptFrom
+                    - kms:DescribeKey
+                    - kms:GenerateDataKeyWithoutPlaintext
+                    - kms:CreateGrant
+                    - kms:ReEncryptTo 
+                  Resource: "*"
+                - 
+                  Sid: Allow Non Prod Account to decrypt resources
+                  Effect: Allow
+                  Principal:
+                    AWS: arn:aws:iam::123123124:root
+                  Action: 
+                    - kms:Decrypt
+                    - kms:ReEncryptFrom
+                    - kms:DescribeKey
+                    - kms:GenerateDataKeyWithoutPlaintext
+                    - kms:CreateGrant
+                    - kms:ReEncryptTo 
+                  Resource: "*"
+      Outputs:
+        KeyName:
+          Description: KMS key name
+          Value:
+            Ref: Key
+        KeyArn:
+          Description: KMS key ARN
+          Value:
+            Fn::Join:
+            - ''
+            - - 'arn:aws:kms:'
+              - Ref: AWS::Region
+              - ":"
+              - Ref: AWS::AccountId
+              - ":key/"
+              - Ref: Key

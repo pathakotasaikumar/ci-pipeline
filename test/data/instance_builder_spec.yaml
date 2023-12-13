@@ -1,0 +1,233 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    Configurations:
+      -
+        BakeInstance:
+          Type: "AWS::EC2::Instance"
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+      -
+        BakeInstance:
+          Type: "AWS::EC2::Instance"
+          CreationPolicy:
+            ResourceSignal:
+              Count: '2' # should not pick
+              Timeout: PTXXX # should pick
+          Properties:
+            EbsOptimized: true # should pick
+            SourceDestCheck: false # should pick
+            KeyName: MyKey
+            InstanceInitiatedShutdownBehavior: stop
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: m3.large # should pick
+      -
+        BakeInstance:
+          Type: "AWS::EC2::Instance"
+          Metadata:
+            AWS::CloudFormation::Init:
+              configSets:
+                Deploy: [ "Install", "Configure" ]
+              Install:
+                packages:
+                  yum:
+                    httpd: []
+                services:
+                  sysvinit:
+                    httpd:
+                      enabled: "true"
+                      ensureRunning: "true"
+              Configure:
+                commands:
+                  bootstrap:
+                    command: 'bash bootstrap.sh'
+                    cwd: '/root/payload'
+          Properties:
+            InstanceType: "t2.small" # should pick up
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: "t2.medium"
+  Output:
+    _add_recovery_alarm:
+      Resources:
+        RecoveryAlarm:
+          Type: AWS::CloudWatch::Alarm
+          Properties:
+            AlarmDescription: Trigger a recovery for instance
+            Namespace: AWS/EC2
+            MetricName: StatusCheckFailed_System
+            Statistic: Minimum
+            Period: '60'
+            EvaluationPeriods: '10'
+            ComparisonOperator: GreaterThanThreshold
+            Threshold: '0'
+            AlarmActions:
+            - Fn::Join:
+              - ''
+              - - 'arn:aws:automate:'
+                - Ref: AWS::Region
+                - ":ec2:recover"
+            Dimensions:
+            - Name: InstanceId
+              Value:
+                Ref: test-instance
+    _process_bake_instance:
+      -
+        Resources:
+          BakeInstance:
+            Type: AWS::EC2::Instance
+            CreationPolicy:
+              ResourceSignal:
+                Count: '1'
+                Timeout: PT45M
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Prepare:
+                  - PrePrepare
+                  Deploy: []
+                PrePrepare: Metadata here
+              AWS::CloudFormation::Authentication:
+                MyAuth: Test
+            Properties:
+              IamInstanceProfile:
+                Ref: InstanceProfile
+              ImageId: soe-ami-123
+              InstanceInitiatedShutdownBehavior: terminate
+              InstanceType: m3.medium
+              SecurityGroupIds:
+              - sg-123
+              - sg-456
+              SubnetId: subnet-123
+              UserData: UserData
+        Outputs:
+          BakeInstanceId:
+            Description: Id of the instance
+            Value:
+              Ref: BakeInstance
+          BakeInstancePrivateDnsName:
+            Description: Private DNS name of the instance
+            Value:
+              Fn::GetAtt:
+              - BakeInstance
+              - PrivateDnsName
+          BakeInstancePrivateIp:
+            Description: Private IP of the instance
+            Value:
+              Fn::GetAtt:
+              - BakeInstance
+              - PrivateIp
+      -
+        Resources:
+          BakeInstance:
+            Type: AWS::EC2::Instance
+            CreationPolicy:
+              ResourceSignal:
+                Count: '1'
+                Timeout: PTXXX
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Prepare:
+                  - PrePrepare
+                  Deploy: []
+                PrePrepare: Metadata here
+              AWS::CloudFormation::Authentication:
+                MyAuth: Test
+            Properties:
+              EbsOptimized: true
+              IamInstanceProfile:
+                Ref: InstanceProfile
+              ImageId: soe-ami-123
+              InstanceInitiatedShutdownBehavior: stop
+              InstanceType: m3.large
+              SecurityGroupIds:
+              - sg-123
+              - sg-456
+              SourceDestCheck: false
+              SubnetId: subnet-123
+              UserData: UserData
+              KeyName: MyKey
+        Outputs:
+          BakeInstanceId:
+            Description: Id of the instance
+            Value:
+              Ref: BakeInstance
+          BakeInstancePrivateDnsName:
+            Description: Private DNS name of the instance
+            Value:
+              Fn::GetAtt:
+              - BakeInstance
+              - PrivateDnsName
+          BakeInstancePrivateIp:
+            Description: Private IP of the instance
+            Value:
+              Fn::GetAtt:
+              - BakeInstance
+              - PrivateIp
+      -
+        Resources:
+          BakeInstance:
+            Type: AWS::EC2::Instance
+            CreationPolicy:
+              ResourceSignal:
+                Count: '1'
+                Timeout: PT45M
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Prepare:
+                  - PrePrepare
+                  Deploy:
+                  - UserInstall
+                  - UserConfigure
+                PrePrepare: Metadata here
+                UserInstall:
+                  packages:
+                    yum:
+                      httpd: []
+                  services:
+                    sysvinit:
+                      httpd:
+                        enabled: 'true'
+                        ensureRunning: 'true'
+                UserConfigure:
+                  commands:
+                    bootstrap:
+                      command: bash bootstrap.sh
+                      cwd: "/root/payload"
+              AWS::CloudFormation::Authentication:
+                MyAuth: Test
+            Properties:
+              IamInstanceProfile:
+                Ref: InstanceProfile
+              ImageId: soe-ami-123
+              InstanceInitiatedShutdownBehavior: terminate
+              InstanceType: t2.small
+              SecurityGroupIds:
+              - sg-123
+              - sg-456
+              SubnetId: subnet-123
+              UserData: UserData
+        Outputs:
+          BakeInstanceId:
+            Description: Id of the instance
+            Value:
+              Ref: BakeInstance
+          BakeInstancePrivateDnsName:
+            Description: Private DNS name of the instance
+            Value:
+              Fn::GetAtt:
+              - BakeInstance
+              - PrivateDnsName
+          BakeInstancePrivateIp:
+            Description: Private IP of the instance
+            Value:
+              Fn::GetAtt:
+              - BakeInstance
+              - PrivateIp

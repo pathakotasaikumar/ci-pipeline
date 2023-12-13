@@ -1,0 +1,4 @@
+[sslConfig]
+sslVersions = *,-ssl2,-ssl3
+cipherSuite = TLSv1.2:!eNULL:!aNULL
+allowSslRenegotiation = false

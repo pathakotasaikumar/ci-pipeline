@@ -1,0 +1,13 @@
+# Postgresql DB with custom parameter group
+---
+Type: "aws/rds-postgresql"
+Stage: "01-test"
+Persist: false
+
+Configuration:
+  RestoredDB:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      MultiAZ: true
+      AllocatedStorage: 50
+      DBSnapshotIdentifier: rds:aphodx67ufe3cm-2016-07-06-16-46

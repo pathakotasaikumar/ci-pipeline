@@ -1,0 +1,248 @@
+---
+Table:
+  Type: AWS::DynamoDB::Table
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::DynamoDB::Table:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Type: List
+          ItemType: Common.SecurityItem
+          Required: false
+        Properties:
+          AttributeDefinitions:
+            Configurable: true
+          GlobalSecondaryIndexes:
+            Configurable: true
+          KeySchema:
+            Configurable: true
+          LocalSecondaryIndexes:
+            Configurable: true
+          ProvisionedThroughput:
+            Configurable: true
+          StreamSpecification:
+            Configurable: true
+          TimeToLiveSpecification:
+            Configurable: true
+          BillingMode:
+            Configurable: true
+            PrimitiveType: String
+    PropertyTypes:
+      AWS::DynamoDB::Table.AttributeDefinition:
+        Properties:
+          AttributeName:
+            Configurable: true
+          AttributeType:
+            Configurable: true
+      AWS::DynamoDB::Table.GlobalSecondaryIndex:
+        Properties:
+          IndexName:
+            Configurable: true
+          KeySchema:
+            Configurable: true
+          Projection:
+            Configurable: true
+          ProvisionedThroughput:
+            Configurable: true
+      AWS::DynamoDB::Table.KeySchema:
+        Properties:
+          AttributeName:
+            Configurable: true
+          KeyType:
+            Configurable: true
+      AWS::DynamoDB::Table.LocalSecondaryIndex:
+        Properties:
+          IndexName:
+            Configurable: true
+          KeySchema:
+            Configurable: true
+          Projection:
+            Configurable: true
+      AWS::DynamoDB::Table.Projection:
+        Properties:
+          NonKeyAttributes:
+            Configurable: true
+          ProjectionType:
+            Configurable: true
+      AWS::DynamoDB::Table.ProvisionedThroughput:
+        Properties:
+          ReadCapacityUnits:
+            Configurable: true
+            Default: 1
+          WriteCapacityUnits:
+            Configurable: true
+            Default: 1
+      AWS::DynamoDB::Table.StreamSpecification:
+        Properties:
+          StreamViewType:
+            Configurable: true
+      AWS::DynamoDB::Table.TimeToLiveSpecification:
+        Properties:
+          AttributeName:
+            Configurable: true
+          Enabled:
+            Configurable: true
+      AWS::DynamoDB::Table.BillingMode:
+        Properties:
+          AttributeName:
+            Configurable: true
+          Enabled:
+            Configurable: true
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features
+
+ThroughputScheduledAction:
+  Type: Pipeline::DynamoDB::ScheduledAction
+  Cardinality: 0-2
+  Specification:
+    ResourceTypes:
+      Pipeline::DynamoDB::ScheduledAction:
+        Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=66731025"
+        Properties:
+          Recurrence:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=66731025"
+            PrimitiveType: String
+            Regex: ^([0-9,\-*\/]+) ([0-9,\-*\/]+) ([0-9,\-*?\/LW]+) ([0-9A-Z,\-*?\/]+) ([1-7A-Z,\-*?\/L]+)$
+            Required: true
+          SetReadCapacity:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=66731025"
+            PrimitiveType: String
+            Required: true
+          SetWriteCapacity:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=66731025"
+            PrimitiveType: String
+            Required: true
+          TableName:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=66731025"
+            PrimitiveType: String
+            Required: true
+
+BackupPolicy:
+  Type: Pipeline::DynamoDB::BackupPolicy
+  Cardinality: 0-10
+  Specification:
+    ResourceTypes:
+      Pipeline::DynamoDB::BackupPolicy:
+        Properties:
+          Consistent:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+          Recurrence:
+            Configurable: true
+            PrimitiveType: String
+            Regex: ^([0-9,\-*\/]+) ([0-9,\-*\/]+) ([0-9,\-*?\/LW]+) ([0-9A-Z,\-*?\/]+) ([1-7A-Z,\-*?\/L]+)$
+            Required: true
+          Target:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+            PrimitiveType: String
+            Regex: ^@origin|@dr|@nonp|@ams[0-9]{2}-(origin|dr([0-9])?)-(prod|nonp|dev)$
+            Required: false
+          RetentionPeriod:
+            Configurable: true
+            PrimitiveType: String
+            Regex: ^PT|[0-9]+Y|[0-9]+D|[0-9]+H|[0-9]+M|[0-9]+S$
+            Required: true
+          CopyTargets:
+            Configurable: true
+            Type: List
+            ItemType: Common.CopyTarget
+
+ScalableTarget:
+  Type: AWS::ApplicationAutoScaling::ScalableTarget
+  Cardinality: 0-12
+  Specification:
+    ResourceTypes:
+      AWS::ApplicationAutoScaling::ScalableTarget:
+        Properties:
+          MaxCapacity:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: true
+          MinCapacity:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: true
+          ResourceId:
+            Configurable: true
+            PrimitiveType: Map
+            Required: true
+          ScalableDimension:
+            Configurable: true
+            PrimitiveType: String
+            EnumValues:
+              - dynamodb:table:ReadCapacityUnits
+              - dynamodb:table:WriteCapacityUnits
+              - dynamodb:index:ReadCapacityUnits
+              - dynamodb:index:WriteCapacityUnits
+            Required: true
+
+ScalingPolicy:
+  Type: AWS::ApplicationAutoScaling::ScalingPolicy
+  Cardinality: 0-12
+  Specification:
+    ResourceTypes:
+      AWS::ApplicationAutoScaling::ScalingPolicy:
+        Properties:
+          PolicyName:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+          PolicyType:
+            Configurable: true
+            PrimitiveType: String
+            EnumValues:
+              - TargetTrackingScaling
+            Required: true
+          ScalingTargetId:
+            Configurable: true
+            PrimitiveType: Map
+            Required: true
+          TargetTrackingScalingPolicyConfiguration:
+            Configurable: true
+            Required: true
+    PropertyTypes:
+      AWS::ApplicationAutoScaling::ScalingPolicy.TargetTrackingScalingPolicyConfiguration:
+        Properties:
+          TargetValue:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: true
+          ScaleOutCooldown:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: true
+          ScaleInCooldown:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: true
+          PredefinedMetricSpecification:
+            Configurable: true
+            Required: true
+      AWS::ApplicationAutoScaling::ScalingPolicy.PredefinedMetricSpecification:
+        Properties:
+          PredefinedMetricType:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+          ResourceLabel:
+            Configurable: true
+            PrimitiveType: String
+            Required: false

@@ -1,0 +1,268 @@
+---
+Instance:
+  Type: AWS::RDS::DBInstance
+  Cardinality: 1-20
+  Specification:
+    ResourceTypes:
+      AWS::RDS::DBInstance:
+        DeletionPolicy:
+          Configurable: true
+          Documentation: "http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-deletionpolicy.html"
+          Type: Enum
+          EnumValues: [ Snapshot, Delete ]
+          Required: false
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Type: List
+          ItemType: Common.SecurityItem
+          Required: false
+        Properties:
+          AllocatedStorage:
+            Configurable: true
+            Required:
+              Unless: [ DBSnapshotIdentifier ]
+          AllowMajorVersionUpgrade:
+            Configurable: true
+          AutoMinorVersionUpgrade:
+            Configurable: true
+          BackupRetentionPeriod:
+            Configurable:
+              Unless: [ SourceDBInstanceIdentifier ]
+          CharacterSetName:
+            Configurable: false
+          DBInstanceClass:
+            Configurable: true
+            Required:
+              Unless: [ SourceDBInstanceIdentifier ]
+          DBName:
+            Configurable: false
+          DBSnapshotIdentifier:
+            Configurable:
+              Unless: [ SourceDBInstanceIdentifier ]
+          DBParameterGroupName:
+            Configurable: true    
+          EnableCloudwatchLogExports:
+            Configurable: true
+            Type: List
+            PrimitiveItemType: String
+          Engine:
+            Configurable: true
+            Default: sqlserver-se
+            Type: Enum
+            EnumValues: [ sqlserver-se, sqlserver-ee, sqlserver-ex, sqlserver-web ]
+          EngineVersion:
+            Configurable: true
+          Timezone:
+            Configurable: true
+          Iops:
+            Configurable:
+              If: [ StorageType: io1 ]
+            Required:
+              If: [ StorageType: io1 ]
+          LicenseModel:
+            Configurable:
+              IfAny: [ Engine: sqlserver-se, Engine: sqlserver-ee ]
+            Type: Enum
+            EnumValues: [ bring-your-own-license, license-included ]
+          MasterUsername:
+            Configurable:
+              UnlessAny: [ SourceDBInstanceIdentifier, DBSnapshotIdentifier, 'Pipeline::SourceSnapshot' ]
+          MasterUserPassword:
+            Configurable: true
+            PrimitiveType: String
+            Regex: ^@app.([0-9a-zA-Z_\/]+)$
+          MultiAZ:
+            Configurable: true
+          Port:
+            Configurable: true
+          PreferredBackupWindow:
+            Configurable:
+              Unless: [ SourceDBInstanceIdentifier ]
+          PreferredMaintenanceWindow:
+            Configurable: true
+          SourceDBInstanceIdentifier:
+            Configurable: false
+          StorageType:
+            Configurable: true
+          Pipeline::ResetMasterUserPassword:
+            Configurable:
+              IfAny: [ DBSnapshotIdentifier, 'Pipeline::SourceSnapshot' ]
+            PrimitiveItemType: Boolean
+          Pipeline::SourceSnapshot:
+            Configurable:
+              Unless: [ DBSnapshotIdentifier ]
+            PrimitiveItemType: Json
+
+OptionGroup:
+  Type: AWS::RDS::OptionGroup
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::RDS::OptionGroup:
+        DeletionPolicy:
+          Configurable: true
+          Documentation: "http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-deletionpolicy.html"
+          Type: Enum
+          EnumValues: [ Delete, Retain ]
+          Required: false
+        Properties:
+          EngineName:
+            Configurable: true
+          EnablePerformanceInsights:
+            Configurable: true
+            PrimitiveItemType: Boolean
+          MajorEngineVersion:
+            Configurable: true
+          OptionConfigurations:
+            Configurable: true
+          OptionGroupDescription:
+            Configurable: true
+    PropertyTypes:
+      AWS::RDS::OptionGroup.OptionConfiguration:
+        Properties:
+          OptionName:
+            Configurable: true
+          OptionSettings:
+            Configurable: true
+            Type: List
+            ItemType: OptionSetting
+          Port:
+            Configurable: true
+          VpcSecurityGroupMemberships:
+            Configurable: true
+      AWS::RDS::OptionGroup.OptionSetting:
+        Properties:
+          Name:
+            Configurable: true
+            Required: true
+          Value:
+            Configurable: true
+            Required: true
+
+ParameterGroup:
+  Type: AWS::RDS::DBParameterGroup
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::RDS::DBParameterGroup:
+        DeletionPolicy:
+          Configurable: true
+          Documentation: "http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-deletionpolicy.html"
+          Type: Enum
+          EnumValues: [ Snapshot, Delete, Retain ]
+          Required: false
+        Properties:
+          Description:
+            Configurable: true
+            Required: false
+          Family:
+            Configurable: true
+          Parameters:
+            Configurable: true
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features
+
+SubnetGroup:
+  Type: AWS::RDS::DBSubnetGroup
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::RDS::DBSubnetGroup:
+        Properties:
+          SubnetIds:
+            Configurable: true
+
+SubscriptionFilter:
+  Type: AWS::Logs::SubscriptionFilter
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::Logs::SubscriptionFilter:
+        Properties:
+          DestinationArn:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+          FilterPattern:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+          LogGroupName:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+
+DBInstanceBackupPolicy:
+  Type: Pipeline::DBInstance::BackupPolicy
+  Cardinality: 0-10
+  Specification:
+    ResourceTypes:
+      Pipeline::DBInstance::BackupPolicy:
+        Properties:
+          Consistent:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+          Recurrence:
+            Configurable: true
+            PrimitiveType: String
+            Regex: ^([0-9,\-*\/]+) ([0-9,\-*\/]+) ([0-9,\-*?\/LW]+) ([0-9A-Z,\-*?\/]+) ([1-7A-Z,\-*?\/L]+)$
+            Required: true
+          Target:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+            PrimitiveType: String
+            Regex: ^@origin|@dr|@nonp|@ams[0-9]{2}-(origin|dr([0-9])?)-(prod|nonp|dev)$
+            Required: false
+          RetentionPeriod:
+            Configurable: true
+            PrimitiveType: String
+            Regex: ^PT|[0-9]+Y|[0-9]+D|[0-9]+H|[0-9]+M|[0-9]+S$
+            Required: true
+          CopyTargets:
+            Configurable: true
+            Type: List
+            ItemType: Common.CopyTarget
+
+DBClusterBackupPolicy:
+  Type: Pipeline::DBCluster::BackupPolicy
+  Cardinality: 0-10
+  Specification:
+    ResourceTypes:
+      Pipeline::DBCluster::BackupPolicy:
+        Properties:
+          Consistent:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+          Recurrence:
+            Configurable: true
+            PrimitiveType: String
+            Regex: ^([0-9,\-*\/]+) ([0-9,\-*\/]+) ([0-9,\-*?\/LW]+) ([0-9A-Z,\-*?\/]+) ([1-7A-Z,\-*?\/L]+)$
+            Required: true
+          Target:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+            PrimitiveType: String
+            Regex: ^@origin|@dr|@nonp|@ams[0-9]{2}-(origin|dr([0-9])?)-(prod|nonp|dev)$
+            Required: false
+          RetentionPeriod:
+            Configurable: true
+            PrimitiveType: String
+            Regex: ^PT|[0-9]+Y|[0-9]+D|[0-9]+H|[0-9]+M|[0-9]+S$
+            Required: true
+          CopyTargets:
+            Configurable: true
+            Type: List
+            ItemType: Common.CopyTarget

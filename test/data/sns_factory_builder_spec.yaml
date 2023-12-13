@@ -1,0 +1,73 @@
+SnsFactory:
+  Template:
+    Resources: {}
+    Outputs: {}
+  Output:
+    Resources:
+      SNSFactoryCustomResourceLambda:
+        Type: "AWS::Lambda::Function"
+        Properties:
+          Handler: "index.lambda_handler"
+          Role: "arn:aws:iam::123456789012:role/ams01-c031-99-dev-master-5-SnsFactory-LambdaExecutionRole"
+          Runtime: "python3.9"
+          Code:
+            ZipFile:
+          Timeout: "300"
+          KmsKeyArn:
+      SNSFactoryCustomResourceLambdaLogGroup:
+        Type: "AWS::Logs::LogGroup"
+        Properties:
+          LogGroupName:
+            Fn::Join:
+              - ""
+              - - "/aws/lambda/"
+                - "Ref": "SNSFactoryCustomResourceLambda"
+          RetentionInDays: 30
+      InvokeLambda:
+        DependsOn: "SNSFactoryCustomResourceLambda"
+        Type: "Custom::InvokeLambda"
+        Properties:
+          ServiceToken:
+            Fn::GetAtt:
+              - "SNSFactoryCustomResourceLambda"
+              - "Arn"
+          Region:
+            - Ref: "AWS::Region"
+          TopicPrefix: "ams01-p292-01-dev-master-1-testsnsfactory"
+    Outputs:
+      SNSFactoryCustomResourceLambdaName:
+        Description: "Name of the function"
+        Value:
+          Ref: "SNSFactoryCustomResourceLambda"
+      SNSFactoryCustomResourceLambdaArn:
+        Description: "Arn of the function"
+        Value:
+          Fn::GetAtt:
+            - "SNSFactoryCustomResourceLambda"
+            - "Arn"
+  SecurityRules:
+    - !ruby/object:IamSecurityRule
+      roles:
+      - SnsFactory.LambdaExecutionRole
+      resources:
+      - arn:aws:sns:ap-southeast-2:123456789012:ams01-c031-99-dev-master-5-SnsFactory*
+      actions:
+      - sns:DeleteTopic
+      condition:
+    - !ruby/object:IamSecurityRule
+      roles:
+      - SnsFactory.LambdaExecutionRole
+      resources:
+      - '*'
+      actions:
+      - sns:ListTopics
+      condition:
+    - !ruby/object:IamSecurityRule
+      roles:
+      - SnsFactory.LambdaExecutionRole
+      resources:
+      - arn:aws:logs:*:*:*
+      actions:
+      - logs:CreateLogStream
+      - logs:PutLogEvents
+      condition:

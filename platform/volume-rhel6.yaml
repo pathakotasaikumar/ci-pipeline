@@ -1,0 +1,16 @@
+---
+Type: aws/volume
+Stage: 01-test
+Persist: true
+
+Configuration:
+  MyVolume:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Security:
+      # Allow write by test-instance
+      - Source: test-instance.InstanceRole
+        Allow: write
+    Properties:
+      AvailabilityZone: "@a"
+      Size: 10

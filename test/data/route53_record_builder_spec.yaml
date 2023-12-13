@@ -1,0 +1,35 @@
+_process_route53_records:
+  template:
+    Resources: {}
+    Outputs: {}
+  record_sets:
+    PrimaryApi:
+      Type: AWS::Route53::Record
+      Properties:
+        Comment: Primary Health based record
+        Failover: PRIMARY
+        HealthCheckId: PrimaryHealthCheck
+        ResourceRecords:
+          - "@api1.DeployDnsName"
+        SetIdentifier: PrimaryApi
+        TTL: 0
+        Type: CNAME
+
+  result:
+    -
+      Resources:
+        PrimaryApi:
+          Type: AWS::Route53::RecordSet
+          Properties:
+            HostedZoneName: ams01.nonp.aws.qcp.
+            Name: test.ams01.nonp.aws.qcp
+            Type: CNAME
+            TTL: 0
+            ResourceRecords:
+            - www.google.com
+            Comment: Primary Health based record
+            Failover: PRIMARY
+            SetIdentifier: PrimaryApi
+            HealthCheckId:
+              Ref: PrimaryHealthCheck
+      Outputs: {}

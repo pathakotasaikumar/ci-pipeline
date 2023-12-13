@@ -1,0 +1,23 @@
+# MySQL RDS database component, without persistence
+---
+Type: "aws/rds-mysql"
+Stage: "01-test"
+Persist: false
+Configuration:
+  MySqlPrimary:
+    Type: "AWS::RDS::DBInstance"
+    Security:
+      # Allow access to database from pricing
+      - Source: "rds-mysql-one-replica.SecurityGroup"
+        Allow: "ALL:*"
+    Properties:
+      DBName: mydb
+      MultiAZ: false
+  MySqlReplica1:
+    Type: "AWS::RDS::DBInstance"
+    Security:
+      # Allow access to database from pricing
+      - Source: "rds-mysql-one-replica.SecurityGroup"
+        Allow: "ALL:*"
+    Properties:
+        SourceDBInstanceIdentifier: MySqlPrimary

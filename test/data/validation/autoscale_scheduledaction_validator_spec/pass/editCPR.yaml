@@ -1,0 +1,151 @@
+Type: "aws/autoscale"
+Stage: "02 - editCPR microservice"
+Persist: false
+IngressPoint: true
+
+Configuration:
+  Features:
+    Type: Pipeline::Features
+    Properties:
+      Features:
+        Datadog: enabled
+  BakeInstance:
+    Type: "AWS::EC2::Instance"
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          commands:
+            bootstrap:
+              command: 'bash bootstrap.sh'
+              cwd: '/root/payload'
+    Properties:
+      ImageId: "@rhel7-latest"
+      InstanceType: "t2.small"
+      BlockDeviceMappings:
+        - DeviceName: "/dev/xvdm"
+          Ebs:
+            VolumeType: "gp2"
+            VolumeSize: 2
+
+  # Elastic Load Balancer configuration
+  LoadBalancer:
+    Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+    Properties:
+      Listeners:
+        - LoadBalancerPort: "80"
+          InstancePort: "80"
+          Protocol: "HTTP"
+      HealthCheck:
+        HealthyThreshold: "2"
+        Interval: "60"
+        Target: "HTTP:80/health"
+        Timeout: "5"
+        UnhealthyThreshold: "10"
+
+  # Autoscaling Group configuration
+  AutoScalingGroup:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      MinSize: 1
+      MaxSize: 1
+      HealthCheckGracePeriod: 600
+
+  # ASG launch configuration
+  LaunchConfiguration:
+    Type: "AWS::AutoScaling::LaunchConfiguration"
+    Properties:
+      InstanceType: "t2.small"
+
+  # High-CPU alarm
+  AlarmHighCpu:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmActions:
+        - "ScaleUpPolicy"
+      ComparisonOperator: "GreaterThanThreshold"
+      EvaluationPeriods: 5
+      MetricName: "CPUUtilization"
+      Period: 60
+      Statistic: "Average"
+      Threshold: 75
+
+  # Scaling policy to increase the number of ASG instances
+  ScaleUpPolicy:
+    Type: "AWS::AutoScaling::ScalingPolicy"
+    Properties:
+      AdjustmentType: "ChangeInCapacity"
+      ScalingAdjustment: 1
+      Cooldown: 60
+
+  # Low-CPU alarm
+  AlarmLowCpu:
+    Type: "AWS::CloudWatch::Alarm"
+    Properties:
+      AlarmActions:
+        - "ScaleDownPolicy"
+      ComparisonOperator: "LessThanThreshold"
+      EvaluationPeriods: 30
+      MetricName: "CPUUtilization"
+      Period: 60
+      Statistic: "Average"
+      Threshold: 25
+
+  # Scaling policy to decrease the number of ASG instances
+  ScaleDownPolicy:
+    Type: "AWS::AutoScaling::ScalingPolicy"
+    Properties:
+      AdjustmentType: "ChangeInCapacity"
+      ScalingAdjustment: -1
+      Cooldown: 300
+   
+  ScheduledActionUp:
+    Type: "AWS::AutoScaling::ScheduledAction"
+    Properties:
+      MinSize: 1
+      MaxSize: 2
+      Recurrence: "0 21 * * 0-4" # UTC Time 21:00 is SYD time 07:00 every day on weekdays
+
+Environments:
+  DEV:
+    Configuration:
+        # Scheduling action to add instances
+      ScheduledActionUp:
+        Type: "AWS::AutoScaling::ScheduledAction"
+        Properties:
+          MinSize: 2
+          MaxSize: 4
+          Recurrence: "0 21 * * 0-4" # UTC Time 21:00 is SYD time 07:00 every day on weekdays
+
+        # Scheduling action to remove instances
+      ScheduledActionDown:
+        Type: "AWS::AutoScaling::ScheduledAction"
+        Properties:
+          MinSize: 0
+          MaxSize: 0
+          Recurrence: "0 9 * * 1-5" # UTC Time 09:00 is SYD time 19:00 every day on weekdays
+  STG:
+    Configuration:
+        # Scheduling action to add instances
+      ScheduledActionUp:
+        Type: "AWS::AutoScaling::ScheduledAction"
+        Properties:
+          MinSize: 1
+          MaxSize: 1
+          Recurrence: "0 21 * * 0-4" # UTC Time 21:00 is SYD time 07:00 every day on weekdays
+
+        # Scheduling action to remove instances
+      ScheduledActionDown:
+        Type: "AWS::AutoScaling::ScheduledAction"
+        Properties:
+          MinSize: 0
+          MaxSize: 0
+          Recurrence: "0 9 * * 1-5" # UTC Time 09:00 is SYD time 19:00 every day on weekdays
+  PROD:
+    Configuration:
+      LaunchConfiguration:
+        Properties:
+          InstanceType: "t2.medium"
+      AutoScalingGroup:
+        Properties:
+          MinSize: 2
+          MaxSize: 4

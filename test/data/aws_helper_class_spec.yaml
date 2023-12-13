@@ -1,0 +1,79 @@
+---
+CloudFormation:
+  Template:
+    Resources:
+      myWaitHandle:
+        Type: "AWS::CloudFormation::WaitConditionHandle"
+        Properties: {}
+      myWaitCondition:
+        Type: "AWS::CloudFormation::WaitCondition"
+        Properties:
+          Handle:
+            Ref: "myWaitHandle"
+          Timeout: "0"
+          Count: "0"
+    Outputs:
+      WaitConditionId:
+        Value:
+          Ref: "myWaitCondition"
+  UdpatedTemplate:
+    Resources:
+      myWaitHandle:
+        Type: "AWS::CloudFormation::WaitConditionHandle"
+        Properties: {}
+      myWaitCondition2:
+        Type: "AWS::CloudFormation::WaitCondition"
+        Properties:
+          Handle:
+            Ref: "myWaitHandle"
+          Timeout: "0"
+          Count: "0"
+    Outputs:
+      WaitCondition2Id:
+        Value:
+          Ref: "myWaitCondition2"
+  BadTemplate:
+    Resources:
+      myWaitHandle:
+        Type: "AWS::CloudFormation::WaitConditionHandle"
+        Properties: {}
+      myWaitCondition2:
+        Type: "AWS::CloudFormation::WaitCondition"
+        Properties:
+          Handle:
+            Ref: "myWaitHandle"
+          Timeoutt: "0"
+          Count: "0"
+    Outputs:
+      WaitCondition2Id:
+        Value:
+          Ref: "myWaitCondition2"
+  SingleDb:
+    Type: "aws/rds"
+    Stage: "001-datatier"
+    Configuration:
+      Database:
+        Type: "AWS::RDS::DBInstance"
+        Security:
+          # Allow access to database from my-apptier
+          - Source: "my-apptier"
+            Allow: "ALL:*"
+        Properties:
+          DBInstanceClass: "db.t3.medium"
+          AllocatedStorage: 10
+          MultiAZ: false
+          DBSnapshotIdentifier: "latest"
+Ec2:
+  Template:
+    Resources:
+      myEC2Instance:
+        Type: "AWS::EC2::Instance"
+        Properties:
+          ImageId: ""
+          InstanceType: "m3.medium"
+          SecurityGroupIds: []
+          SubnetId: ""
+    Outputs:
+      EC2InstanceId:
+        Value:
+          Ref: "myEC2Instance"

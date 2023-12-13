@@ -1,0 +1,2 @@
+01-CloudFormationResourceSpecification.json should be regularly updated as per the recent AWS resource specification
+> https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-resource-specification.html

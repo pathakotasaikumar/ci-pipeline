@@ -1,0 +1,840 @@
+UnitTest:
+  Input:
+    ComponentName: TestComponent
+    Initialize:
+      Valid:
+        Type: "aws/instance"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Instance:
+            Type: "AWS::EC2::Instance"
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Deploy: ["Install", "Test"]
+                Install:
+                  packages:
+                    yum:
+                      mysql: []
+                Test:
+                  commands:
+                    test:
+                      command: "bash test.sh"
+                      cwd: "/rootcd/artefacts/path"
+            Properties:
+              ImageId: "@rhel6-latest"
+              InstanceType: "t2.medium"
+      ScheduledAction:
+        Type: "aws/instance"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Instance:
+            Type: "AWS::EC2::Instance"
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Deploy: ["Install", "Test"]
+                Install:
+                  packages:
+                    yum:
+                      mysql: []
+                Test:
+                  commands:
+                    test:
+                      command: "bash test.sh"
+                      cwd: "/rootcd/artefacts/path"
+            Properties:
+              ImageId: "@rhel6-latest"
+              InstanceType: "t2.medium"
+          InstancePowerUp:
+            Type: Pipeline::EC2::ScheduledAction
+            Properties:
+              Recurrence: "0 6 * * ?"
+              Action: start
+      BackupPolicy:
+        Type: "aws/instance"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Instance:
+            Type: "AWS::EC2::Instance"
+            Properties:
+              ImageId: "@rhel6-latest"
+              InstanceType: "t2.medium"
+          HalfHourlyBackupPolicy:
+            Type: Pipeline::Instance::BackupPolicy
+            Properties:
+              Recurrence: 0/15 * ? * *
+              RetentionPeriod: PT1H
+              CopyTargets:
+                - Target: "@dr"
+                  RetentionPeriod: PT1H
+      PipelineFeatures:
+        Type: "aws/instance"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Instance:
+            Type: "AWS::EC2::Instance"
+            Properties:
+              ImageId: "@rhel6-latest"
+              InstanceType: "t2.medium"
+          Features:
+            Type: Pipeline::Features
+            Properties:
+              Datagod: true
+              Qualys:
+                - Enabled: true
+                - Recipients: ["test@qantas.com.au"]
+      PipelineFeatures1:
+        Type: "aws/instance"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Instance:
+            Type: "AWS::EC2::Instance"
+            Properties:
+              ImageId: "@rhel6-latest"
+              InstanceType: "t2.medium"
+          Features:
+            Type: Pipeline::Features
+            Properties:
+              Datagod: true
+              Qualys:
+                - Enabled: false
+                - Recipients: ["test@qantas.com.au"]
+      InvalidNilType:
+        Type: "aws/instance"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Instance:
+            Type: Null
+            Properties:
+              ImageId: "@rhel6-latest"
+              InstanceType: "t2.medium"
+          Features:
+            Type: Pipeline::Features
+            Properties:
+              Datagod: true
+      InvalidBackupTags:
+        Type: "aws/instance"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Instance:
+            Type: "AWS::EC2::Instance"
+            Properties:
+              ImageId: "@rhel6-latest"
+              InstanceType: "t2.medium"
+
+      Invalid:
+        MutlipleInstances:
+          Type: "aws/instance"
+          Stage: "02-test"
+          Persist: false
+          IngressPoint: true
+          Configuration:
+            Instance:
+              Type: "AWS::EC2::Instance"
+              Metadata:
+                AWS::CloudFormation::Init:
+                  configSets:
+                    Deploy: ["Install", "Test"]
+                  Install:
+                    packages:
+                      yum:
+                        mysql: []
+                  Test:
+                    commands:
+                      test:
+                        command: "bash test.sh"
+                        cwd: "/rootcd/artefacts/path"
+              Properties:
+                ImageId: "@rhel6-latest"
+                InstanceType: "t2.medium"
+            Instance2:
+              Type: "AWS::EC2::Instance"
+              Metadata:
+                AWS::CloudFormation::Init:
+                  configSets:
+                    Deploy: ["Install", "Test"]
+                  Install:
+                    packages:
+                      yum:
+                        mysql: []
+                  Test:
+                    commands:
+                      test:
+                        command: "bash test.sh"
+                        cwd: "/rootcd/artefacts/path"
+              Properties:
+                ImageId: "@rhel6-latest"
+                InstanceType: "t2.medium"
+        IamRole:
+          Type: "aws/instance"
+          Stage: "02-test"
+          Persist: false
+          IngressPoint: true
+          Configuration:
+            Instance:
+              Type: "AWS::EC2::Instance"
+              Metadata:
+                AWS::CloudFormation::Init:
+                  configSets:
+                    Deploy: ["Install", "Test"]
+                  Install:
+                    packages:
+                      yum:
+                        mysql: []
+                  Test:
+                    commands:
+                      test:
+                        command: "bash test.sh"
+                        cwd: "/rootcd/artefacts/path"
+              Properties:
+                ImageId: "@rhel6-latest"
+                InstanceType: "t2.medium"
+            InstanceRole:
+              Type: "AWS::IAM::Role"
+              Properties:
+                AssumeRolePolicyDocument: {}
+                ManagedPolicyArns: []
+                Path: "/"
+                PermissionsBoundary: !Sub "arn:aws:iam::${AWS::AccountId}:policy/PermissionBoundaryPolicy"
+                Policies: []
+    SecurityItems:
+    SecurityRules:
+      Mock:
+        - Object: Defaults
+          MessageChain: sections
+          Return:
+            :ams: ams01
+            :qda: c999
+            :as: "99"
+            :ase: "dev"
+            :env: "nonp"
+            :branch: "master"
+            :build: "1"
+        - Object: Context
+          MessageChain: kms.secrets_key_arn
+          Return: "arn:/secrets_key_arn"
+        - Object: Context
+          MessageChain: environment.variable
+          Return: "dummy_env_var"
+        - Object: Context
+          MessageChain: environment.subnet_ids
+          With: ["@private"]
+          Return: ["subnet-123", "subnet-456"]
+        - Object: Context
+          MessageChain: component.role_name
+          With: ["TestComponent", "InstanceRole"]
+          Return: "InstanceRoleName-123"
+        - Object: Context
+          MessageChain: component.variable
+          With: ["TestComponent", "ImageId"]
+          Return:
+        - Object: Context
+          MessageChain: component.stack_id
+          With: ["TestComponent"]
+          Return:
+        - Object: Context
+          MessageChain: s3.secret_bucket_arn
+          Return: "arn:aws:s3:::secret_bucket"
+        - Object: Context
+          MessageChain: s3.legacy_bucket_arn
+          Return: "arn:aws:s3:::legacy_bucket"
+        - Object: Context
+          MessageChain: s3.artefact_bucket_arn
+          Return: "arn:aws:s3:::artefact_bucket"
+        - Object: Context
+          MessageChain: s3.ams_bucket_arn
+          Return: "arn:aws:s3:::ams_bucket"
+        - Object: Context
+          MessageChain: s3.qda_bucket_arn
+          Return: "arn:aws:s3:::qda_bucket"
+        - Object: Context
+          MessageChain: s3.as_bucket_arn
+          Return: "arn:aws:s3:::as_bucket"
+        - Object: Defaults
+          MessageChain: cd_artefact_path
+          Return: "cd/artefacts/path"
+        - Object: Context
+          MessageChain: component.sg_id
+          Return: "sg-123"
+        - Object: Context
+          MessageChain: asir.destination_sg_id
+          Return: "sg-asir-dest"
+        - Object: Context
+          MessageChain: asir.source_sg_id
+          Return: "sg-asir-source"
+        - Object: Context
+          MessageChain: environment.region
+          Return: "region-ap2"
+        - Object: Context
+          MessageChain: environment.account_id
+          Return: "acct-ap2"
+
+    Deploy:
+      Mock:
+        - Object: AwsInstance
+          AnyInstance:
+          Messages:
+            :_full_template:
+            :security_rules: []
+            :_prepare_secret_lambda_template:
+        - Object: Consumable
+          AnyInstance:
+          Messages:
+            :_update_security_rules:
+        - Object: Defaults
+          MessageChain: soe_ami_id
+          Return: "AmiId-123"
+        - Object: Context
+          MessageChain: environment.persist_override
+          Return: false
+        - Object: InstanceBuilder
+          AnyInstance:
+          MessageChain: _upload_cd_artefacts
+        - Object: Context
+          MessageChain: component.set_variable
+        - Object: Context
+          MessageChain: component.set_variables
+        - Object: Context
+          MessageChain: component.stack_id
+        - Object: Context
+          MessageChain: component.variable
+        - Object: AwsHelper
+          MessageChain: s3_copy_object
+        - Object: AwsHelper
+          MessageChain: s3_put_object
+        - Object: AwsHelper
+          MessageChain: s3_upload_file
+        - Object: AwsHelper
+          MessageChain: s3_download_objects
+        - Object: AwsHelper
+          MessageChain: ec2_get_image_details
+          Return:
+            :id: "ami-12345"
+            :name: "qf-rhel-soe"
+            :platform: :rhel
+            :description: "RHEL SOE"
+        - Object: AwsHelper
+          MessageChain: cfn_create_stack
+          Return: { "StackId": "Test-Stack", "InstanceId": "ins-123" }
+        - Object: AwsHelper
+          MessageChain: cfn_update_stack
+          Return: { "StackName": "StackName-123", "StackId": "StackId-123" }
+        - Object: AwsHelper
+          MessageChain: ec2_shutdown_instance_and_create_image
+          Return: { "ImageName": "name", "ImageId": "image_id" }
+        - Object: AwsHelper
+          MessageChain: kms_encrypt_data
+          Return: "encrypted_message"
+        #          - Object: Context
+        #            MessageChain: variable
+        - Object: Util::Nsupdate
+          MessageChain: create_dns_record
+        - Object: Defaults
+          MessageChain: dns_zone
+          Return: "qcpaws.qantas.com.au"
+
+    Release:
+      Mock:
+        - Object: Defaults
+          Messages:
+            :release_dns_name:
+        - Object: Util::Nsupdate
+          Messages:
+            :create_dns_record:
+        - Object: Context
+          MessageChain: component.variable
+        - Object: Context
+          MessageChain: component.set_variables
+    Teardown:
+      Mock:
+        - Object: Context
+          MessageChain: component.stack_id
+          Return: stack123
+        - Object: Context
+          MessageChain: component.security_stack_id
+          Return: sec123
+        - Object: AwsHelper
+          MessageChain: cfn_delete_stack
+        - Object: Context
+          MessageChain: component.variable
+          Retun: dns12332dsasd.asdasd.asd
+        - Object: Util::Nsupdate
+          MessageChain: delete_dns_record
+    _full_template:
+      Mock:
+        - Object: InstanceBuilder
+          AnyInstance:
+          MessageChain: _process_instance
+          Return:
+        - Object: Context
+          MessageChain: component.role_name
+          With: ["TestComponent", "InstanceRole"]
+          Return: "InstanceRoleName-123"
+        - Object: Context
+          MessageChain: component.variable
+          With: ["pipeline", "ArtefactBucketName"]
+          Return: "artefact_bucket_name"
+        - Object: Context
+          MessageChain: component.sg_id
+          Return: "sg-123"
+        - Object: Context
+          MessageChain: asir.destination_sg_id
+          Return: "sg-asir-dest"
+        - Object: Context
+          MessageChain: asir.source_sg_id
+          Return: "sg-asir-source"
+  Output:
+    Initialize:
+      Invalid:
+        MutlipleInstances: "This component does not support multiple AWS::EC2::Instance resources"
+        IamRole: 'Resource type "AWS::IAM::Role" is not supported by this component'
+    SecurityItems:
+      - Name: SecurityGroup
+        Type: SecurityGroup
+        Component: TestComponent
+      - Name: InstanceRole
+        Type: Role
+        Component: TestComponent
+        ManagedPolicyArns:
+          - Null
+          - "arn:aws:iam::894961276425:policy/qcp-iam-ams-test-stack-QCPAMSManagedPolicy-LAEJIBY6GDP7"
+      - Name: LambdaSecretManagementExecutionRole
+        Type: Role
+        Component: TestComponent
+        Service: lambda.amazonaws.com
+    SecurityRules:
+      - !ruby/object:IpSecurityRule
+        sources:
+          - sg-123456
+          - sg-654321
+        destination: TestComponent.SecurityGroup
+        ports:
+          - !ruby/object:IpPort
+            spec: TCP:22
+            protocol: tcp
+            from: '22'
+            to: '22'
+          - !ruby/object:IpPort
+            spec: TCP:3389
+            protocol: tcp
+            from: '3389'
+            to: '3389'
+        name:
+      - !ruby/object:IpSecurityRule
+        sources:
+          - sg-2468
+        destination: TestComponent.SecurityGroup
+        ports:
+          - !ruby/object:IpPort
+            spec: ALL:0-65535
+            protocol: '-1'
+            from: '0'
+            to: '65535'
+        name:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:ssm:region-ap2:acct-ap2:parameter/platform/ams01/c999/99/dev/master/1/*
+        actions:
+          - ssm:DeleteParameter
+          - ssm:DeleteParameters
+          - ssm:DescribeParameters
+          - ssm:GetParameter
+          - ssm:GetParameters
+          - ssm:GetParametersByPath
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:ssm:region-ap2:acct-ap2:parameter/ams01-c999-99-dev-master-1-TestComponent-pwd-*
+          - arn:aws:ssm:region-ap2:acct-ap2:parameter/ams01-c999-99-dev-master-1-TestComponent-Qualys-*
+        actions:
+          - ssm:PutParameter
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:/secrets_key_arn
+        actions:
+          - kms:Decrypt
+          - kms:Describe*
+          - kms:Encrypt
+          - kms:GenerateDataKey
+          - kms:GenerateDataKeyWithoutPlaintext
+          - kms:GenerateRandom
+          - kms:ReEncrypt*
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:s3:::ams_bucket
+          - arn:aws:s3:::qda_bucket
+          - arn:aws:s3:::as_bucket
+          - arn:aws:s3:::legacy_bucket
+          - arn:aws:s3:::artefact_bucket
+        actions:
+          - s3:GetBucketLocation
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:s3:::ams_bucket
+          - arn:aws:s3:::qda_bucket
+          - arn:aws:s3:::as_bucket
+          - arn:aws:s3:::legacy_bucket
+        actions:
+          - s3:ListBucket
+          - s3:ListBucketVersions
+          - s3:ListBucketMultipartUploads
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:s3:::ams_bucket/*
+          - arn:aws:s3:::qda_bucket/*
+          - arn:aws:s3:::as_bucket/*
+          - arn:aws:s3:::legacy_bucket/*
+          - arn:aws:s3:::artefact_bucket/cd/artefacts/path/*
+          - arn:aws:s3:::artefact_bucket/cd/ams01/c999/99/dev/master/00/*
+        actions:
+          - s3:GetObject
+          - s3:GetObjectVersion
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:s3:::qda_bucket/*
+          - arn:aws:s3:::as_bucket/*
+        actions:
+          - s3:PutObject
+          - s3:PutObjectAcl
+          - s3:DeleteObject
+          - s3:DeleteObjectVersion
+          - s3:RestoreObject
+          - s3:ListMultipartUploadParts
+          - s3:AbortMultipartUpload
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:s3:::as_bucket
+        actions:
+          - s3:GetBucketVersioning
+          - s3:PutBucketVersioning
+          - s3:GetLifecycleConfiguration
+          - s3:PutLifecycleConfiguration
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:s3:::as_bucket
+        actions:
+          - s3:GetBucketNotification
+          - s3:PutBucketNotification
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+        actions:
+          - kms:Encrypt
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:ec2:region-ap2:acct-ap2:instance/*
+        actions:
+          - ec2:AttachVolume
+          - ec2:DetachVolume
+          - ec2:StopInstances
+          - ec2:StartInstances
+        condition:
+          StringLike:
+            ec2:ResourceTag/Name: ams01-c999-99-dev-master-*-TestComponent
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:/secrets_key_arn
+        actions:
+          - kms:CreateGrant
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:ssm:*:*:document/AWS-RunPatchBaseline
+        actions:
+          - ssm:SendCommand
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:ec2:region-ap2:acct-ap2:instance/*
+        actions:
+          - ssm:SendCommand
+        condition:
+          StringLike:
+            ssm:ResourceTag/Name: ams01-c999-99-dev-master-*-TestComponent
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - "*"
+        actions:
+          - ssm:GetDeployablePatchSnapshotForInstance
+          - ssm:PutInventory
+          - ssm:PutComplianceItems
+          - ec2messages:AcknowledgeMessage
+          - ec2messages:DeleteMessage
+          - ec2messages:FailMessage
+          - ec2messages:GetEndpoint
+          - ec2messages:GetMessages
+          - ec2messages:SendReply
+          - ssm:DescribeInstancePatchStates
+          - ssm:DescribePatchBaselines
+          - ssm:GetPatchBaseline
+          - ssm:ListCommandInvocations
+          - ssm:ListCommands
+          - ssm:ListComplianceItems
+          - ssm:UpdateInstanceInformation
+          - ssm:DescribeInstanceProperties
+          - ssm:DescribeDocumentParameters
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.InstanceRole
+        resources:
+          - arn:aws:s3:::artefact_bucket/logs/ams01/c999/99/dev/master/1/TestComponent/deploy/*
+        actions:
+          - s3:PutObject
+          - s3:PutObjectAcl
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.LambdaSecretManagementExecutionRole
+        resources:
+          - arn:aws:s3:::secret_bucket/*
+        actions:
+          - s3:GetObject
+          - s3:GetObjectVersion
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.LambdaSecretManagementExecutionRole
+        resources:
+          - arn:aws:ssm:region-ap2:acct-ap2:parameter/platform/ams01/c999/99/dev/master/1/*
+        actions:
+          - ssm:PutParameter
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.LambdaSecretManagementExecutionRole
+        resources:
+          - arn:aws:ssm:region-ap2:acct-ap2:parameter/platform/ams01/c999/99/dev/master/1/*
+        actions:
+          - ssm:DeleteParameter
+          - ssm:DeleteParameters
+          - ssm:DescribeParameters
+          - ssm:GetParameter
+          - ssm:GetParameters
+          - ssm:GetParametersByPath
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.LambdaSecretManagementExecutionRole
+        resources:
+          - "*"
+        actions:
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+          - ec2:DescribeInstances
+          - ec2:AttachNetworkInterface
+          - ec2:DetachNetworkInterface
+          - ec2:ModifyNetworkInterfaceAttribute
+          - ec2:ResetNetworkInterfaceAttribute
+          - autoscaling:CompleteLifecycleAction
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.LambdaSecretManagementExecutionRole
+        resources:
+          - arn:aws:logs:*:*:*
+        actions:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - TestComponent.LambdaSecretManagementExecutionRole
+        resources:
+          - arn:/secrets_key_arn
+        actions:
+          - kms:Describe*
+          - kms:Encrypt
+          - kms:GenerateDataKey
+          - kms:GenerateDataKeyWithoutPlaintext
+          - kms:GenerateRandom
+          - kms:ReEncrypt*
+        condition:
+
+    _full_template:
+      ad_dns_zone:
+        Resources:
+          InstanceProfile:
+            Type: AWS::IAM::InstanceProfile
+            Properties:
+              Path: "/"
+              Roles:
+                - InstanceRoleName-123
+          RecoveryAlarm:
+            Type: AWS::CloudWatch::Alarm
+            Properties:
+              AlarmDescription: Trigger a recovery for instance
+              Namespace: AWS/EC2
+              MetricName: StatusCheckFailed_System
+              Statistic: Minimum
+              Period: "60"
+              EvaluationPeriods: "10"
+              ComparisonOperator: GreaterThanThreshold
+              Threshold: "0"
+              AlarmActions:
+                - Fn::Join:
+                    - ""
+                    - - "arn:aws:automate:"
+                      - Ref: AWS::Region
+                      - ":ec2:recover"
+              Dimensions:
+                - Name: InstanceId
+                  Value:
+                    Ref: Instance
+        Outputs:
+          InstanceProfileName:
+            Description: Instance profile Name
+            Value:
+              Ref: InstanceProfile
+          InstanceProfileArn:
+            Description: Instance profile ARN
+            Value:
+              Fn::GetAtt:
+                - InstanceProfile
+                - Arn
+      r53_dns_zone:
+        Resources:
+          InstanceProfile:
+            Type: AWS::IAM::InstanceProfile
+            Properties:
+              Path: "/"
+              Roles:
+                - InstanceRoleName-123
+          RecoveryAlarm:
+            Type: AWS::CloudWatch::Alarm
+            Properties:
+              AlarmDescription: Trigger a recovery for instance
+              Namespace: AWS/EC2
+              MetricName: StatusCheckFailed_System
+              Statistic: Minimum
+              Period: "60"
+              EvaluationPeriods: "10"
+              ComparisonOperator: GreaterThanThreshold
+              Threshold: "0"
+              AlarmActions:
+                - Fn::Join:
+                    - ""
+                    - - "arn:aws:automate:"
+                      - Ref: AWS::Region
+                      - ":ec2:recover"
+              Dimensions:
+                - Name: InstanceId
+                  Value:
+                    Ref: Instance
+          DeployDns:
+            Type: AWS::Route53::RecordSet
+            Properties:
+              HostedZoneName: ams01.nonp.aws.qcp.
+              Name: testcomponent.master-5.dev.c031-99.ams01.nonp.aws.qcp
+              Type: A
+              TTL: "60"
+              ResourceRecords:
+                - Fn::GetAtt:
+                    - Instance
+                    - PrivateIp
+        Outputs:
+          InstanceProfileName:
+            Description: Instance profile Name
+            Value:
+              Ref: InstanceProfile
+          InstanceProfileArn:
+            Description: Instance profile ARN
+            Value:
+              Fn::GetAtt:
+                - InstanceProfile
+                - Arn
+    SecretManagementOutput:
+      Resources:
+        SecretManagementLambda:
+          Type: AWS::Lambda::Function
+          Properties:
+            Handler: platform_secret_management.handler
+            Role: secretmanagement-role-arn
+            Runtime: python3.9
+            Code:
+              S3Bucket: qcp-pipeline-lambda-artefacts
+              S3Key: cd/ams01/c031/99/dev/master/5/TestComponent/platform.zip
+            Timeout: 300
+            Environment:
+              Variables:
+                Sections: '{"ams":"ams01","qda":"c031","as":"99","ase":"dev","ase_number":"","plan_key":"ams01-c031s99dev","branch":"master","build":"5","env":"nonp","asbp_type":"qda"}'
+                KmsId: arn:aws:kms:ap-southeast-2:123456789012:key/12345678-1234-1234-1234-123456789012
+                SecretsStorageBucket: qcp-secret-management-bucket
+                SecretsStorageFileLocation: platform-secrets-storage/secrets.json
+                AwsProxy: http://proxy.qcpaws.qantas.com.au:3128
+            KmsKeyArn: arn:aws:kms:ap-southeast-2:123456789012:key/12345678-1234-1234-1234-123456789012
+        SecretManagementLambdaLogGroup:
+          Type: AWS::Logs::LogGroup
+          Properties:
+            LogGroupName:
+              Fn::Join:
+                - ""
+                - - "/aws/lambda/"
+                  - Ref: SecretManagementLambda
+            RetentionInDays: 30
+      Outputs:
+        SecretManagementLambdaName:
+          Description: Name of the function
+          Value:
+            Ref: SecretManagementLambda
+        SecretManagementLambdaArn:
+          Description: Arn of the function
+          Value:
+            Fn::GetAtt:
+              - SecretManagementLambda
+              - Arn

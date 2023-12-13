@@ -1,0 +1,64 @@
+---
+App:
+  Type: AWS::CodeDeploy::Application
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::CodeDeploy::Application:
+        Properties:
+          ApplicationName:
+            Configurable: true
+            Required: true
+
+AppGroup:
+  Type: "AWS::CodeDeploy::DeploymentGroup"
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::CodeDeploy::DeploymentGroup:
+        Properties:
+          ApplicationName:
+            Configurable: false
+          LoadBalancerInfo:
+            Configurable: true
+            ItemType: LoadBalancerInfo
+          DeploymentStyle:
+            Configurable: true
+            ItemType: DeploymentStyle
+    PropertyTypes:
+      AWS::CodeDeploy::DeploymentGroup.LoadBalancerInfo:
+        Properties:
+          TargetGroupInfoList:
+            Configurable: true
+            ItemType: LoadBalancerInfoTargetGroupInfoList
+          ElbInfoList:
+            Configurable: true
+            ItemType: LoadBalancerInfoElbInfoInfoList
+      AWS::CodeDeploy::DeploymentGroup.DeploymentStyle:
+        Properties:
+          DeploymentOption:
+            Configurable: true
+          DeploymentType:
+            Configurable: true
+      AWS::CodeDeploy::DeploymentGroup.LoadBalancerInfoTargetGroupInfoList:
+        Properties:
+          Name:
+            Configurable: true
+            PrimitiveType: String
+      AWS::CodeDeploy::DeploymentGroup.LoadBalancerInfoElbInfoInfoList:
+        Properties:
+          Name:
+            Configurable: true
+            PrimitiveType: String
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features

@@ -1,0 +1,15 @@
+{
+  "Comment": "HelloWorld",
+  "StartAt": "Wait",
+  "States": {
+    "Wait": {
+      "Type": "Wait",
+      "Seconds": 30,
+      "Next": "Finish"
+    },
+    "Finish": {
+      "Type": "Pass",
+      "End" : true
+    }
+  }
+}

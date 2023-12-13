@@ -1,0 +1,415 @@
+UnitTest:
+  Input:
+    initialize:
+      correct:
+        Type: aws/state-machine
+        Stage: "02"
+        Persist: false
+        Configuration:
+          RetainerWorkflow:
+            Type: AWS::StepFunctions::StateMachine
+            Security:
+              - Source: retainer-proxy.ExecutionRole
+                Allow: execute
+            Properties:
+              DefinitionString:
+                States:
+                  DeleteSnapshot:
+                    Type: Task
+                    Resource: ${DBInstanceDeleteSnapshot}
+                    Next: CheckSnapshotDeletionStatus
+
+                  CheckSnapshotDeletionStatus:
+                    Type: Task
+                    Resource: ${DBInstanceCheckSnapshot}
+                    Next: HasSnapshotFinished?
+
+          RunWorkflow:
+            Type: AWS::Lambda::Function
+            Properties:
+              Handler: RunWorkflow.lambda_handler
+              Runtime: python3.9
+              Timeout: 30
+              MemorySize: 128
+              Code: package.zip
+              Environment:
+                Variables:
+                  CONFIG_FILE: config/config.json
+
+          MyActivity:
+            Type: AWS::StepFunctions::Activity
+
+          RunLoadDynamoContent:
+            Type: AWS::Events::Rule
+            Properties:
+              ScheduleExpression: rate(5 minutes)
+              Pipeline::EventInput:
+                TableName: "@srv-dynamo.MyTableName"
+                Attributes: 10
+                ItemCount: 1000
+                BatchSize: 100
+
+          SendLogs:
+            Type: AWS::Logs::SubscriptionFilter
+            Properties:
+              DestinationArn: logger-stream-logcollector.master.dev.c036-09.ams01.nonp.aws.qcp
+
+      wrong-type:
+        Type: aws/state-machine
+        Stage: 02-test
+        Configuration:
+          MyTable:
+            Type: AWS::Lambda::Function
+
+      missing-resource:
+        Type: aws/state-machine
+        Stage: 02-test
+        Configuration:
+          MyStream:
+            Type: AWS::Kinesis::Stream
+
+      multiple:
+        Type: aws/sns-topic
+        Stage: 02-test
+        Configuration:
+          MyStream1:
+            Type: AWS::StepFunctions::StateMachine
+          MyStream2:
+            Type: AWS::StepFunctions::StateMachine
+
+      nil:
+        Type: AWS::StepFunctions::StateMachine
+        Stage: 02-test
+        Configuration::
+
+    _full_template:
+      Valid:
+        Type: aws/state-machine
+        Stage: "02"
+        Persist: false
+        Configuration:
+          RetainerWorkflow:
+            Type: AWS::StepFunctions::StateMachine
+            Security:
+              - Source: retainer-proxy.ExecutionRole
+                Allow: execute
+            Properties:
+              DefinitionString:
+                States:
+                  DeleteSnapshot:
+                    Type: Task
+                    Resource: ${DBInstanceDeleteSnapshot}
+                    Next: CheckSnapshotDeletionStatus
+
+                  CheckSnapshotDeletionStatus:
+                    Type: Task
+                    Resource: ${DBInstanceCheckSnapshot}
+                    Next: HasSnapshotFinished?
+
+          RunWorkflow:
+            Type: AWS::Lambda::Function
+            Properties:
+              Handler: RunWorkflow.lambda_handler
+              Runtime: python3.9
+              Timeout: 30
+              MemorySize: 128
+              Code: package.zip
+              Environment:
+                Variables:
+                  CONFIG_FILE: config/config.json
+          MyActivity:
+            Type: AWS::StepFunctions::Activity
+
+          RunLoadDynamoContent:
+            Type: AWS::Events::Rule
+            Properties:
+              ScheduleExpression: rate(5 minutes)
+              Pipeline::EventInput:
+                TableName: "@srv-dynamo.MyTableName"
+                Attributes: 10
+                ItemCount: 1000
+                BatchSize: 100
+
+          SendLogs:
+            Type: AWS::Logs::SubscriptionFilter
+            Properties:
+              DestinationArn: logger-stream-logcollector.master.dev.c036-09.ams01.nonp.aws.qcp
+
+    _build_template:
+      Customised:
+        Type: "aws/state-machine"
+        Stage: "001"
+        Configuration:
+          STF:
+            Type: "AWS::StepFunctions::StateMachine"
+            Properties:
+              DefinitionString:
+                States:
+                  DeleteSnapshot:
+                    Type: Task
+                    Resource: ${DBInstanceDeleteSnapshot}
+                    Next: CheckSnapshotDeletionStatus
+
+                  CheckSnapshotDeletionStatus:
+                    Type: Task
+                    Resource: ${DBInstanceCheckSnapshot}
+                    Next: HasSnapshotFinished?
+
+    Release:
+      Mock:
+        - Object: Defaults
+          Messages:
+            :release_dns_name:
+        - Object: Util::Nsupdate
+          Messages:
+            :create_dns_record:
+        - Object: Context
+          MessageChain: component.variable
+        - Object: Context
+          MessageChain: component.set_variables
+    Teardown:
+      Mock:
+        - Object: Context
+          MessageChain: component.stack_id
+          Return: stack123
+        - Object: Context
+          MessageChain: component.security_stack_id
+          Return: sec123
+        - Object: AwsHelper
+          MessageChain: cfn_delete_stack
+        - Object: Context
+          MessageChain: component.variable
+          Retun: dns12332dsasd.asdasd.asd
+        - Object: Util::Nsupdate
+          MessageChain: delete_dns_reco
+  Output:
+    security_items:
+      - Name: SecurityGroup
+        Type: SecurityGroup
+        Component: correct
+      - Name: ExecutionRole
+        Type: Role
+        Component: correct
+        Service: lambda.amazonaws.com
+        ManagedPolicyArns:
+      - Name: EventsRole
+        Type: Role
+        Component: correct
+        Service: events.amazonaws.com
+
+    security_rules:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - correct.EventsRole
+        resources: &1
+          - dummy-arn1
+          - dummy-arn2
+        actions:
+          - states:StartExecution
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - correct.ExecutionRole
+        resources:
+          - "*"
+        actions:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - correct.ExecutionRole
+        resources:
+          - "*"
+        actions:
+          - xray:PutTraceSegments
+          - xray:PutTelemetryRecords
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - correct.ExecutionRole
+        resources:
+          - "*"
+        actions:
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+          - ec2:DescribeSubnets
+          - ec2:DescribeVpcs
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - correct.ExecutionRole
+        resources:
+          - "*"
+        actions:
+          - cloudwatch:PutMetricData
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - correct.ExecutionRole
+        resources:
+        actions:
+          - kms:Decrypt
+          - kms:DescribeKey
+          - kms:Encrypt
+          - kms:GenerateDataKey
+          - kms:GenerateDataKeyWithoutPlaintext
+          - kms:GenerateRandom
+          - kms:ReEncrypt*
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - correct.ExecutionRole
+        resources:
+          - arn:aws:s3:::dummy-arn
+          - arn:aws:s3:::dummy-arn
+          - arn:aws:s3:::dummy-arn
+          - arn:aws:s3:::dummy-arn
+          - arn:aws:s3:::dummy-arn
+        actions:
+          - s3:GetBucketLocation
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - correct.ExecutionRole
+        resources:
+          - arn:aws:s3:::dummy-arn
+          - arn:aws:s3:::dummy-arn
+          - arn:aws:s3:::dummy-arn
+          - arn:aws:s3:::dummy-arn
+        actions:
+          - s3:ListBucket
+          - s3:ListBucketVersions
+          - s3:ListBucketMultipartUploads
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - correct.ExecutionRole
+        resources:
+          - arn:aws:s3:::dummy-arn/*
+          - arn:aws:s3:::dummy-arn/*
+          - arn:aws:s3:::dummy-arn/*
+          - arn:aws:s3:::dummy-arn/*
+          - arn:aws:s3:::dummy-arn/cd/ams01/c031/99/dev/master/5/*
+          - arn:aws:s3:::dummy-arn/cd/ams01/c031/99/dev/master/5/*
+        actions:
+          - s3:GetObject
+          - s3:GetObjectVersion
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - correct.ExecutionRole
+        resources:
+          - arn:aws:s3:::dummy-arn
+        actions:
+          - s3:GetBucketVersioning
+          - s3:PutBucketVersioning
+          - s3:GetLifecycleConfiguration
+          - s3:PutLifecycleConfiguration
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - correct.ExecutionRole
+        resources:
+          - arn:aws:s3:::dummy-arn/*
+          - arn:aws:s3:::dummy-arn/*
+        actions:
+          - s3:PutObject
+          - s3:PutObjectAcl
+          - s3:DeleteObject
+          - s3:DeleteObjectVersion
+          - s3:RestoreObject
+          - s3:ListMultipartUploadParts
+          - s3:AbortMultipartUpload
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - retainer-proxy.ExecutionRole
+        resources: *1
+        actions:
+          - states:StartExecution
+          - states:StopExecution
+        condition:
+
+    _full_template:
+      Resources:
+        MyActivity:
+          Type: AWS::StepFunctions::Activity
+          Properties:
+            Name: ams01-c031-99-dev-master-state-machine-MyActivity
+        SendLogsRunWorkflow:
+          Type: AWS::Logs::SubscriptionFilter
+          Properties:
+            DestinationArn: dummy-destination-location
+            FilterPattern: ""
+            LogGroupName:
+              Ref: RunWorkflowLogGroup
+        RetainerWorkflows:
+          Type: AWS::StepFunctions::StateMachine
+          Properties:
+            DefinitionString:
+              Fn::Sub:
+                - '{"States":{"DeleteSnapshot":{"Type":"Task","Resource":"${DBInstanceDeleteSnapshot}","Next":"CheckSnapshotDeletionStatus"},"CheckSnapshotDeletionStatus":{"Type":"Task","Resource":"${DBInstanceCheckSnapshot}","Next":"HasSnapshotFinished?"}}}'
+                - MyActivity:
+                    Ref: MyActivity
+                  RunWorkflow:
+                    Fn::GetAtt:
+                      - RunWorkflow
+                      - Arn
+            RoleArn: dummy-execution-role
+      Outputs:
+        MyActivityArn:
+          Description: ARN for MyActivity StepFunction Activity Arn
+          Value:
+            Ref: MyActivity
+        MyActivityName:
+          Description: ARN for MyActivity StepFunction Activity Name
+          Value:
+            Fn::GetAtt:
+              - MyActivity
+              - Name
+        RetainerWorkflowsArn:
+          Description: RetainerWorkflows StepFunction StateMachine ARN
+          Value:
+            Ref: RetainerWorkflows
+        RetainerWorkflowsName:
+          Description: RetainerWorkflows StepFunction StateMachine Name
+          Value:
+            Fn::GetAtt:
+              - RetainerWorkflows
+              - Name
+
+    _build_template:
+      Customised:
+        Route53:
+          Resources:
+            STF:
+              Type: AWS::StepFunctions::StateMachine
+              Properties:
+                DefinitionString: '{"States":{"DeleteSnapshot":{"Type":"Task","Resource":"${DBInstanceDeleteSnapshot}","Next":"CheckSnapshotDeletionStatus"},"CheckSnapshotDeletionStatus":{"Type":"Task","Resource":"${DBInstanceCheckSnapshot}","Next":"HasSnapshotFinished?"}}}'
+                RoleArn: arn:aws:iam::111111111111:role/service-role/StatesExecutionRole-ap-southeast-2
+            DeployDns:
+              Type: AWS::Route53::RecordSet
+              Properties:
+                Name: stf.master-5.dev.c031-99.ams01.nonp.aws.qcp
+                Type: TXT
+                TTL: "60"
+                ResourceRecords:
+                  - Fn::Join:
+                      - ""
+                      - - '"'
+                        - Ref: STF
+                        - '"'
+                HostedZoneName: ams01.nonp.aws.qcp.
+          Outputs:
+            STFArn:
+              Description: STF StepFunction StateMachine ARN
+              Value:
+                Ref: STF
+            STFName:
+              Description: STF StepFunction StateMachine Name
+              Value:
+                Fn::GetAtt:
+                  - STF
+                  - Name

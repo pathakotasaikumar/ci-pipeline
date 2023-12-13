@@ -1,0 +1,285 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Cloudformation template to build and test the pipeline container. Stack updates are performed via CodePipeline contained within
+Parameters:
+  ProjectId:
+    Description: The name of the build, to be used for naming resources
+    Type: String
+    Default: ams01-c031-01
+  ProjectFriendlyName:
+    Description: The human friendly name for the project
+    Type: String
+  BranchName:
+    Description: The branch name of the build, to be used for naming resources
+    Type: String
+    Default: master
+  SourceS3Key:
+    Description: The file name of the source artifact, such as myfolder/myartifact.zip
+    Type: String
+    Default: pipeline.zip
+  QCPPipelineASE:
+    Description: The application service environment for your deployment
+    Type: String
+    Default: dev
+  SourceS3BucketName:
+    Description: The bucket that artefacts are stored in and logs are written to
+    Type: String
+    Default: qcp-codepipeline-artefacts
+Conditions:
+  MasterBranch:
+    !Equals [ !Ref BranchName, master ]
+Resources:
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Location: !Ref SourceS3BucketName
+        Type: S3
+      Name: !Sub "${ProjectId}-${QCPPipelineASE}-${BranchName}-dockerbuild"
+      RoleArn: !GetAtt [CodePipelineRole, Arn]
+      Stages:
+        - Name: S3Source
+          Actions:
+            - Name: TemplateSource
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: S3
+                Version: 1
+              Configuration:
+                S3Bucket: !Ref SourceS3BucketName
+                S3ObjectKey: !Sub "cloned-repositories/pipeline/${BranchName}/${SourceS3Key}"
+              OutputArtifacts:
+                - Name: !Sub "${ProjectFriendlyName}Artifact"
+              RunOrder: 1
+            - Name: S3SourceParams
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: S3
+                Version: 1
+              Configuration:
+                PollForSourceChanges: false
+                S3Bucket: !Ref SourceS3BucketName
+                S3ObjectKey: !Sub "cloned-repositories/${ProjectFriendlyName}/${BranchName}/${QCPPipelineASE}-params.zip"
+              OutputArtifacts:
+                - Name: ParamsArtifact
+              RunOrder: 1
+        - Name: CFNUpdate
+          Actions:
+            - Name: CFNUpdate
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: 1
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                Capabilities: CAPABILITY_IAM
+                RoleArn: !ImportValue "ams01-c031-01-prod-csdcfnrole"
+                StackName: !Sub "${ProjectId}-${QCPPipelineASE}-${BranchName}-dockerbuild"
+                TemplatePath: !Sub "${ProjectFriendlyName}Artifact::deployments/cloudformation/templates/dockerbuild.yaml"
+                TemplateConfiguration: 'ParamsArtifact::params.json'
+              InputArtifacts:
+                - Name: !Sub "${ProjectFriendlyName}Artifact"
+                - Name: ParamsArtifact
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: DockerBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName: !Ref PipelineCodebuildDockerBuild
+              InputArtifacts:
+                - Name: !Sub "${ProjectFriendlyName}Artifact"
+              RunOrder: 1
+  PipelineCodebuildDockerBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Description: 'Docker build for QCP Pipeline'
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:2.0
+        ImagePullCredentialsType: CODEBUILD
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: BranchName
+            Type: PLAINTEXT
+            Value: !Ref BranchName
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: !Sub "${ProjectId}-${QCPPipelineASE}-${BranchName}-dockerbuild"
+          StreamName: DockerBuild
+      Name: !Sub "${ProjectId}-${QCPPipelineASE}-${BranchName}-dockerbuild-build"
+      QueuedTimeoutInMinutes: 5
+      ServiceRole: !Ref CodeBuildRole
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: deployments/codebuild/buildspec-build.yml
+      TimeoutInMinutes: 30
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref CodeBuildSecurityGroup
+        Subnets: !Split [",", !ImportValue Subnets]
+        VpcId: !ImportValue VPC
+  CodeBuildSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: 'Security group used by CodeBuild'
+      VpcId: !ImportValue VPC
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Description: 'Creating role in IAM for AWS CodeBuild'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+      Path: /
+      Policies:
+        - PolicyName: CodeBuildAccessPolicies
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                - 's3:GetObject'
+                - 's3:GetObjectVersion'
+                - 's3:PutObject'
+                Effect: Allow
+                Resource:
+                  - !ImportValue ams01-c031-01-prod-csdbucketarn
+                  - Fn::Join:
+                    - '/'
+                    - - !ImportValue ams01-c031-01-prod-csdbucketarn
+                      - "*"
+              - Action:
+                - 'kms:Decrypt'
+                Effect: Allow
+                Resource:
+                  - 'arn:aws:kms:ap-southeast-2:221295517176:key/e5a61b62-6c32-426a-8651-3456609a4143'
+              - Action:
+                - 'ssm:GetParameters'
+                Effect: Allow
+                Resource:
+                  - 'arn:aws:ssm:ap-southeast-2:221295517176:parameter/Application/ams01/c031/01/_common/0'
+              - Action:
+                - 'ec2:CreateNetworkInterfacePermission'
+                - 'ec2:CreateNetworkInterface'
+                - 'ec2:DescribeNetworkInterfaces'
+                - 'ec2:DeleteNetworkInterface'
+                - 'ec2:DescribeDhcpOptions'
+                - 'ec2:DescribeSubnets'
+                - 'ec2:DescribeSecurityGroups'
+                - 'ec2:DescribeVpcs'
+                - 'ecr:BatchCheckLayerAvailability'
+                - 'ecr:BatchGetImage'
+                - 'ecr:GetDownloadUrlForLayer'
+                - 'ecr:GetAuthorizationToken'
+                - 'ecr:GetAuthorizationToken'
+                - 'ecr:BatchCheckLayerAvailability'
+                - 'ecr:GetDownloadUrlForLayer'
+                - 'ecr:GetRepositoryPolicy'
+                - 'ecr:DescribeRepositories'
+                - 'ecr:ListImages'
+                - 'ecr:DescribeImages'
+                - 'ecr:BatchGetImage'
+                - 'ecr:InitiateLayerUpload'
+                - 'ecr:UploadLayerPart'
+                - 'ecr:CompleteLayerUpload'
+                - 'ecr:PutImage'
+                - 'logs:CreateLogStream'
+                - 'logs:CreateLogGroup'
+                - 'logs:PutLogEvents'
+                Effect: Allow
+                Resource: '*'
+              - Action: sts:AssumeRole
+                Effect: Allow
+                Resource: 'arn:aws:iam::221295517176:role/CD-Control'
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service:
+              - codepipeline.amazonaws.com
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+        - PolicyName: CodePipelineAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                - 's3:*'
+                Effect: Allow
+                Resource:
+                  - !ImportValue ams01-c031-01-prod-csdbucketarn
+                  - Fn::Join:
+                    - '/'
+                    - - !ImportValue ams01-c031-01-prod-csdbucketarn
+                      - "*"
+              - Action:
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+                - 'cloudformation:CreateStack'
+                - 'cloudformation:DescribeStacks'
+                - 'cloudformation:DeleteStack'
+                - 'cloudformation:UpdateStack'
+                - 'cloudformation:CreateChangeSet'
+                - 'cloudformation:ExecuteChangeSet'
+                - 'cloudformation:DeleteChangeSet'
+                - 'cloudformation:DescribeChangeSet'
+                - 'cloudformation:SetStackPolicy'
+                - 'iam:PassRole'
+                - 'ec2:DescribeSecurityGroups'
+                - 'codebuild:BatchGetBuilds'
+                - 'codebuild:StartBuild'
+                Effect: Allow
+                Resource: '*'
+  CodePipelineTopic:
+    Type: AWS::SNS::Topic
+    Condition: MasterBranch
+    Properties:
+      DisplayName: !Sub "${ProjectId}-${QCPPipelineASE}-${BranchName}-dockerbuild"
+      TopicName: !Sub "${ProjectId}-${QCPPipelineASE}-${BranchName}-dockerbuild"
+  CodePipelineSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: MasterBranch
+    Properties:
+      Endpoint: csi@qantas.com.au
+      Protocol: email
+      TopicArn: !Ref CodePipelineTopic
+  EventRule:
+    Type: AWS::Events::Rule
+    Condition: MasterBranch
+    Properties:
+      Description: 'EventRule for state change of QCP Pipeline docker build'
+      EventPattern:
+        source:
+        - aws.codepipeline
+        detail-type:
+        - CodePipeline Stage Execution State Change
+        detail:
+          state:
+            - FAILED
+          pipeline:
+            - !Ref Pipeline
+      State: ENABLED
+      Targets:
+        -
+          Arn:
+            Ref: 'CodePipelineTopic'
+          Id: 'CodePipelineTopic'

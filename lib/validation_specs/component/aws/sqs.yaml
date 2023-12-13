@@ -1,0 +1,79 @@
+---
+Queue:
+  Type: AWS::SQS::Queue
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::SQS::Queue:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Required: false
+          Type: List
+          ItemType: Common.SecurityItem
+        Properties:
+          DelaySeconds:
+            Configurable: true
+          MaximumMessageSize:
+            Configurable: true
+          MessageRetentionPeriod:
+            Configurable: true
+          ReceiveMessageWaitTimeSeconds:
+            Configurable: true
+          VisibilityTimeout:
+            Configurable: true
+          RedrivePolicy:
+            Configurable: true
+            Type: RedrivePolicy
+          ContentBasedDeduplication:
+            Configurable: true
+          FifoQueue:
+            Configurable: true
+    PropertyTypes:
+      AWS::SQS::Queue.RedrivePolicy:
+        Documentation: "http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-sqs-queues-redrivepolicy.html"
+        Properties:
+          deadLetterTargetArn:
+            Configurable: true
+            Documentation: "http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-sqs-queues-redrivepolicy.html#aws-sqs-queue-redrivepolicy-targetarn"
+            PrimitiveType: String
+            Required: true
+            UpdateType: Immutable
+            Regex: ^@[a-zA-Z0-9\-_]+\.\w+Arn$
+          maxReceiveCount:
+            Configurable: true
+            Documentation: "http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-sqs-queues-redrivepolicy.html#aws-sqs-queue-redrivepolicy-maxcount"
+            PrimitiveType: Integer
+            Required: true
+            UpdateType: Immutable
+NotifySNS:
+  Type: AWS::SNS::Subscription
+  Cardinality: 0-50
+  Specification:
+    ResourceTypes:
+      AWS::SNS::Subscription:
+        Properties:
+          TopicArn:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+          DeliveryPolicy:
+            Configurable: true
+            PrimitiveType: Json
+            Required: false
+          FilterPolicy:
+            Configurable: true
+            PrimitiveType: Json
+            Required: false
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features

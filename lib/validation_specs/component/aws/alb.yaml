@@ -1,0 +1,206 @@
+---
+LoadBalancer:
+  Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::ElasticLoadBalancingV2::LoadBalancer:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Type: List
+          ItemType: Common.SecurityItem
+          Required: false
+        Properties:
+          LoadBalancerAttributes:
+            Configurable: true
+            ItemType: LoadBalancerAttribute
+          Scheme:
+            Configurable: true
+          IpAddressType:
+            Configurable: true
+          Subnets:
+            Configurable: true
+    PropertyTypes:
+      AWS::ElasticLoadBalancingV2::LoadBalancer.LoadBalancerAttribute:
+        Properties:
+          Key:
+            Configurable: true
+          Value:
+            Configurable: true
+
+Listener:
+  Type: AWS::ElasticLoadBalancingV2::Listener
+  Cardinality: 0-50
+  Specification:
+    ResourceTypes:
+      AWS::ElasticLoadBalancingV2::Listener:
+        Properties:
+          Certificates:
+            Configurable: true
+            ItemType: AWS::ElasticLoadBalancingV2::Listener.Certificate
+            Type: List
+          DefaultActions:
+            Configurable: true
+            Type: List
+            ItemType: AWS::ElasticLoadBalancingV2::Listener.Action
+          Port:
+            Configurable: true
+          Protocol:
+            Configurable: true
+          SslPolicy:
+            Configurable: true
+    PropertyTypes:
+      AWS::ElasticLoadBalancingV2::Listener.Certificate:
+        Properties:
+          CertificateArn:
+            Configurable: true
+
+      AWS::ElasticLoadBalancingV2::Listener.Action:
+        Properties:
+          RedirectConfig:
+            Configurable: true
+            ItemType: AWS::ElasticLoadBalancingV2::Listener.RedirectConfig
+          TargetGroupArn:
+            Configurable: true
+          Type:
+            Configurable: true
+
+      AWS::ElasticLoadBalancingV2::Listener.RedirectConfig:
+        Properties:
+          Host:
+            Configurable: true
+          Path:
+            Configurable: true
+          Port:
+            Configurable: true
+          Protocol:
+            Configurable: true
+          Query:
+            Configurable: true
+          StatusCode:
+            Configurable: true
+            Required: true
+
+ListenerRule:
+  Type: AWS::ElasticLoadBalancingV2::ListenerRule
+  Cardinality: 0-100
+  Specification:
+    ResourceTypes:
+      AWS::ElasticLoadBalancingV2::ListenerRule:
+        Properties:
+          Actions:
+            Configurable: true
+            Type: List
+            ItemType: AWS::ElasticLoadBalancingV2::ListenerRule.Action
+          Conditions:
+            Configurable: true
+            Type: List
+            ItemType: AWS::ElasticLoadBalancingV2::ListenerRule.RuleCondition
+          ListenerArn:
+            Configurable: true
+          Priority:
+            Configurable: true
+
+    PropertyTypes:
+      AWS::ElasticLoadBalancingV2::ListenerRule.Action:
+        Properties:
+          RedirectConfig:
+            Configurable: true
+            ItemType: AWS::ElasticLoadBalancingV2::ListenerRule.RedirectConfig
+          TargetGroupArn:
+            Configurable: true
+          Type:
+            Configurable: true
+
+      AWS::ElasticLoadBalancingV2::ListenerRule.RedirectConfig:
+        Properties:
+          Host:
+            Configurable: true
+          Path:
+            Configurable: true
+          Port:
+            Configurable: true
+          Protocol:
+            Configurable: true
+          Query:
+            Configurable: true
+          StatusCode:
+            Configurable: true
+            Required: true
+
+      AWS::ElasticLoadBalancingV2::ListenerRule.RuleCondition:
+        Properties:
+          Field:
+            Configurable: true
+          Values:
+            Configurable: true
+
+TargetGroup:
+  Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  Cardinality: 0-50
+  Specification:
+    ResourceTypes:
+      AWS::ElasticLoadBalancingV2::TargetGroup:
+        Properties:
+          HealthCheckEnabled:
+            Configurable: true
+          HealthCheckIntervalSeconds:
+            Configurable: true
+          HealthCheckPath:
+            Configurable: true
+          HealthCheckPort:
+            Configurable: true
+          HealthCheckProtocol:
+            Configurable: true
+          HealthCheckTimeoutSeconds:
+            Configurable: true
+          HealthyThresholdCount:
+            Configurable: true
+          Matcher:
+            Configurable: true
+          Port:
+            Configurable: true
+          Protocol:
+            Configurable: true
+          TargetGroupAttributes:
+            Configurable: true
+            ItemType: TargetGroupAttribute
+          Targets:
+            Configurable: true
+            ItemType: TargetDescription
+          TargetType:
+            Configurable: true
+          UnhealthyThresholdCount:
+            Configurable: true
+    PropertyTypes:
+      AWS::ElasticLoadBalancingV2::TargetGroup.Matcher:
+        Properties:
+          HttpCode:
+            Configurable: true
+
+      AWS::ElasticLoadBalancingV2::TargetGroup.TargetGroupAttribute:
+        Properties:
+          Key:
+            Configurable: true
+          Value:
+            Configurable: true
+
+      AWS::ElasticLoadBalancingV2::TargetGroup.TargetDescription:
+        Properties:
+          Id:
+            Configurable: true
+            Required: true
+          Port:
+            Configurable: true
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features

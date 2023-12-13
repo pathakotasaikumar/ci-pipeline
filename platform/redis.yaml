@@ -1,0 +1,16 @@
+# ElastiCache Redis component
+---
+Type: aws/elasticache-redis
+Stage: 01-test
+Persist: true
+
+Configuration:
+  MyCache:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Security:
+      - Source: test-instance.SecurityGroup
+        Allow: TCP:6379
+    Properties:
+      AutomaticFailoverEnabled: true
+      CacheNodeType: cache.t3.medium
+      NumCacheClusters: 2

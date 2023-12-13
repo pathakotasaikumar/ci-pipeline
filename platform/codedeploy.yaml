@@ -1,0 +1,20 @@
+---
+Type: "aws/codedeploy"
+Stage: "02-test"
+Persist: false
+
+Configuration:
+  App:
+    Type: "AWS::CodeDeploy::Application"
+    Properties:
+      ApplicationName: "@autoscale-codedeploy"
+
+  AppGroup:
+    Type: "AWS::CodeDeploy::DeploymentGroup"
+    Properties:
+      LoadBalancerInfo:
+        TargetGroupInfoList:
+          - Name: "@alb-codedeploy.GroupATargetGroupName"
+      DeploymentStyle:
+        DeploymentOption: "WITH_TRAFFIC_CONTROL"
+        DeploymentType: "IN_PLACE"

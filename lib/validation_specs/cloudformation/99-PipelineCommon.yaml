@@ -1,0 +1,151 @@
+---
+ResourceTypes: {}
+PropertyTypes:
+  Common.SecurityItem:
+    Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+    Properties:
+      Source:
+        Configurable: true
+        Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+        PrimitiveType: String
+        Regex: ^@?[a-zA-Z0-9\-_]+\.[a-zA-Z]+$
+        Required: true
+      Allow:
+        Configurable: true
+        Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+        PrimitiveType: String
+        Regex: ^(@?[a-zA-Z]+)|((TCP)|(UDP)|(ALL):([0-9]{1,5})|(\*)(-([0-9]{1,5})|(\*))?)$
+        Required: true
+  Common.CopyTarget:
+    Properties:
+      Target:
+        Configurable: true
+        Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+        PrimitiveType: String
+        Regex: ^@origin|@dr|@nonp|@ams[0-9]{2}-(origin|dr([0-9])?)-(prod|nonp|dev)$
+        Required: false
+      RetentionPeriod:
+        Configurable: true
+        PrimitiveType: String
+        Regex: ^P(?!$)(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(?=\d+[HMS])(\d+H)?(\d+M)?(\d+S)?)?$
+        Required: true
+  Common.Code:
+    Properties:
+      Code:
+        Configurable: false
+        Required: false
+  Common.Content:
+    Properties:
+      Content:
+        Configurable: false
+        Required: false
+
+  Common.Pipeline.Features:
+    Properties:
+      Longlived:
+        Configurable: true
+        Type: Common.Pipeline.Features.Longlived
+        Required: False
+      CustomTags:
+        Configurable: true
+        Type: Common.Pipeline.Features.CustomTags
+        Required: False
+      Qualys:
+        Configurable: true
+        Type: Common.Pipeline.Features.Qualys
+        Required: False
+      IPS:
+        Configurable: true
+        Type: Common.Pipeline.Features.IPS
+        Required: False
+      Datadog:
+        Configurable: true
+        Type: Enum
+        EnumValues: [enabled, disabled]
+        Required: False
+      CodeDeploy:
+        Configurable: true
+        Type: Enum
+        EnumValues: [enabled, disabled]
+        Required: False
+
+  Common.Pipeline.Features.Longlived:
+    Properties:
+      Enabled:
+        Configurable: true
+        Documentation: "N/A"
+        Type: Enum
+        EnumValues: [true, false]
+        Required: true
+      PuppetServer:
+        Configurable: true
+        Documentation: "N/A"
+        PrimitiveType: String
+        Required: false
+      PuppetEnvironment:
+        Configurable: true
+        Documentation: "N/A"
+        PrimitiveType: String
+        Required: false
+      PuppetDevelopment:
+        Configurable: true
+        Documentation: "N/A"
+        Type: Enum
+        EnumValues: [true, false]
+        Required: false
+      PatchGroup:
+        Configurable: true
+        Documentation: "N/A"
+        PrimitiveType: String
+        Required: false
+      RestoreAMI:
+        Configurable: true
+        Documentation: "N/A"
+        PrimitiveType: String
+        Required: false
+
+  Common.Pipeline.Features.CustomTags:
+    Properties:
+      Enabled:
+        Configurable: true
+        Documentation: "N/A"
+        Type: Enum
+        EnumValues: [true, false]
+        Required: true
+      Tags:
+        Configurable: true
+        Documentation: "N/A"
+        PrimitiveItemType: String
+        Required: false
+
+  Common.Pipeline.Features.Qualys:
+    Properties:
+      Enabled:
+        Configurable: true
+        Documentation: "N/A"
+        Type: Enum
+        EnumValues: [true, false]
+        Required: true
+      Recipients:
+        Configurable: true
+        Documentation: "N/A"
+        Type: List
+        PrimitiveItemType: String
+        Regex: ^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@(?:qantas\.com\.au|qantas\.onmicrosoft\.com|qantas\.mail\.onmicrosoft\.com)$
+        Required: true
+
+  Common.Pipeline.Features.IPS:
+    Properties:
+      Enabled:
+        Configurable: true
+        Documentation: "N/A"
+        Type: Enum
+        EnumValues: [true, false]
+        Required: true
+      Behaviour:
+        Configurable: true
+        Documentation: "N/A"
+        Type: Enum
+        EnumValues: [detective]
+        Required: true
+        Default: detective

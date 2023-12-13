@@ -1,0 +1,15 @@
+---
+Type: aws/volume
+Stage: 00-test
+Persist: true
+Configuration:
+  MyVolume:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Delete
+    Properties:
+      AvailabilityZone: "@a"
+      Size: 10
+Actions:
+  PreRelease:
+    - Action: Snapshot
+      Stage: "01"

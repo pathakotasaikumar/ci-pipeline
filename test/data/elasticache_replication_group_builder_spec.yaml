@@ -1,0 +1,65 @@
+_process_elasticache_replication_group:
+  replication_group:
+    MyCache:
+      Type: "AWS::ElastiCache::ReplicationGroup"
+      Properties:
+        AutomaticFailoverEnabled: true
+        CacheNodeType: "cache.m3.large"
+        NumCacheClusters: 2
+  parameter_group_name: "MyParameterGroup"
+  component_name: "MyRedisCache"
+  subnet_group_name: "MySubnetGroup"
+  security_group_ids:
+    - sg-123
+    - sg-456
+
+  OutputTemplate:
+    Resources:
+      MyCache:
+        Type: AWS::ElastiCache::ReplicationGroup
+        Properties:
+          CacheNodeType: cache.m3.large
+          CacheSubnetGroupName:
+            Ref: MySubnetGroup
+          Engine: redis
+          NumCacheClusters: 2
+          ReplicationGroupDescription: ams01-c031-99-dev-master-5-MyRedisCache
+          SecurityGroupIds:
+          - sg-123
+          - sg-456
+          AutomaticFailoverEnabled: true
+          CacheParameterGroupName:
+            Ref: MyParameterGroup
+    Outputs:
+      MyCacheName:
+        Description: Replication Group Name
+        Value:
+          Ref: MyCache
+      MyCachePrimaryEndPointAddress:
+        Description: Primary endpoint address
+        Value:
+          Fn::GetAtt:
+          - MyCache
+          - PrimaryEndPoint.Address
+      MyCachePrimaryEndPointPort:
+        Description: Primary endpoint port
+        Value:
+          Fn::GetAtt:
+          - MyCache
+          - PrimaryEndPoint.Port
+      MyCacheReadEndPointAddresses:
+        Description: Read endpoint addresses
+        Value:
+          Fn::Join:
+          - ","
+          - Fn::GetAtt:
+            - MyCache
+            - ReadEndPoint.Addresses.List
+      MyCacheReadEndPointPorts:
+        Description: Read endpoint ports
+        Value:
+          Fn::Join:
+          - ","
+          - Fn::GetAtt:
+            - MyCache
+            - ReadEndPoint.Ports.List

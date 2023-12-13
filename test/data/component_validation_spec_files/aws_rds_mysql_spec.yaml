@@ -1,0 +1,97 @@
+UnitTest:
+  ValidateMethod:
+    Invalid:
+      Type: aws/rds-mysql
+      Stage: 01-test
+      Persist: false
+      Configuration:
+        Features:
+          Type: Pipeline::Features
+          Properties:
+            Features:
+              -
+                Datadog : enabled
+        BackupPolicy:
+          CardinalityBackupPolicy1:
+            Type: Pipeline::DBInstance::BackupPolicy
+            Properties:
+              Recurrence: 0/15 * ? * * * *
+              RetentionPeriod: PT15M
+              CopyTargets:
+              - Target: "@test"
+                RetentionPeriod: PT15M
+          CardinalityBackupPolicy:
+            Type: Pipeline::DBInstance::BackupPolicy
+            Properties:
+              Recurrence: 0/15 * ? * *
+              RetentionPeriod: PT15M
+              CopyTargets:
+              - Target: "@nonp"
+                RetentionPeriod: PT15M
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Retain
+          Security:
+          - Source: mysql.SecurityGroup
+            Allow: ALL:*
+          Properties:
+            DBInstanceClass: db.m4.large
+            DBName: testdb
+            MultiAZ: false
+            Storage: false
+            StorageType: io1
+            Iops: 1000
+            Pipeline::ResetMasterUserPassword: 'true'
+            Pipeline::SourceSnapshot:
+              ase: dev
+        MySqlReplica1:
+          Type: AWS::RDS::DBInstance
+          Security:
+          - Source: mysql.SecurityGroup
+            Allow: ALL:*
+          Properties:
+            SourceDBInstanceIdentifier: Database
+            DBName: testdb
+            AllocatedStorage: 100
+            DBInstanceClass: db.m4.large
+            StorageType: gp2
+  PolicyTest:
+    Valid:
+      Type: aws/rds-mysql
+      Stage: 01-test
+      Persist: true
+
+      Configuration:
+        Database:
+          Type: AWS::RDS::DBInstance
+          Properties:
+            AllocatedStorage: 200
+            DBInstanceClass: db.m4.large
+            MultiAZ: false
+            DBSnapshotIdentifier: "@take-snapshot"
+            StorageType: io1
+            Iops: 2000
+        CardinalityBackupPolicy:
+          Type: Pipeline::DBInstance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy2:
+          Type: Pipeline::DBInstance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy3:
+          Type: Pipeline::DBInstance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@nonp"
+              RetentionPeriod: PT15M

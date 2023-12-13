@@ -1,0 +1,23 @@
+---
+Type: aws/image
+Stage: 01-test
+Persist: true
+Configuration:
+  Bake:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          commands:
+            01-copy-files:
+              command: bash bootstrap.sh
+              cwd: /root/payload
+            02-copy-files:
+              command: rm -rf /root/payload/bootstrap.sh && mkdir /root/app && cp -r /root/payload/* /root/app
+
+    Properties:
+      ImageId: "@rhel7-latest"
+      InstanceType: m5a.large
+      Tenancy: dedicated
+      Pipeline::CustomImagePrefix: rhel.@pipeline.Qda.@pipeline.As.@pipeline.Ase.@pipeline.Branch.@pipeline.Build
+      Pipeline::EncryptImage: true

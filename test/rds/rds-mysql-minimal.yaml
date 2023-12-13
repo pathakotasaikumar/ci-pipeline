@@ -1,0 +1,10 @@
+# MySQL RDS database component, without persistence
+---
+Type: "aws/rds-oracle"
+Stage: "01-test"
+Persist: false
+Configuration:
+  MySQLMinimal:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      DBName: mydb

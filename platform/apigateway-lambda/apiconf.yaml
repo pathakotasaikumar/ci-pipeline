@@ -1,0 +1,6 @@
+name: qcp-pipeline-dev-lambda
+domain: '/customer'
+includeVersion: false
+lambda: true
+internalGateway: true
+externalGateway: false

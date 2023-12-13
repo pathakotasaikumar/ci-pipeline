@@ -1,0 +1,72 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    _process_ecs_events_rule:
+      Type: AWS::Events::Rule
+      Properties:
+        ScheduleExpression: rate(1 minute)
+
+  Output:
+    _process_ecs_events_rule:
+      Resources:
+        DummyRuleName:
+          Type: AWS::Events::Rule
+          Properties:
+            Description: Cloudwatch event rule - DummyRuleName
+            Targets:
+            - Arn:
+                Fn::ImportValue: qcp-ecs-default-cluster-arn
+              RoleArn:
+                Fn::GetAtt:
+                - DummyRuleNameEventRole
+                - Arn
+              Id: dummy-stack-name
+              EcsParameters:
+                NetworkConfiguration:
+                  AwsVpcConfiguration:
+                    :AssignPublicIp: DISABLED
+                    :SecurityGroups:
+                    - sg-123
+                    :Subnets:
+                    - subnet-123
+                    - subnet-456
+                TaskCount: 1
+                TaskDefinitionArn:
+                  Ref: DummyTaskName
+            ScheduleExpression: rate(1 minute)
+        DummyRuleNameEventRole:
+          Type: AWS::IAM::Role
+          Properties:
+            AssumeRolePolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+              - Effect: Allow
+                Principal:
+                  Service:
+                  - events.amazonaws.com
+                Action:
+                - sts:AssumeRole
+            Path: "/"
+            PermissionsBoundary:
+              Fn::Sub: arn:aws:iam::${AWS::AccountId}:policy/PermissionBoundaryPolicy
+            :Policies:
+            - :PolicyName: ECSEventRule
+              :PolicyDocument:
+                :Version: '2012-10-17'
+                :Statement:
+                - :Effect: Allow
+                  :Action:
+                  - ecs:RunTask
+                  :Resource:
+                  - Ref: DummyTaskName
+                - :Effect: Allow
+                  :Action:
+                  - iam:PassRole
+                  :Resource:
+                  - DummyExecutionRole
+                  - DummyTaskRole
+                  :Condition:
+                    :StringLike:
+                      :iam:PassedToService: ecs-tasks.amazonaws.com

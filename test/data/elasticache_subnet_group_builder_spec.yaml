@@ -1,0 +1,17 @@
+_process_elasticache_subnet_group:
+  subnet_group:
+    SubnetGroup:
+      Type: AWS::ElastiCache::SubnetGroup
+      Properties:
+        SubnetIds: "@private"
+
+  OutputTemplate:
+    Resources:
+      SubnetGroup:
+        Type: AWS::ElastiCache::SubnetGroup
+        Properties:
+          Description: Subnet group SubnetGroup
+          SubnetIds:
+          - subnet-123
+          - subnet-456
+    Outputs: {}

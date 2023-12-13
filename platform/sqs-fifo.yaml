@@ -1,0 +1,16 @@
+# SQS FIFO Queue component
+---
+Type: aws/sqs
+Stage: 00-test
+Persist: true
+
+Configuration:
+  MyQueue:
+    Type: AWS::SQS::Queue
+    Security:
+      - Source: test-instance.InstanceRole
+        Allow: write    
+    Properties:
+      MessageRetentionPeriod: 600
+      ContentBasedDeduplication: true
+      FifoQueue: true

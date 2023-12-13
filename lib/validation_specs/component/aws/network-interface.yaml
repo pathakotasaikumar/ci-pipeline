@@ -1,0 +1,25 @@
+---
+NetworkInterface:
+  Type: AWS::EC2::NetworkInterface
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::EC2::NetworkInterface:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Required: false
+          Type: List
+          ItemType: Common.SecurityItem
+        Properties:
+          SourceDestCheck:
+            Configurable: true
+          SubnetId:
+            Configurable: true
+            Required: false
+          PrivateIpAddress:
+            Configurable: true
+          PrivateIpAddresses:
+            Configurable: true
+          SecondaryPrivateIpAddressCount:
+            Configurable: true

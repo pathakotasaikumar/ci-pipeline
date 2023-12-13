@@ -1,0 +1,31 @@
+UnitTest:
+  Input:
+    ComponentName: TestComponent
+    Initialize:
+      Valid:
+        Type: aws/image
+        Stage: 01-test
+        Persist: true
+        Configuration:
+          Bake:
+            Type: AWS::EC2::Instance
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Deploy: [ Install ]
+                Install:
+                  packages:
+                    yum:
+                      httpd: []
+                  services:
+                    sysvinit:
+                      httpd:
+                        enabled: true
+                        ensureRunning: true
+                  commands:
+                    01-copy-files:
+                      command: mkdir /root/app && cp -r /root/payload/* /root/app
+            Properties:
+              ImageId: "@rhel7-latest"
+              InstanceType: m4.large
+              Pipeline::CustomImagePrefix: rhel.@pipeline.Qda.@pipeline.As.@pipeline.Ase.@pipeline.Branch.@pipeline.Build

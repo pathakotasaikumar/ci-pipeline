@@ -1,0 +1,370 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    Configurations:
+      -
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+          Properties:
+            MinSize: 1 # Auto default to 1
+            MaxSize: 1 # Auto default to 1
+            HealthCheckGracePeriod: 600 # Auto default to 600
+            HealthCheckType : EC2
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: "t2.medium"
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+          Properties:
+            Scheme: "internal"
+            Listeners:
+              - LoadBalancerPort: "80"
+                InstancePort: "80"
+                Protocol: "HTTP"
+            HealthCheck:
+              HealthyThreshold: "2"
+              Interval: "10"
+              Target: "HTTP:80/health"
+              Timeout: "5"
+              UnhealthyThreshold: "2"
+      -
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+          Properties:
+            MinSize: '10' # should be picked
+            MaxSize: '10' # should be picked
+            HealthCheckGracePeriod: 900 # should be picked
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: "t2.medium"
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+          Properties:
+            Scheme: "internal"
+            Listeners:
+              - LoadBalancerPort: "80"
+                InstancePort: "80"
+                Protocol: "HTTP"
+            HealthCheck:
+              HealthyThreshold: "2"
+              Interval: "10"
+              Target: "HTTP:80/health"
+              Timeout: "5"
+              UnhealthyThreshold: "2"
+      -
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+          Properties:
+            MinSize: 1 # Auto default to 1
+            MaxSize: 1 # Auto default to 1
+            HealthCheckGracePeriod: 600 # Auto default to 600
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: "t2.medium"
+      -
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+          Properties:
+            MinSize: 2 # Auto default to 1
+            MaxSize: 2 # Auto default to 1
+            HealthCheckGracePeriod: 600 # Auto default to 600
+            HealthCheckType: EC2
+        LaunchTemplate:
+          Type: "AWS::EC2::LaunchTemplate"
+          Properties:
+            LaunchTemplateData:
+              InstanceType: "t2.medium"
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+          Properties:
+            Scheme: "internal"
+            Listeners:
+            - LoadBalancerPort: "80"
+              InstancePort: "80"
+              Protocol: "HTTP"
+            HealthCheck:
+              HealthyThreshold: "2"
+              Interval: "10"
+              Target: "HTTP:80/health"
+              Timeout: "5"
+              UnhealthyThreshold: "2"
+      -
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+          Properties:
+            MinSize: 3 # Auto default to 1
+            MaxSize: 3 # Auto default to 1
+            HealthCheckGracePeriod: 600 # Auto default to 600
+            HealthCheckType: EC2
+            MixedInstancesPolicy:
+              LaunchTemplate:
+                Overrides:
+                - InstanceType: m3.medium
+                - InstanceType: m4.xlarge
+              InstancesDistribution:
+                OnDemandAllocationStrategy: "prioritized"
+                OnDemandBaseCapacity: 1
+                OnDemandPercentageAboveBaseCapacity: 10
+                SpotAllocationStrategy: "lowest-price"
+                SpotInstancePools: 2
+                SpotMaxPrice: 0.1
+        LaunchTemplate:
+          Type: "AWS::EC2::LaunchTemplate"
+          Properties:
+            LaunchTemplateData:
+              InstanceType: "t2.medium"
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+          Properties:
+            Scheme: "internal"
+            Listeners:
+            - LoadBalancerPort: "80"
+              InstancePort: "80"
+              Protocol: "HTTP"
+            HealthCheck:
+              HealthyThreshold: "2"
+              Interval: "10"
+              Target: "HTTP:80/health"
+              Timeout: "5"
+              UnhealthyThreshold: "2"
+
+  Output:
+    _process_autoscaling_group:
+      -
+        Resources:
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Properties:
+              HealthCheckGracePeriod: 600
+              HealthCheckType: EC2
+              LaunchConfigurationName:
+                Ref: LaunchConfiguration
+              MinSize: 0
+              MaxSize: 0
+              DesiredCapacity: 0
+              VPCZoneIdentifier:
+              - subnet-123
+              - subnet-456
+              LoadBalancerNames:
+              - Ref: LoadBalancer
+        Outputs:
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup
+      -
+        Resources:
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Properties:
+              HealthCheckGracePeriod: 900
+              HealthCheckType: ELB
+              LaunchConfigurationName:
+                Ref: LaunchConfiguration
+              MinSize: 0
+              MaxSize: 0
+              DesiredCapacity: 0
+              VPCZoneIdentifier:
+              - subnet-123
+              - subnet-456
+              LoadBalancerNames:
+              - Ref: LoadBalancer
+        Outputs:
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup
+      -
+        Resources:
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Properties:
+              HealthCheckGracePeriod: 600
+              HealthCheckType: EC2
+              LaunchConfigurationName:
+                Ref: LaunchConfiguration
+              MinSize: 0
+              MaxSize: 0
+              DesiredCapacity: 0
+              VPCZoneIdentifier:
+              - subnet-123
+              - subnet-456
+        Outputs:
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup
+      -
+        Resources:
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Properties:
+              HealthCheckGracePeriod: 600
+              HealthCheckType: EC2
+              LaunchTemplate:
+                LaunchTemplateId:
+                  Ref: LaunchTemplate
+                Version: 1
+              MinSize: 0
+              MaxSize: 0
+              DesiredCapacity: 0
+              VPCZoneIdentifier:
+              - subnet-123
+              - subnet-456
+        Outputs:
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup
+      -
+        Resources:
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Properties:
+              HealthCheckGracePeriod: 600
+              HealthCheckType: EC2
+              MixedInstancesPolicy:
+                LaunchTemplate:
+                  Overrides:
+                  - InstanceType: m3.medium
+                  - InstanceType: m4.xlarge
+                InstancesDistribution:
+                  OnDemandAllocationStrategy: "prioritized"
+                  OnDemandPercentageAboveBaseCapacity: 10
+                  SpotAllocationStrategy: "lowest-price"
+                  SpotInstancePools: 2
+                  SpotMaxPrice: 0.1
+              MinSize: 0
+              MaxSize: 0
+              DesiredCapacity: 0
+              VPCZoneIdentifier:
+              - subnet-123
+              - subnet-456
+        Outputs:
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup
+
+    _process_autoscaling_group_with_waitcondition:
+      -
+        Resources:
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Properties:
+              HealthCheckGracePeriod: 600
+              HealthCheckType: EC2
+              LaunchConfigurationName:
+                Ref: LaunchConfiguration
+              MinSize: 1
+              MaxSize: 1
+              DesiredCapacity: 1
+              VPCZoneIdentifier:
+              - subnet-123
+              - subnet-456
+              LoadBalancerNames:
+              - Ref: LoadBalancer
+        Outputs:
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup
+      -
+        Resources:
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Properties:
+              HealthCheckGracePeriod: 900
+              HealthCheckType: ELB
+              LaunchConfigurationName:
+                Ref: LaunchConfiguration
+              MinSize: 10
+              MaxSize: 10
+              DesiredCapacity: 10
+              VPCZoneIdentifier:
+              - subnet-123
+              - subnet-456
+              LoadBalancerNames:
+              - Ref: LoadBalancer
+        Outputs:
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup
+      -
+        Resources:
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Properties:
+              HealthCheckGracePeriod: 600
+              HealthCheckType: EC2
+              LaunchConfigurationName:
+                Ref: LaunchConfiguration
+              MinSize: 1
+              MaxSize: 1
+              DesiredCapacity: 1
+              VPCZoneIdentifier:
+              - subnet-123
+              - subnet-456
+        Outputs:
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup
+      -
+        Resources:
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Properties:
+              HealthCheckGracePeriod: 600
+              HealthCheckType: EC2
+              LaunchTemplate:
+                LaunchTemplateId:
+                  Ref: LaunchTemplate
+                Version: 1
+              MinSize: 2
+              MaxSize: 2
+              DesiredCapacity: 2
+              VPCZoneIdentifier:
+              - subnet-123
+              - subnet-456
+        Outputs:
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup
+      -
+        Resources:
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Properties:
+              HealthCheckGracePeriod: 600
+              HealthCheckType: EC2
+              MixedInstancesPolicy:
+                LaunchTemplate:
+                  Overrides:
+                  - InstanceType: m3.medium
+                  - InstanceType: m4.xlarge
+                InstancesDistribution:
+                  OnDemandAllocationStrategy: "prioritized"
+                  OnDemandBaseCapacity: 1
+                  OnDemandPercentageAboveBaseCapacity: 10
+                  SpotAllocationStrategy: "lowest-price"
+                  SpotInstancePools: 2
+                  SpotMaxPrice: 0.1
+              MinSize: 3
+              MaxSize: 3
+              DesiredCapacity: 3
+              VPCZoneIdentifier:
+              - subnet-123
+              - subnet-456
+        Outputs:
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup

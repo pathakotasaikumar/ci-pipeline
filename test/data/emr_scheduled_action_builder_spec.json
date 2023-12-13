@@ -1,0 +1,796 @@
+{
+  "UnitTest": {
+    "Output": {
+      "_parse_emr_scheduled_action" : [{
+        "TasksScheduleUp": {
+          "schedule_expression": "cron(30 8 ? * * *)",
+          "inputs": {
+            "cluster": {
+              "Ref": "MyCluster"
+            },
+            "instance_group": {
+              "Ref": "TaskGroup1"
+            },
+            "instance_count": 4
+          }
+        }
+      },
+      {
+        "TasksScheduleDown": {
+          "schedule_expression": "cron(0 22 ? * * *)",
+          "inputs": {
+            "cluster": {
+              "Ref": "MyCluster"
+            },
+            "instance_group": {
+              "Ref": "MyTaskGroup1"
+            },
+            "instance_count": 0
+          }
+        }
+      },
+        {
+          "CoreScheduleUp": {
+            "schedule_expression": "cron(30 8 ? * * *)",
+            "inputs": {
+              "cluster": {
+                "Ref": "MyCluster"
+              },
+              "instance_group": {
+                "Ref": "CoreInstanceGroup"
+              },
+              "instance_count": 4
+            }
+          }
+        },
+        {
+          "CoreScheduleDown": {
+            "schedule_expression": "cron(0 22 ? * * *)",
+            "inputs": {
+              "cluster": {
+                "Ref": "MyCluster"
+              },
+              "instance_group": {
+                "Ref": "CoreInstanceGroup"
+              },
+              "instance_count": 1
+            }
+          }
+        }],
+      "_process_emr_scheduled_actions" : [
+        {
+          "Resources": {
+            "EMRScaling": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Handler": "index.handler",
+                "Role": "arn:aws:iam::410115506586:role/ams01-c031-98-home-master-VolumeTaggerExecutionRol-3BERX1NJ77YE",
+                "Runtime": "python3.9",
+                "Code": {
+                  "ZipFile": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "from __future__ import print_function\n",
+                        "\n",
+                        "import boto3\n",
+                        "import json\n",
+                        "import logging\n",
+                        "\n",
+                        "logger = logging.getLogger()\n",
+                        "logger.setLevel(logging.INFO)\n",
+                        "emr = boto3.client('emr')\n",
+                        "\n",
+                        "def set_instance_group_count(instance_group, instance_count):\n",
+                        "    params = [\n",
+                        "        {\n",
+                        "            'InstanceGroupId': instance_group,\n",
+                        "            'InstanceCount': int(instance_count)\n",
+                        "        }\n",
+                        "    ]\n",
+                        "\n",
+                        "    try:\n",
+                        "        emr.modify_instance_groups(InstanceGroups=params)\n",
+                        "\n",
+                        "    except Exception as e:\n",
+                        "        logger.error(e)\n",
+                        "\n",
+                        "def get_core_group(cluster):\n",
+                        "    try:\n",
+                        "        resp = emr.list_instance_groups(ClusterId=cluster)\n",
+                        "        for group in resp.get('InstanceGroups'):\n",
+                        "            if group.get('InstanceGroupType') == \"CORE\":\n",
+                        "                return group.get('Id')\n",
+                        "\n",
+                        "    except Exception as e:\n",
+                        "        logger.error(e)\n",
+                        "\n",
+                        "def handler(event, context):\n",
+                        "    logger.info(json.dumps(event))\n",
+                        "\n",
+                        "    instance_group = event['instance_group']\n",
+                        "    instance_count = event['instance_count']\n",
+                        "\n",
+                        "    if instance_group.lower() == \"core\":\n",
+                        "        group_id = get_core_group(event['cluster'])\n",
+                        "    else:\n",
+                        "        group_id = instance_group\n",
+                        "\n",
+                        "    if group_id is not None:\n",
+                        "        print('Setting group {} to {}'.format(group_id, instance_count))\n",
+                        "        set_instance_group_count(group_id, instance_count)\n"
+                      ]
+                    ]
+                  }
+                },
+                "Timeout": "300",
+                "KmsKeyArn": "arn:aws:kms:ap-southeast-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+              }
+            },
+            "TasksScheduleUp": {
+              "Type": "AWS::Events::Rule",
+              "Properties": {
+                "Description": "Cloudwatch event rule - TasksScheduleUp",
+                "Name": "ams01-c031-99-dev-master-5-TasksScheduleUp",
+                "Targets": [
+                  {
+                    "Arn": {
+                      "Fn::GetAtt": [
+                        "EMRScaling",
+                        "Arn"
+                      ]
+                    },
+                    "Id": "EMRScaling",
+                    "Input": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "{",
+                          {
+                            "Fn::Join": [
+                              ",",
+                              [
+                                {
+                                  "Fn::Join": [
+                                    "",
+                                    [
+                                      "\"cluster\":",
+                                      {
+                                        "Fn::Join": [
+                                          "",
+                                          [
+                                            "\"",
+                                            {
+                                              "Ref": "MyCluster"
+                                            },
+                                            "\""
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                },
+                                {
+                                  "Fn::Join": [
+                                    "",
+                                    [
+                                      "\"instance_group\":",
+                                      {
+                                        "Fn::Join": [
+                                          "",
+                                          [
+                                            "\"",
+                                            {
+                                              "Ref": "TaskGroup1"
+                                            },
+                                            "\""
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                },
+                                "\"instance_count\":\"4\""
+                              ]
+                            ]
+                          },
+                          "}"
+                        ]
+                      ]
+                    }
+                  }
+                ],
+                "ScheduleExpression": "cron(30 8 ? * * *)"
+              }
+            },
+            "TasksScheduleUpScheduledEventPermission": {
+              "Type": "AWS::Lambda::Permission",
+              "Properties": {
+                "Action": "lambda:InvokeFunction",
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "EMRScaling",
+                    "Arn"
+                  ]
+                },
+                "Principal": "events.amazonaws.com",
+                "SourceArn": {
+                  "Fn::GetAtt": [
+                    "TasksScheduleUp",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          },
+          "Outputs": {
+            "EMRScalingName": {
+              "Description": "Name of the function",
+              "Value": {
+                "Ref": "EMRScaling"
+              }
+            },
+            "EMRScalingArn": {
+              "Description": "Arn of the function",
+              "Value": {
+                "Fn::GetAtt": [
+                  "EMRScaling",
+                  "Arn"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "Resources": {
+            "EMRScaling": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Handler": "index.handler",
+                "Role": "arn:aws:iam::410115506586:role/ams01-c031-98-home-master-VolumeTaggerExecutionRol-3BERX1NJ77YE",
+                "Runtime": "python3.9",
+                "Code": {
+                  "ZipFile": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "from __future__ import print_function\n",
+                        "\n",
+                        "import boto3\n",
+                        "import json\n",
+                        "import logging\n",
+                        "\n",
+                        "logger = logging.getLogger()\n",
+                        "logger.setLevel(logging.INFO)\n",
+                        "emr = boto3.client('emr')\n",
+                        "\n",
+                        "def set_instance_group_count(instance_group, instance_count):\n",
+                        "    params = [\n",
+                        "        {\n",
+                        "            'InstanceGroupId': instance_group,\n",
+                        "            'InstanceCount': int(instance_count)\n",
+                        "        }\n",
+                        "    ]\n",
+                        "\n",
+                        "    try:\n",
+                        "        emr.modify_instance_groups(InstanceGroups=params)\n",
+                        "\n",
+                        "    except Exception as e:\n",
+                        "        logger.error(e)\n",
+                        "\n",
+                        "def get_core_group(cluster):\n",
+                        "    try:\n",
+                        "        resp = emr.list_instance_groups(ClusterId=cluster)\n",
+                        "        for group in resp.get('InstanceGroups'):\n",
+                        "            if group.get('InstanceGroupType') == \"CORE\":\n",
+                        "                return group.get('Id')\n",
+                        "\n",
+                        "    except Exception as e:\n",
+                        "        logger.error(e)\n",
+                        "\n",
+                        "def handler(event, context):\n",
+                        "    logger.info(json.dumps(event))\n",
+                        "\n",
+                        "    instance_group = event['instance_group']\n",
+                        "    instance_count = event['instance_count']\n",
+                        "\n",
+                        "    if instance_group.lower() == \"core\":\n",
+                        "        group_id = get_core_group(event['cluster'])\n",
+                        "    else:\n",
+                        "        group_id = instance_group\n",
+                        "\n",
+                        "    if group_id is not None:\n",
+                        "        print('Setting group {} to {}'.format(group_id, instance_count))\n",
+                        "        set_instance_group_count(group_id, instance_count)\n"
+                      ]
+                    ]
+                  }
+                },
+                "Timeout": "300",
+                "KmsKeyArn": "arn:aws:kms:ap-southeast-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+              }
+            },
+            "TasksScheduleDown": {
+              "Type": "AWS::Events::Rule",
+              "Properties": {
+                "Description": "Cloudwatch event rule - TasksScheduleDown",
+                "Name": "ams01-c031-99-dev-master-5-TasksScheduleDown",
+                "Targets": [
+                  {
+                    "Arn": {
+                      "Fn::GetAtt": [
+                        "EMRScaling",
+                        "Arn"
+                      ]
+                    },
+                    "Id": "EMRScaling",
+                    "Input": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "{",
+                          {
+                            "Fn::Join": [
+                              ",",
+                              [
+                                {
+                                  "Fn::Join": [
+                                    "",
+                                    [
+                                      "\"cluster\":",
+                                      {
+                                        "Fn::Join": [
+                                          "",
+                                          [
+                                            "\"",
+                                            {
+                                              "Ref": "MyCluster"
+                                            },
+                                            "\""
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                },
+                                {
+                                  "Fn::Join": [
+                                    "",
+                                    [
+                                      "\"instance_group\":",
+                                      {
+                                        "Fn::Join": [
+                                          "",
+                                          [
+                                            "\"",
+                                            {
+                                              "Ref": "MyTaskGroup1"
+                                            },
+                                            "\""
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                },
+                                "\"instance_count\":\"0\""
+                              ]
+                            ]
+                          },
+                          "}"
+                        ]
+                      ]
+                    }
+                  }
+                ],
+                "ScheduleExpression": "cron(0 22 ? * * *)"
+              }
+            },
+            "TasksScheduleDownScheduledEventPermission": {
+              "Type": "AWS::Lambda::Permission",
+              "Properties": {
+                "Action": "lambda:InvokeFunction",
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "EMRScaling",
+                    "Arn"
+                  ]
+                },
+                "Principal": "events.amazonaws.com",
+                "SourceArn": {
+                  "Fn::GetAtt": [
+                    "TasksScheduleDown",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          },
+          "Outputs": {
+            "EMRScalingName": {
+              "Description": "Name of the function",
+              "Value": {
+                "Ref": "EMRScaling"
+              }
+            },
+            "EMRScalingArn": {
+              "Description": "Arn of the function",
+              "Value": {
+                "Fn::GetAtt": [
+                  "EMRScaling",
+                  "Arn"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "Resources": {
+            "EMRScaling": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Handler": "index.handler",
+                "Role": "arn:aws:iam::410115506586:role/ams01-c031-98-home-master-VolumeTaggerExecutionRol-3BERX1NJ77YE",
+                "Runtime": "python3.9",
+                "Code": {
+                  "ZipFile": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "from __future__ import print_function\n",
+                        "\n",
+                        "import boto3\n",
+                        "import json\n",
+                        "import logging\n",
+                        "\n",
+                        "logger = logging.getLogger()\n",
+                        "logger.setLevel(logging.INFO)\n",
+                        "emr = boto3.client('emr')\n",
+                        "\n",
+                        "def set_instance_group_count(instance_group, instance_count):\n",
+                        "    params = [\n",
+                        "        {\n",
+                        "            'InstanceGroupId': instance_group,\n",
+                        "            'InstanceCount': int(instance_count)\n",
+                        "        }\n",
+                        "    ]\n",
+                        "\n",
+                        "    try:\n",
+                        "        emr.modify_instance_groups(InstanceGroups=params)\n",
+                        "\n",
+                        "    except Exception as e:\n",
+                        "        logger.error(e)\n",
+                        "\n",
+                        "def get_core_group(cluster):\n",
+                        "    try:\n",
+                        "        resp = emr.list_instance_groups(ClusterId=cluster)\n",
+                        "        for group in resp.get('InstanceGroups'):\n",
+                        "            if group.get('InstanceGroupType') == \"CORE\":\n",
+                        "                return group.get('Id')\n",
+                        "\n",
+                        "    except Exception as e:\n",
+                        "        logger.error(e)\n",
+                        "\n",
+                        "def handler(event, context):\n",
+                        "    logger.info(json.dumps(event))\n",
+                        "\n",
+                        "    instance_group = event['instance_group']\n",
+                        "    instance_count = event['instance_count']\n",
+                        "\n",
+                        "    if instance_group.lower() == \"core\":\n",
+                        "        group_id = get_core_group(event['cluster'])\n",
+                        "    else:\n",
+                        "        group_id = instance_group\n",
+                        "\n",
+                        "    if group_id is not None:\n",
+                        "        print('Setting group {} to {}'.format(group_id, instance_count))\n",
+                        "        set_instance_group_count(group_id, instance_count)\n"
+                      ]
+                    ]
+                  }
+                },
+                "Timeout": "300",
+                "KmsKeyArn": "arn:aws:kms:ap-southeast-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+              }
+            },
+            "CoreScheduleUp": {
+              "Type": "AWS::Events::Rule",
+              "Properties": {
+                "Description": "Cloudwatch event rule - CoreScheduleUp",
+                "Name": "ams01-c031-99-dev-master-5-CoreScheduleUp",
+                "Targets": [
+                  {
+                    "Arn": {
+                      "Fn::GetAtt": [
+                        "EMRScaling",
+                        "Arn"
+                      ]
+                    },
+                    "Id": "EMRScaling",
+                    "Input": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "{",
+                          {
+                            "Fn::Join": [
+                              ",",
+                              [
+                                {
+                                  "Fn::Join": [
+                                    "",
+                                    [
+                                      "\"cluster\":",
+                                      {
+                                        "Fn::Join": [
+                                          "",
+                                          [
+                                            "\"",
+                                            {
+                                              "Ref": "MyCluster"
+                                            },
+                                            "\""
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                },
+                                {
+                                  "Fn::Join": [
+                                    "",
+                                    [
+                                      "\"instance_group\":",
+                                      {
+                                        "Fn::Join": [
+                                          "",
+                                          [
+                                            "\"",
+                                            {
+                                              "Ref": "CoreInstanceGroup"
+                                            },
+                                            "\""
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                },
+                                "\"instance_count\":\"4\""
+                              ]
+                            ]
+                          },
+                          "}"
+                        ]
+                      ]
+                    }
+                  }
+                ],
+                "ScheduleExpression": "cron(30 8 ? * * *)"
+              }
+            },
+            "CoreScheduleUpScheduledEventPermission": {
+              "Type": "AWS::Lambda::Permission",
+              "Properties": {
+                "Action": "lambda:InvokeFunction",
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "EMRScaling",
+                    "Arn"
+                  ]
+                },
+                "Principal": "events.amazonaws.com",
+                "SourceArn": {
+                  "Fn::GetAtt": [
+                    "CoreScheduleUp",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          },
+          "Outputs": {
+            "EMRScalingName": {
+              "Description": "Name of the function",
+              "Value": {
+                "Ref": "EMRScaling"
+              }
+            },
+            "EMRScalingArn": {
+              "Description": "Arn of the function",
+              "Value": {
+                "Fn::GetAtt": [
+                  "EMRScaling",
+                  "Arn"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "Resources": {
+            "EMRScaling": {
+              "Type": "AWS::Lambda::Function",
+              "Properties": {
+                "Handler": "index.handler",
+                "Role": "arn:aws:iam::410115506586:role/ams01-c031-98-home-master-VolumeTaggerExecutionRol-3BERX1NJ77YE",
+                "Runtime": "python3.9",
+                "Code": {
+                  "ZipFile": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "from __future__ import print_function\n",
+                        "\n",
+                        "import boto3\n",
+                        "import json\n",
+                        "import logging\n",
+                        "\n",
+                        "logger = logging.getLogger()\n",
+                        "logger.setLevel(logging.INFO)\n",
+                        "emr = boto3.client('emr')\n",
+                        "\n",
+                        "def set_instance_group_count(instance_group, instance_count):\n",
+                        "    params = [\n",
+                        "        {\n",
+                        "            'InstanceGroupId': instance_group,\n",
+                        "            'InstanceCount': int(instance_count)\n",
+                        "        }\n",
+                        "    ]\n",
+                        "\n",
+                        "    try:\n",
+                        "        emr.modify_instance_groups(InstanceGroups=params)\n",
+                        "\n",
+                        "    except Exception as e:\n",
+                        "        logger.error(e)\n",
+                        "\n",
+                        "def get_core_group(cluster):\n",
+                        "    try:\n",
+                        "        resp = emr.list_instance_groups(ClusterId=cluster)\n",
+                        "        for group in resp.get('InstanceGroups'):\n",
+                        "            if group.get('InstanceGroupType') == \"CORE\":\n",
+                        "                return group.get('Id')\n",
+                        "\n",
+                        "    except Exception as e:\n",
+                        "        logger.error(e)\n",
+                        "\n",
+                        "def handler(event, context):\n",
+                        "    logger.info(json.dumps(event))\n",
+                        "\n",
+                        "    instance_group = event['instance_group']\n",
+                        "    instance_count = event['instance_count']\n",
+                        "\n",
+                        "    if instance_group.lower() == \"core\":\n",
+                        "        group_id = get_core_group(event['cluster'])\n",
+                        "    else:\n",
+                        "        group_id = instance_group\n",
+                        "\n",
+                        "    if group_id is not None:\n",
+                        "        print('Setting group {} to {}'.format(group_id, instance_count))\n",
+                        "        set_instance_group_count(group_id, instance_count)\n"
+                      ]
+                    ]
+                  }
+                },
+                "Timeout": "300",
+                "KmsKeyArn": "arn:aws:kms:ap-southeast-2:123456789012:key/12345678-1234-1234-1234-123456789012"
+              }
+            },
+            "CoreScheduleDown": {
+              "Type": "AWS::Events::Rule",
+              "Properties": {
+                "Description": "Cloudwatch event rule - CoreScheduleDown",
+                "Name": "ams01-c031-99-dev-master-5-CoreScheduleDown",
+                "Targets": [
+                  {
+                    "Arn": {
+                      "Fn::GetAtt": [
+                        "EMRScaling",
+                        "Arn"
+                      ]
+                    },
+                    "Id": "EMRScaling",
+                    "Input": {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "{",
+                          {
+                            "Fn::Join": [
+                              ",",
+                              [
+                                {
+                                  "Fn::Join": [
+                                    "",
+                                    [
+                                      "\"cluster\":",
+                                      {
+                                        "Fn::Join": [
+                                          "",
+                                          [
+                                            "\"",
+                                            {
+                                              "Ref": "MyCluster"
+                                            },
+                                            "\""
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                },
+                                {
+                                  "Fn::Join": [
+                                    "",
+                                    [
+                                      "\"instance_group\":",
+                                      {
+                                        "Fn::Join": [
+                                          "",
+                                          [
+                                            "\"",
+                                            {
+                                              "Ref": "CoreInstanceGroup"
+                                            },
+                                            "\""
+                                          ]
+                                        ]
+                                      }
+                                    ]
+                                  ]
+                                },
+                                "\"instance_count\":\"1\""
+                              ]
+                            ]
+                          },
+                          "}"
+                        ]
+                      ]
+                    }
+                  }
+                ],
+                "ScheduleExpression": "cron(0 22 ? * * *)"
+              }
+            },
+            "CoreScheduleDownScheduledEventPermission": {
+              "Type": "AWS::Lambda::Permission",
+              "Properties": {
+                "Action": "lambda:InvokeFunction",
+                "FunctionName": {
+                  "Fn::GetAtt": [
+                    "EMRScaling",
+                    "Arn"
+                  ]
+                },
+                "Principal": "events.amazonaws.com",
+                "SourceArn": {
+                  "Fn::GetAtt": [
+                    "CoreScheduleDown",
+                    "Arn"
+                  ]
+                }
+              }
+            }
+          },
+          "Outputs": {
+            "EMRScalingName": {
+              "Description": "Name of the function",
+              "Value": {
+                "Ref": "EMRScaling"
+              }
+            },
+            "EMRScalingArn": {
+              "Description": "Arn of the function",
+              "Value": {
+                "Fn::GetAtt": [
+                  "EMRScaling",
+                  "Arn"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

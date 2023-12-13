@@ -1,0 +1,79 @@
+UnitTest:
+  Input:
+    Configurations:
+      -
+        GroupA:
+          Type: AWS::ElasticLoadBalancingV2::TargetGroup
+          Properties:
+            Port: 80
+            Protocol: HTTP
+      -
+        GroupA:
+          Type: AWS::ElasticLoadBalancingV2::TargetGroup
+          Properties:
+            TargetType: lambda
+            Targets:
+            - Id: "@lambda.DeployArn"
+            HealthCheckEnabled: true
+  Output:
+    _process_load_balancer_v2_target_group:
+      -
+        Resources:
+          GroupA:
+            Type: AWS::ElasticLoadBalancingV2::TargetGroup
+            Properties:
+              Port: 80
+              Protocol: HTTP
+              VpcId: dummy-vpc
+              TargetType: instance
+        Outputs:
+          GroupAArn:
+            Description: Target Group Arn
+            Value:
+              Ref: GroupA
+          GroupATargetGroupFullName:
+            Description: Target Group Full Name
+            Value:
+              Fn::GetAtt:
+                - GroupA
+                - TargetGroupFullName
+          GroupATargetGroupName:
+            Description: Target Group Name
+            Value:
+              Fn::GetAtt:
+                - GroupA
+                - TargetGroupName
+      -
+        Resources:
+          GroupA:
+            DependsOn: GroupAELBLambdaPermission
+            Type: AWS::ElasticLoadBalancingV2::TargetGroup
+            Properties:
+              TargetType: lambda
+              Targets:
+              - Id: "@lambda.DeployArn"
+              HealthCheckEnabled: true
+          GroupAELBLambdaPermission:
+            Type: AWS::Lambda::Permission
+            Properties:
+              Action: lambda:InvokeFunction
+              FunctionName: "@lambda.DeployArn"
+              Principal: elasticloadbalancing.amazonaws.com
+        Outputs:
+          GroupAArn:
+            Description: Target Group Arn
+            Value:
+              Ref: GroupA
+          GroupATargetGroupFullName:
+            Description: Target Group Full Name
+            Value:
+              Fn::GetAtt:
+                - GroupA
+                - TargetGroupFullName
+          GroupATargetGroupName:
+            Description: Target Group Name
+            Value:
+              Fn::GetAtt:
+                - GroupA
+                - TargetGroupName
+

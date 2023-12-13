@@ -1,0 +1,9 @@
+---
+Type: aws/network-interface
+Stage: 00-test
+Persist: true
+Configuration:
+  MyEni:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      SubnetId: "@a-private"

@@ -1,0 +1,108 @@
+name: Run checks
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches-ignore: [master]
+
+env:
+  bamboo_ad_join_user: "${{ secrets.AD_JOIN_USER }}"
+  bamboo_ad_join_password: "${{ secrets.AD_JOIN_PASSWORD }}"
+  bamboo_ad_join_domain: "${{ secrets.AD_JOIN_DOMAIN}}"
+  bamboo_aws_control_role: "arn:aws:iam::221295517176:role/CI-Control"
+  bamboo_aws_provisioning_role_name: qcp-platform-provision
+  bamboo_aws_proxy: "${{ secrets.PROXY_HOST }}"
+  bamboo_aws_region: ap-southeast-2
+  bamboo_buildNumber: "${{ github.run_id }}"
+  bamboo_deployment_env: NonProduction
+  bamboo_invoke_bamboocd_enable: disabled
+  bamboo_nexus_docker_registry: "${{ secrets.NEXUS_DOCKER_REGISTRY }}"
+  bamboo_nexus_docker_repository: "${{ secrets.NEXUS_DOCKER_REGISTRY }}"
+  bamboo_pipeline_user: bamboo-pipeline
+  bamboo_planKey: AMS01-C031S01CI
+  bamboo_rubocop_only: Lint
+  bamboo_shortJobKey: BUILDARTEFACTS
+  bamboo_simplecov_coverage: "89.07"
+  bamboo_snow_endpoint: https://qantastest.service-now.com
+  bamboo_snow_user: abc123
+  bamboo_validation_mode: enforce
+  bamboo_yardstick_threshold: "65.3"
+  bamboo_avos_release_arn: "arn:aws:lambda:ap-southeast-2:221295517176:function:ams01-c047-01-prod-release-avos-scanproxy-Function-5Ifb8jzOMI9P:release"
+  pipeline_log_config: '{"environments":{"nonprod":{"appenders":{"default_stdout":{"type":"tokenized_color_output","config":{"enable":true,"color_map":{"method":{"debug":36,"info":32}},"tokens":{"restrict":[]},"formatters":[{"type":"method","value":"debug","format":"   {0}"}]}},"default_file_output":{"type":"file_output","enable":true},"splunk":{"type":"splunk","enable":true},"snow":{"type":"snow","enable":true}}},"dev":{"appenders":{"default_stdout":{"type":"tokenized_color_output","config":{"enable":true,"color_map":{"method":{"debug":36,"info":32}},"tokens":{"restrict":[]},"formatters":[{"type":"method","value":"debug","format":"   {0}"}]}},"default_file_output":{"type":"file_output","config":{"enable":true}},"latest_file_output":{"type":"file_output","config":{"enable":true,"log_file_name":"_pipeline-latest.log"}},"snow":{"type":"snow","config":{"enable":true}}}}}}'
+  pipeline_log_debug: ""
+
+jobs:
+  unit-tests:
+    name: Unit tests
+    runs-on: self-hosted
+
+    steps:
+
+    - name: Git clone the repository
+      uses: actions/checkout@v3
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+
+    - name: Set some pipeline variables
+      id: setup
+      run: |
+        echo ref=${GITHUB_REF#refs/*/} >> $GITHUB_OUTPUT
+
+    - run: ./bin/bamboo_simplecov.sh
+      env:
+        bamboo_planRepository_branchName: ${{ steps.setup.outputs.ref }}
+        bamboo_repository_git_branch: ${{ steps.setup.outputs.ref }}
+
+    - name: Parse unit test results
+      uses: mikepenz/action-junit-report@v3
+      if: always()
+      with:
+        report_paths: 'rspec_results_in_junit_format*.xml'
+
+  rubocop:
+    name: Rubocop
+    runs-on: self-hosted
+
+    steps:
+
+    - name: Git clone the repository
+      uses: actions/checkout@v3
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+
+    - name: Set some pipeline variables
+      id: setup
+      run: |
+        echo ref=${GITHUB_REF#refs/*/} >> $GITHUB_OUTPUT
+
+    - run: ./bin/bamboo_rubocop.sh
+      env:
+        bamboo_planRepository_branchName: ${{ steps.setup.outputs.ref }}
+        bamboo_repository_git_branch: ${{ steps.setup.outputs.ref }}
+
+  yardstick:
+    name: Yardstick
+    runs-on: self-hosted
+
+    steps:
+
+    - name: Git clone the repository
+      uses: actions/checkout@v3
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        bundler-cache: true
+
+    - name: Set some pipeline variables
+      id: setup
+      run: |
+        echo ref=${GITHUB_REF#refs/*/} >> $GITHUB_OUTPUT
+
+    - run: ./bin/bamboo_yardstick.sh
+      env:
+        bamboo_planRepository_branchName: ${{ steps.setup.outputs.ref }}
+        bamboo_repository_git_branch: ${{ steps.setup.outputs.ref }}

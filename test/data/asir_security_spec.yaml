@@ -1,0 +1,166 @@
+---
+UnitTest:
+  Input:
+    _build_rules_template:
+      destination_sg_id: "sg-dest-123"
+      destination_rules:
+      # Single port, TCP, CIDR -> AS
+      - asir_set: "AMS01-C001-99-NONP-latest"
+        rule_id: "ASIR001"
+        source: "10.0.0.0/8"
+        destination: "AMS01-C001-99-NONP"
+        port: "22"
+        protocol: "TCP"
+      # Single-port, UDP, IP -> AS
+      - asir_set: "AMS01-C001-99-NONP-latest"
+        rule_id: "ASIR002"
+        source: "10.0.0.5"
+        destination: "AMS01-C001-99-NONP"
+        port: "53"
+        protocol: "UDP"
+      # Single-port, ALL, IP -> AS
+      - asir_set: "AMS01-C001-99-NONP-latest"
+        rule_id: "ASIR003"
+        source: "10.0.0.5"
+        destination: "AMS01-C001-99-NONP"
+        port: "55"
+        protocol: "ALL"
+      # Multi-port, TCP, CIDR -> AS
+      - asir_set: "AMS01-C001-99-NONP-latest"
+        rule_id: "ASIR004"
+        source: "10.0.0.0/8"
+        destination: "AMS01-C001-99-NONP"
+        port: "80-81"
+        protocol: "TCP"
+      # Single port, AS -> AS
+      - asir_set: "AMS01-C001-99-NONP-latest"
+        rule_id: "ASIR005"
+        source: "AMS22-C001-22-NONP"
+        destination: "AMS01-C001-99-NONP"
+        port: "80"
+        protocol: "TCP"
+      ## Single port, AS -> non-existant AS (should skip)
+      - asir_set: "AMS01-C001-99-NONP-latest"
+        rule_id: "ASIR005"
+        source: "AMS33-C001-33-NONP"
+        destination: "AMS01-C001-99-NONP"
+        port: "80"
+        protocol: "TCP"
+      Mock:
+      - Object: Context
+        MessageChain: asir.source_sg_id
+        With:
+          - "latest"
+          - :ams: ams22
+            :qda: c001
+            :as: "22"
+            :env: nonp
+        Return: "sg-asir-source-ams22-c001-22-nonp-latest"
+      - Object: Context
+        MessageChain: asir.source_sg_id
+        With:
+          - "latest"
+          - :ams: ams33
+            :qda: c001
+            :as: "33"
+            :env: nonp
+        Return: "sg-asir-source-ams33-c001-33-nonp-latest"
+    deploy_security_items:
+      Mock:
+        - Object: AsirSecurity
+          MessageChain: _deploy_asir_destination_sg
+        - Object: AsirSecurity
+          MessageChain: _deploy_asir_source_sg
+        - Object: AsirSecurity
+          MessageChain: _deploy_asir_managed_policy
+        - Object: AsirSecurity
+          MessageChain: _deploy_asir_rules_stack
+        - Object: AsirSecurity
+          MessageChain: _find_ams_iam_policy
+          Return: "arn:aws:iam::894961276425:policy/qcp-iam-ams-test-stack-QCPAMSManagedPolicy-LAEJIBY6GDP7"
+    deploy_security_rules:
+      Mock:
+        - Object: AsirSecurity
+          MessageChain: _rules_in_set
+          Return: {}
+    _deploy_asir_destination_sg:
+      Mock:
+        - Object: AwsHelper
+          MessageChain: cfn_stack_exists
+        - Object: AwsHelper
+          MessageChain: cfn_get_stack_outputs
+          Return:
+            AsirDestinationGroupId: adgid-123
+        - Object: AwsHelper
+          MessageChain: cfn_create_stack
+          Return:
+            StackId: stack123
+            AsirDestinationGroupId: adgid123
+    _deploy_asir_source_sg:
+      Mock:
+        - Object: AwsHelper
+          MessageChain: cfn_stack_exists
+        - Object: AwsHelper
+          MessageChain: cfn_create_stack
+          Return:
+            StackId: stack123
+    _deploy_asir_managed_policy:
+      Mock:
+        - Object: AwsHelper
+          MessageChain: cfn_stack_exists
+        - Object: AwsHelper
+          MessageChain: cfn_create_stack
+          Return:
+            StackId: stack123
+    _deploy_asir_rules_stack:
+      Mock:
+        - Object: AwsHelper
+          MessageChain: cfn_stack_exists
+        - Object: AwsHelper
+          MessageChain: cfn_create_stack
+          Return:
+            StackId: stack123
+
+  Output:
+    _build_rules_template:
+      Resources:
+        AMS01xC001x99xNONPxlatestxASIR001:
+          Type: AWS::EC2::SecurityGroupIngress
+          Properties:
+            CidrIp: 10.0.0.0/8
+            GroupId: sg-dest-123
+            IpProtocol: tcp
+            FromPort: '22'
+            ToPort: '22'
+        AMS01xC001x99xNONPxlatestxASIR002:
+          Type: AWS::EC2::SecurityGroupIngress
+          Properties:
+            CidrIp: 10.0.0.5
+            GroupId: sg-dest-123
+            IpProtocol: udp
+            FromPort: '53'
+            ToPort: '53'
+        AMS01xC001x99xNONPxlatestxASIR003:
+          Type: AWS::EC2::SecurityGroupIngress
+          Properties:
+            CidrIp: 10.0.0.5
+            GroupId: sg-dest-123
+            IpProtocol: "-1"
+            FromPort: '55'
+            ToPort: '55'
+        AMS01xC001x99xNONPxlatestxASIR004:
+          Type: AWS::EC2::SecurityGroupIngress
+          Properties:
+            CidrIp: 10.0.0.0/8
+            GroupId: sg-dest-123
+            IpProtocol: tcp
+            FromPort: '80'
+            ToPort: '81'
+        AMS01xC001x99xNONPxlatestxASIR005:
+          Type: AWS::EC2::SecurityGroupIngress
+          Properties:
+            SourceSecurityGroupId: sg-asir-source-ams33-c001-33-nonp-latest
+            GroupId: sg-dest-123
+            IpProtocol: tcp
+            FromPort: '80'
+            ToPort: '80'

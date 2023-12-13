@@ -1,0 +1,288 @@
+---
+Cluster:
+  Type: AWS::EMR::Cluster
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::EMR::Cluster:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Required: false
+          Type: List
+          ItemType: Common.SecurityItem
+        Properties:
+          AdditionalInfo:
+            Configurable: true
+          Applications:
+            Configurable: true
+          BootstrapActions:
+            Configurable: true
+          Configurations:
+            Configurable: true
+          Instances:
+            Configurable: true
+          ReleaseLabel:
+            Configurable: true
+          LogUri:
+            Configurable: true
+
+    PropertyTypes:
+      AWS::EMR::Cluster.Application:
+        Properties:
+          AdditionalInfo:
+            Configurable: true
+          Args:
+            Configurable: true
+          Name:
+            Configurable: true
+          Version:
+            Configurable: true
+
+      AWS::EMR::Cluster.BootstrapActionConfig:
+        Properties:
+          Name:
+            Configurable: true
+          ScriptBootstrapAction:
+            Configurable: true
+
+      AWS::EMR::Cluster.Configuration:
+        Properties:
+          Classification:
+            Configurable: true
+          ConfigurationProperties:
+            Configurable: true
+          Configurations:
+            Configurable: true
+
+      AWS::EMR::Cluster.EbsBlockDeviceConfig:
+        Properties:
+          VolumeSpecification:
+            Configurable: true
+          VolumesPerInstance:
+            Configurable: true
+
+      AWS::EMR::Cluster.EbsConfiguration:
+        Properties:
+          EbsBlockDeviceConfigs:
+            Configurable: true
+          EbsOptimized:
+            Configurable: true
+
+      AWS::EMR::Cluster.InstanceGroupConfig:
+        Properties:
+          AutoScalingPolicy:
+            Configurable: true
+          Configurations:
+            Configurable: true
+          EbsConfiguration:
+            Configurable: true
+          InstanceCount:
+            Configurable: true
+          InstanceType:
+            Configurable: true
+          Name:
+            Configurable: true
+
+      AWS::EMR::Cluster.JobFlowInstancesConfig:
+        Properties:
+          CoreInstanceGroup:
+            Configurable: true
+          Ec2KeyName:
+            Configurable: true
+          Ec2SubnetId:
+            Configurable: true
+          HadoopVersion:
+            Configurable: true
+          MasterInstanceGroup:
+            Configurable: true
+
+      AWS::EMR::Cluster.ScriptBootstrapActionConfig:
+        Properties:
+          Args:
+            Configurable: true
+          Path:
+            Configurable: true
+
+      AWS::EMR::Cluster.VolumeSpecification:
+        Properties:
+          Iops:
+            Configurable: true
+          SizeInGB:
+            Configurable: true
+          VolumeType:
+            Configurable: true
+
+      AWS::EMR::Cluster.AutoScalingPolicy:
+        Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-elasticmapreduce-cluster-autoscalingpolicy.html
+        Properties:
+          Constraints:
+            Configurable: true
+          Rules:
+            Configurable: true
+
+      AWS::EMR::Cluster.ScalingConstraints:
+        Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-elasticmapreduce-cluster-scalingconstraints.html
+        Properties:
+          MaxCapacity:
+            Configurable: true
+          MinCapacity:
+            Configurable: true
+
+      AWS::EMR::Cluster.ScalingTrigger:
+        Properties:
+          CloudWatchAlarmDefinition:
+            Configurable: true
+
+      AWS::EMR::Cluster.ScalingRule:
+        Properties:
+          Action:
+            Configurable: true
+          Description:
+            Configurable: true
+          Name:
+            Configurable: true
+          Trigger:
+            Configurable: true
+      AWS::EMR::Cluster.ScalingAction:
+        Properties:
+          Market:
+            Configurable: true
+          SimpleScalingPolicyConfiguration:
+            Configurable: true
+
+      AWS::EMR::Cluster.SimpleScalingPolicyConfiguration:
+        Properties:
+          AdjustmentType:
+            Configurable: true
+          CoolDown:
+            Configurable: true
+          ScalingAdjustment:
+            Configurable: true
+
+      AWS::EMR::Cluster.CloudWatchAlarmDefinition:
+        Properties:
+          ComparisonOperator:
+            Configurable: true
+          Dimensions:
+            Configurable: true
+          EvaluationPeriods:
+            Configurable: true
+          MetricName:
+            Configurable: true
+          Namespace:
+            Configurable: true
+          Period:
+            Configurable: true
+          Statistic:
+            Configurable: true
+          Threshold:
+            Configurable: true
+          Unit:
+            Configurable: true
+
+      AWS::EMR::Cluster.MetricDimension:
+        Properties:
+          Key:
+            Configurable: true
+          Value:
+            Configurable: true
+
+      AWS::EMR::Cluster.SimpleScalingPolicyConfiguration:
+        Properties:
+          AdjustmentType:
+            Configurable: true
+          CoolDown:
+            Configurable: true
+          ScalingAdjustment:
+            Configurable: true
+
+InstanceGroupConfig:
+  Type: AWS::EMR::InstanceGroupConfig
+  Cardinality: 0-10
+  Specification:
+    ResourceTypes:
+      AWS::EMR::InstanceGroupConfig:
+        Properties:
+          BidPrice:
+            Configurable: true
+          Configurations:
+            Configurable: true
+          EbsConfiguration:
+            Configurable: true
+          InstanceCount:
+            Configurable: true
+            Default: 1
+          InstanceRole:
+            Configurable: true
+            Default: TASK
+          InstanceType:
+            Configurable: true
+            Default: m3.xlarge
+          Market:
+            Configurable: true
+
+Steps:
+  Type: AWS::EMR::Step
+  Cardinality: 0-20
+  Specification:
+    ResourceTypes:
+      AWS::EMR::Step:
+        Properties:
+          ActionOnFailure:
+            Configurable: true
+          HadoopJarStep:
+            Configurable: true
+    PropertyTypes:
+      AWS::EMR::Step.HadoopJarStepConfig:
+        Properties:
+          Args:
+            Configurable: true
+          Jar:
+            Configurable: true
+          MainClass:
+            Configurable: true
+          StepProperties:
+            Configurable: true
+      AWS::EMR::Step.KeyValue:
+        Properties:
+          Key:
+            Configurable: true
+          Value:
+            Configurable: true
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features
+
+ScheduledActions:
+  Type: Pipeline::EMR::ScheduledAction
+  Cardinality: 0-10
+  Specification:
+    ResourceTypes:
+      Pipeline::EMR::ScheduledAction:
+        Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=66730838#aws/emr-cluster-Pipeline::EMR::ScheduledAction"
+        Properties:
+          InstanceGroup:
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=66730838#aws/emr-cluster-Pipeline::EMR::ScheduledAction"
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+          InstanceCount:
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=66730838#aws/emr-cluster-Pipeline::EMR::ScheduledAction"
+            Configurable: true
+            PrimitiveType: Integer
+            Required: true
+          Recurrence:
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=66730838#aws/emr-cluster-Pipeline::EMR::ScheduledAction"
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+            Regex: ^([0-9,\-*\/]+) ([0-9,\-*\/]+) ([0-9,\-*?\/LW]+) ([0-9A-Z,\-*?\/]+) ([1-7A-Z,\-*?\/L]+)$

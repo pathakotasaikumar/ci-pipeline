@@ -1,0 +1,67 @@
+---
+FileSystem:
+  Type: AWS::EFS::FileSystem
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::EFS::FileSystem:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Required: false
+          Type: List
+          ItemType: Common.SecurityItem
+        Properties:
+          PerformanceMode:
+            Configurable: true
+            Type: Enum
+            EnumValues:
+              - generalPurpose
+              - maxIO
+          ThroughputMode:
+            Configurable: true
+          ProvisionedThroughputInMibps:
+            Configurable: 
+              If: [ { ThroughputMode: provisioned } ]
+          AutoBackupPolicy:
+            Configurable: true
+            Required: false
+            Type: Enum
+            EnumValues:
+              - ENABLED
+              - DISABLED
+            PrimitiveType: String
+            
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features
+
+Alarm:
+  Type: AWS::CloudWatch::Alarm
+  Cardinality: 0-10
+  Specification:
+    ResourceTypes:
+      AWS::CloudWatch::Alarm:
+        Properties:
+          ComparisonOperator:
+            Configurable: true
+          EvaluationPeriods:
+            Configurable: true
+          MetricName:
+            Configurable: true
+          Period:
+            Configurable: true
+          Statistic:
+            Configurable: true
+          Threshold:
+            Configurable: true
+          Units:
+            Configurable: true

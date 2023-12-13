@@ -1,0 +1,91 @@
+Input:
+  TestEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Dummy Event Rule
+      Targets:
+      - Arn:
+          Ref: Target
+        Id: dummy-target
+        Input:
+          Fn::Join:
+          - ''
+          - - '1'
+            - '2'
+            - '3'
+        RoleArn:
+          Ref: dummy-arn
+      - Arn: 'arn:aws:111-222'
+
+JsonInput:
+  TestEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Dummy Event Rule
+      Targets:
+      - Arn:
+          Ref: Target
+        Id: dummy-target
+        Input:
+          a: 1
+          b: 2
+        RoleArn:
+          Ref: dummy-arn
+      - Arn: 'arn:aws:111-222'
+
+Invalid:
+  TestEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Dummy Event Rule
+      Targets:
+      - Arn:
+          Ref: Target
+        Id: dummy-target
+        Input:
+          Fn::Join:
+          - ''
+          - - '1'
+            - '2'
+            - '3'
+        RoleArn:
+          Ref: dummy-arn
+      - Arn: 1
+        Id: dummy-target
+
+Output:
+  Resources:
+    TestEventRule:
+      Type: AWS::Events::Rule
+      Properties:
+        Description: Cloudwatch event rule - TestEventRule
+        Targets:
+        - Arn:
+            Ref: Target
+          Id: dummy-target
+          Input:
+            Fn::Join:
+            - ''
+            - - '1'
+              - '2'
+              - '3'
+          RoleArn:
+            Ref: dummy-arn
+        - Arn: 'arn:aws:111-222'
+  Outputs: {}
+
+JsonOutput:
+  Resources:
+    TestEventRule:
+      Type: AWS::Events::Rule
+      Properties:
+        Description: Cloudwatch event rule - TestEventRule
+        Targets:
+        - Arn:
+            Ref: Target
+          Id: dummy-target
+          Input: '{"a":1,"b":2}'
+          RoleArn:
+            Ref: dummy-arn
+        - Arn: 'arn:aws:111-222'
+  Outputs: {}

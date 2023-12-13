@@ -1,0 +1,39 @@
+UnitTest:
+  Input:
+    Configurations:
+      -
+        LoadBalancer:
+          Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+
+  Output:
+    _process_load_balancer:
+      -
+        Resources:
+          LoadBalancer:
+            Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+            Properties:
+              IpAddressType: ipv4
+              Scheme: internal
+              SecurityGroups:
+              - sg-12345678
+              - sg-45678901
+              Subnets:
+              - subnet-12345678
+              Type: application
+        Outputs:
+          LoadBalancerDNSName:
+            Description: ELB endpoint address
+            Value:
+              Fn::GetAtt:
+              - LoadBalancer
+              - DNSName
+          LoadBalancerFullName:
+            Description: LoadBalancer Full Name
+            Value:
+              Fn::GetAtt:
+              - LoadBalancer
+              - LoadBalancerFullName
+          LoadBalancerArn:
+            Description: LoadBalancer Arn
+            Value:
+              Ref: LoadBalancer

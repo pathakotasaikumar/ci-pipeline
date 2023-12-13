@@ -1,0 +1,259 @@
+UnitTest:
+  Input:
+    initialize:
+      correct:
+        Type: aws/lambda
+        Stage: 02-test
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          Function:
+            Type: AWS::Lambda::Function
+            Properties:
+              Handler: index.handler
+              Runtime: python3.9
+              ReservedConcurrentExecutions: 5
+              Timeout: 300
+              Code: package.zip
+              Environment:
+                Variables:
+                  test: test
+          RetainerQueueProcessorDeployed:
+            Type: AWS::Events::Rule
+            Properties:
+              ScheduleExpression: rate(1 minute)
+              Pipeline::EventTarget: "@deployed"
+
+          NotifySNSDeployed:
+            Type: AWS::SNS::Subscription
+            Properties:
+              Pipeline::EventTarget: "@deployed"
+              TopicArn: "@srv-sns.DataLoaderArn"
+
+          DynamoStreamReaderDeployed:
+            Type: AWS::Lambda::EventSourceMapping
+            Properties:
+              BatchSize: 100
+              Enabled: true
+              FunctionName: Function
+              EventSourceArn: "@retainer-db.TableStreamArn"
+              StartingPosition: LATEST
+
+          RetainerQueueProcessorReleased:
+            Type: AWS::Events::Rule
+            Properties:
+              ScheduleExpression: rate(1 minute)
+              Pipeline::EventTarget: "@released"
+
+          NotifySNSReleased:
+            Type: AWS::SNS::Subscription
+            Properties:
+              Pipeline::EventTarget: "@released"
+              TopicArn: "@srv-sns.DataLoaderArn"
+
+          DynamoStreamReaderReleased:
+            Type: AWS::Lambda::EventSourceMapping
+            Properties:
+              Pipeline::EventTarget: "@released"
+              BatchSize: 100
+              Enabled: true
+              FunctionName: Function
+              EventSourceArn: "@retainer-db.TableStreamArn"
+              StartingPosition: LATEST
+
+          SendLogs:
+            Type: AWS::Logs::SubscriptionFilter
+            Properties:
+              DestinationArn: logger-stream-logcollector.master.dev.c036-09.ams01.nonp.aws.qcp
+
+          CloudwatchEvents:
+            Type: AWS::Events::Rule
+            Properties:
+              EventPattern: |
+                {
+                  "source": [
+                    "aws.lambda"
+                  ]
+                }
+          NotifySNSPolicy:
+            Type: AWS::SNS::Subscription
+            Properties:
+              Pipeline::EventTarget: "@released"
+              TopicArn: "@srv-sns.DataLoaderArn"
+              DeliveryPolicy: {}
+              FilterPolicy: {}
+
+      deadletter:
+        Type: aws/lambda
+        Stage: 02-test
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          Function:
+            Type: AWS::Lambda::Function
+            Properties:
+              Handler: index.handler
+              DeadLetterConfig: arn:sqs:dealetter
+              Runtime: python3.9
+              Timeout: 300
+              Code: package.zip
+              Environment:
+                Variables:
+                  test: test
+
+      wrong-type:
+        Type: aws/lambda
+        Stage: 02-test
+        Configuration:
+          Function:
+            Type: AWS::Lambda::Func
+
+      wrong-code:
+        Type: aws/lambda
+        Stage: 02-test
+        Configuration:
+          Function:
+            Type: AWS::Lambda::Function
+            Properties:
+              Code: app.tar.gz
+      multiple:
+        Type: aws/lambda
+        Stage: 02-test
+        Configuration:
+          FunctionA:
+            Type: AWS::Lambda::Function
+            Properties:
+              Code: package.zip
+          FunctionB:
+            Type: AWS::Lambda::Function
+            Properties:
+              Code: package.zip
+
+    _full_template:
+      Valid:
+        Type: aws/lambda
+        Stage: 02-test
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          Function:
+            Type: AWS::Lambda::Function
+            Properties:
+              Handler: index.handler
+              Runtime: python3.9
+              ReservedConcurrentExecutions: 5
+              Timeout: 300
+              Code: package.zip
+              Environment:
+                Variables:
+                  test: test
+          RetainerQueueProcessorDeployed:
+            Type: AWS::Events::Rule
+            Properties:
+              ScheduleExpression: rate(1 minute)
+              Pipeline::EventTarget: "@deployed"
+      CloudwatchEvents:
+        Type: aws/lambda
+        Stage: 02-test
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          Function:
+            Type: AWS::Lambda::Function
+            Properties:
+              Handler: index.handler
+              Runtime: python3.9
+              Timeout: 300
+              Code: package.zip
+              Environment:
+                Variables:
+                  test: test
+          CloudwatchEvents:
+            Type: AWS::Events::Rule
+            Properties:
+              Pipeline::EventTarget: "@deployed"
+              Pipeline::EventInput: ~
+              EventPattern: |
+                {
+                  "source": [
+                    "aws.cloudtrail"
+                  ]
+                }
+  Output:
+    _full_template:
+      Valid:
+        Resources:
+          Function:
+            Type: AWS::Lambda::Function
+            Properties:
+              Handler: index.handler
+              Role: InstanceRoleName-123
+              Runtime: python3.9
+              Code:
+                S3Bucket: qcp-pipeline-lambda-artefacts
+                S3Key: cd/ams01/c031/99/dev/master/5/function/package.zip
+              Timeout: 300
+              Environment:
+                Variables:
+                  test: test
+              KmsKeyArn:
+              VpcConfig:
+                SecurityGroupIds:
+                  - - sg-1234566
+                  - source-asir-sg
+                SubnetIds:
+                  - subnet-123
+                  - subnet-456
+              ReservedConcurrentExecutions: 5
+          FunctionLogGroup:
+            Type: AWS::Logs::LogGroup
+            Properties:
+              LogGroupName:
+                Fn::Join:
+                  - ""
+                  - - "/aws/lambda/"
+                    - Ref: Function
+              RetentionInDays: 30
+        Outputs:
+          FunctionName:
+            Description: Name of the function
+            Value:
+              Ref: Function
+          FunctionArn:
+            Description: Arn of the function
+            Value:
+              Fn::GetAtt:
+                - Function
+                - Arn
+    _version_template:
+      Valid:
+        Resources:
+          RetainerQueueProcessorDeployed:
+            Type: AWS::Events::Rule
+            Properties:
+              Description: Cloudwatch event rule - RetainerQueueProcessorDeployed
+              ScheduleExpression: rate(1 minute)
+              Targets:
+                - Arn:
+                    Ref: Deploy
+                  Id: Function
+                  Input: |-
+                    {}
+        Outputs: {}
+      CloudwatchEvents:
+        Resources:
+          CloudwatchEvents:
+            Type: AWS::Events::Rule
+            Properties:
+              Description: Cloudwatch event rule - CloudwatchEvents
+              EventPattern: |
+                {
+                  "source": [
+                    "aws.cloudtrail"
+                  ]
+                }
+              Targets:
+                - Arn:
+                    Ref: Deploy
+                  Id: Function
+        Outputs: {}

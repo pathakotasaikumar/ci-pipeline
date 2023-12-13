@@ -1,0 +1,10 @@
+---
+Type: aws/sns-factory
+Stage: 01-test
+Persist: true
+Configuration:
+  MySnsFactory:
+    Type: Pipeline::SNS::Factory
+    Security:
+      - Source: test-instance.InstanceRole
+        Allow: write

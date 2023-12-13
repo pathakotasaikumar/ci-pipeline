@@ -1,0 +1,11 @@
+---
+Type: aws/sns-topic
+Stage: "00"
+Persist: true
+
+Configuration:
+  DataLoader:
+    Type: AWS::SNS::Topic
+    Security:
+      - Source: srv-func-test.ExecutionRole
+        Allow: write

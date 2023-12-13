@@ -1,0 +1,117 @@
+UnitTest:
+  Input:
+    _parse_ec2_scheduled_actions:
+      Valid:
+        -
+          InstancePowerup:
+            Type: Pipeline::EC2::ScheduledAction
+            Properties:
+              Recurrence: "0 6 * * ?"
+              Action: start
+
+        -
+          InstancePowerDown:
+            Type: Pipeline::EC2::ScheduledAction
+            Properties:
+              Recurrence: "0 18 * * ?"
+              Action: stop
+
+        -
+          InstancePowerDown:
+            Type: Pipeline::EC2::ScheduledAction
+            Properties:
+              Recurrence: "0 18 * * ?"
+              Action: STOP
+        -
+          InstancePowerDown:
+            Type: Pipeline::EC2::ScheduledAction
+            Properties:
+              Recurrence: "0 18 * * ?"
+              Action: Start
+
+      Invalid:
+        -
+          InstancePowerDown:
+            Type: Pipeline::EC2::ScheduledAction
+            Properties:
+              Recurrence: rate(5)
+              Action: stop
+        -
+          InstancePowerDown:
+            Type: Pipeline::EC2::ScheduledAction
+            Properties:
+              Recurrence: "0 22 ? * ?"
+              Action: stop
+
+        -
+          InstancePowerup:
+            Type: Pipeline::EC2::ScheduledAction
+            Properties:
+              Recurrence: "0 6 * * ?"
+              Action: launch
+
+
+  Output:
+    _parse_ec2_scheduled_actions:
+      Valid:
+        -
+          InstancePowerup:
+            schedule_expression: cron(0 6 * * ? *)
+            inputs:
+              InstanceId:
+                Ref: Instance
+              Action: start
+        -
+          InstancePowerDown:
+            schedule_expression: cron(0 18 * * ? *)
+            inputs:
+              InstanceId:
+                Ref: Instance
+              Action: stop
+        -
+          InstancePowerDown:
+            schedule_expression: cron(0 18 * * ? *)
+            inputs:
+              InstanceId:
+                Ref: Instance
+              Action: stop
+        -
+          InstancePowerDown:
+             schedule_expression: cron(0 18 * * ? *)
+             inputs:
+               InstanceId:
+                 Ref: Instance
+               Action: start
+    _ec2_scheduled_action_security_rules:
+      ValidRules:
+        - !ruby/object:IamSecurityRule
+          roles:
+          - TestComponent.Ec2ScheduledActionExecutionRole
+          resources:
+          - arn:aws:ec2:ap-southeast-2:1234567890:instance/test-instance-id
+          actions:
+          - ec2:StopInstances
+          - ec2:StartInstances
+          condition:
+        - !ruby/object:IamSecurityRule
+          roles:
+          - TestComponent.Ec2ScheduledActionExecutionRole
+          resources:
+          - arn:aws:logs:*:*:*
+          actions:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          condition:
+        - !ruby/object:IamSecurityRule
+          roles:
+          - TestComponent.Ec2ScheduledActionExecutionRole
+          resources:
+          - 'test-kmd-key-arn'
+          actions:
+          - kms:CreateGrant
+          condition:
+
+
+
+
+

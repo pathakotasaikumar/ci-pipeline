@@ -1,0 +1,107 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Cloudformation template to build and test the pipeline container. This is managed via AWS web console as it contains the building blocks for our deployment processes
+Parameters:
+  ProjectId:
+    Description: The name of the build, to be used for naming resources
+    Type: String
+    Default: ams01-c031-01
+  EcrRepoName:
+    Description: The name of the ECR Repo that contains the Pipeline image
+    Type: String
+    Default: pipeline
+  BucketName:
+    Description: Bucket name that contains CodePipeline artifacts
+    Type: String
+    Default: qcp-codepipeline-artefacts
+  SharedResourceEnvironment:
+    Description: Used to differentiate between dev and prod versions of these resources
+    Type: String
+    Default: dev
+Resources:
+  CodePipelineS3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Description: 'A bucket to hold artifects for CodePipeline'
+    Properties:
+      AccessControl: Private
+      BucketName: !Ref BucketName
+      VersioningConfiguration:
+        Status: Enabled
+  CloudFormationRole:
+    Type: AWS::IAM::Role
+    Description: 'Role to be assumed by Cloudformation when deploying stacks'
+    DeletionPolicy: Retain
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'cloudformation.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        -
+          PolicyName: CloudFormationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'iam:*'
+                  - 'codepipeline:*'
+                  - 'codebuild:*'
+                  - 'ec2:*'
+                  - 'ecr:*'
+                  - 's3:*'
+                  - 'sns:*'
+                  - 'events:*'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 's3:GetObject'
+                  - 's3:ListBucket'
+                Resource:
+                  - !Sub "arn:aws:s3:::${CodePipelineS3Bucket}"
+                  - !Sub "arn:aws:s3:::${CodePipelineS3Bucket}/*"
+  PipelineEcrRepo:
+    Description: ECR repository for pipeline containers
+    DeletionPolicy: Retain
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref EcrRepoName
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {
+            "rules": [
+            {
+              "rulePriority": 1,
+              "description": "Remove images older than 90 days",
+              "selection": {
+                "tagStatus" : "any",
+                "countType": "sinceImagePushed",
+                "countUnit": "days",
+                "countNumber": 90
+              },
+              "action": { "type": "expire" }
+            }]
+          }
+Outputs:
+  CodePipelineS3Bucket:
+    Description: A bucket to be used by core services to store artefacts in
+    Value: !Ref CodePipelineS3Bucket
+    Export:
+      Name: !Sub "${ProjectId}-${SharedResourceEnvironment}-csdbucket"
+  CodePipelineS3BucketArn:
+    Description: A bucket to be used by core services to store artefacts in
+    Value: !GetAtt [CodePipelineS3Bucket, Arn]
+    Export:
+      Name: !Sub "${ProjectId}-${SharedResourceEnvironment}-csdbucketarn"
+  CloudFormationRole:
+    Description: A role to be assumed by Cloudformation to allow it to deploy resources
+    Value: !GetAtt [CloudFormationRole, Arn]
+    Export:
+      Name: !Sub "${ProjectId}-${SharedResourceEnvironment}-csdcfnrole"

@@ -1,0 +1,189 @@
+---
+ECSTask:
+  Type: AWS::ECS::TaskDefinition
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::ECS::TaskDefinition:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Type: List
+          ItemType: Common.SecurityItem
+          Required: false
+        Properties:
+          ContainerDefinitions:
+            Configurable: true
+            Required: true
+            Type: List
+            ItemType: ContainerDefinition
+          Cpu:
+            Configurable: true
+            Required: false
+            PrimitiveType: String
+          Memory:
+            Configurable: true
+            Required: false
+            PrimitiveType: String
+    PropertyTypes:
+      AWS::ECS::TaskDefinition.ContainerDefinition:
+        Properties:
+          Image:
+            Configurable: true
+            Required: false
+            PrimitiveType: String
+          Name:
+            Configurable: true
+            Required: true
+            PrimitiveType: String
+
+Service:
+  Type: AWS::ECS::Service
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::ECS::Service:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Type: List
+          ItemType: Common.SecurityItem
+          Required: false
+        Properties:
+          Role:
+            Configurable: false
+            Required: false
+
+EventRule:
+  Type: AWS::Events::Rule
+  Cardinality: 0-20
+  Specification:
+    ResourceTypes:
+      AWS::Events::Rule:
+        Properties:
+          EventPattern:
+            Configurable: true
+            Required: false
+          ScheduleExpression:
+            Configurable: true
+            Required: false
+          Pipeline::EventTarget:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+            EnumValues : [ '@deployed' , '@released']
+          Pipeline::EventInput:
+            Configurable: true
+            PrimitiveType: Map
+            Required: false
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features
+
+ScalableTarget:
+  Type: AWS::ApplicationAutoScaling::ScalableTarget
+  Cardinality: 0-12
+  Specification:
+    ResourceTypes:
+      AWS::ApplicationAutoScaling::ScalableTarget:
+        Properties:
+          MaxCapacity:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: true
+          MinCapacity:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: true
+          ScalableDimension:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+
+ScalingPolicy:
+  Type: AWS::ApplicationAutoScaling::ScalingPolicy
+  Cardinality: 0-12
+  Specification:
+    ResourceTypes:
+      AWS::ApplicationAutoScaling::ScalingPolicy:
+        Properties:
+          TargetTrackingScalingPolicyConfiguration:
+            Configurable: true
+            Required: false
+    PropertyTypes:
+      AWS::ApplicationAutoScaling::ScalingPolicy.TargetTrackingScalingPolicyConfiguration:
+        Properties:
+          TargetValue:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: true
+          ScaleOutCooldown:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: true
+          ScaleInCooldown:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: true
+          PredefinedMetricSpecification:
+            Configurable: true
+            Required: true
+      AWS::ApplicationAutoScaling::ScalingPolicy.PredefinedMetricSpecification:
+        Properties:
+          PredefinedMetricType:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+          ResourceLabel:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+
+Alarm:
+  Type: AWS::CloudWatch::Alarm
+  Cardinality: 0-12
+  Specification:
+    ResourceTypes:
+      AWS::CloudWatch::Alarm:
+        Properties:
+          AlarmActions:
+            Configurable: true
+            AllowSingular: true
+          InsufficientDataActions:
+            Configurable: true
+            AllowSingular: true
+          ComparisonOperator:
+            Configurable: true
+          Dimensions:
+            Configurable: true
+          EvaluationPeriods:
+            Configurable: true
+          MetricName:
+            Configurable: true
+          Namespace:
+            Default: AWS/ECS
+            Configurable: true
+          Period:
+            Configurable: true
+          Statistic:
+            Configurable: true
+          Threshold:
+            Configurable: true
+          Units:
+            Configurable: true
+    PropertyTypes:
+      AWS::CloudWatch::Alarm.Dimension:
+        Properties:
+          Name:
+            Configurable: true
+          Value:
+            Configurable: true

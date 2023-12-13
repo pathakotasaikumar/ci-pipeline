@@ -1,0 +1,855 @@
+---
+UnitTest:
+  ComponentName: Test-Component
+  LoadSnapshotTagsTest:
+    ValidSourceSnapshot:
+      Type: "aws/rds"
+      Stage: "001-datatier"
+      Configuration:
+        Database:
+          Type: "AWS::RDS::DBInstance"
+          Security:
+            # Allow access to database from my-apptier
+            - Source: "my-apptier"
+              Allow: "ALL:*"
+          Properties:
+            DBName: Test-Component
+            DBInstanceClass: "db.t3.medium"
+            AllocatedStorage: 10
+            MultiAZ: false
+            Pipeline::SourceSnapshot:
+              ase: STG
+              branch: master
+    ValidPRODSourceSnapshot:
+      Type: "aws/rds"
+      Stage: "001-datatier"
+      Configuration:
+        Database:
+          Type: "AWS::RDS::DBInstance"
+          Security:
+            # Allow access to database from my-apptier
+            - Source: "my-apptier"
+              Allow: "ALL:*"
+          Properties:
+            DBName: Test-Component
+            DBInstanceClass: "db.t3.medium"
+            AllocatedStorage: 10
+            MultiAZ: false
+            Pipeline::SourceSnapshot:
+              ase: PROD
+              branch: master
+  ComponentDefinition:
+    Valid:
+      SingleDb:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBName: Test-Component
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              DBSnapshotIdentifier: "latest"
+      SingleDbSourceSnapshotAurora:
+        Type: "aws/rds-aurora"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBName: Test-Component
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              DBSnapshotIdentifier: "latest"
+      SingleDbSourceSnapshot:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBName: Test-Component
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              Pipeline::SourceSnapshot:
+                ase: PROD
+                branch: master
+      ClusterSourceSnapshotAurora:
+        Type: "aws/rds-aurora"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              DBName: Test-Component
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              Pipeline::SourceSnapshot:
+                ase: PROD
+                branch: master
+      SingleDbMinimalConfig:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              AllocatedStorage: 20
+              DBInstanceClass: "db.m3.small"
+      takeSnapshotConfig:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBName: Test-Component
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              DBSnapshotIdentifier: "take-snapshot"
+      SingleDbOverloadedConfig:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        DeletionPolicy: whatever
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBInstanceClass: "db.t3.medium"
+              AllowMajorVersionUpgrade: true #This should not be picked up by pipeline
+              AutoMinorVersionUpgrade: false #This should not be picked up by pipeline
+              BackupRetentionPeriod: 100 #This is overloaded value
+              DBSubnetGroupName: somegroup #This should not be picked up by pipeline
+              Engine: DynamoDB #This is overloaded value
+              EngineVersion: '1.5' #This is overloaded value
+              MultiAZ: false #This is overloaded value
+              PreferredBackupWindow: '09:00-10:00' #This should not be picked up by pipeline
+              PreferredMaintenanceWindow: 'Mon:09:00-Mon:10:00' #This should not be picked up by pipeline
+              PubliclyAccessible: true #This is overloaded value
+              StorageType: io1 #This should not be picked up by pipeline
+              Tags: [123,456]  #This should not be picked up by pipeline
+              VPCSecurityGroups: MyGroup-123 #This should not be picked up by pipeline
+              AllocatedStorage: 100 #This is overloaded value
+      DBClusterMinimal:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database1:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBName: DB1
+              DBInstanceClass: "db.t3.medium"
+              OptionGroupName: "test-option-group"
+          Database2:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBInstanceClass: "db.t3.medium"
+              DBSnapshotIdentifier: "old-snap-test"
+          DatabaseCluster1:
+            IngressPoint: true
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              DatabaseName: "TempDb"
+      DBClusterOverloaded:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Features:
+            Type: Pipeline::Features
+            Properties:
+              Features:
+                Datadog: disabled
+          Database1:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBName: DB1
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              OptionGroupName: "test-option-group"
+          DailyBackup:
+            Type: Pipeline::DBInstance::BackupPolicy
+            Properties:
+              Recurrence: 0 12 * * *
+              RetentionPeriod: P7D
+          Database2:
+            Type: "AWS::RDS::DBInstance"
+            Security: []
+            Properties:
+              DBName: Database2
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              DBSnapshotIdentifier: "old-snap-test"
+          DatabaseCluster1:
+            IngressPoint: true
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              BackupRetentionPeriod: 6
+              DatabaseName: "TempDb"
+              Engine: "DynamoDB"
+              AvailabilityZones: 'should-not-be-picked' # should not be picked up by pipeline
+              DBSubnetGroupName: 'should-not-be-picked' # should not be picked up by pipeline
+              PreferredBackupWindow: 'should-not-be-picked' # should not be picked up by pipeline
+              PreferredMaintenanceWindow: 'should-not-be-picked' # should not be picked up by pipeline
+              StorageEncrypted: false # should not be picked up by pipeline
+          WeeklyBackup:
+            Type: Pipeline::DBCluster::BackupPolicy
+            Properties:
+              Recurrence: 0 12 * * SUN
+              RetentionPeriod: P14D
+          OptionGroup:
+            Type: "AWS::RDS::OptionGroup"
+            Properties:
+              OptionConfigurations:
+              - OptionName: DummyOption
+                OptionSettings:
+                - Name: dummy_password
+                  Value: "@app.password"
+    Validate_Rds_definition:
+      SingleDb:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBName: Test-Component
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              DBSnapshotIdentifier: "latest"
+              MasterUserPassword: '@app.testing'
+      PlainText:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBName: Test-Component
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MasterUserPassword: 'plaintext'
+              DBSnapshotIdentifier: "latest"
+      DBClusterMinimal:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database1:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBName: DB1
+              DBInstanceClass: "db.t3.medium"
+              OptionGroupName: "test-option-group"
+          Database2:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBInstanceClass: "db.t3.medium"
+              DBSnapshotIdentifier: "old-snap-test"
+          DatabaseCluster1:
+            IngressPoint: true
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              DatabaseName: "TempDb"
+              MasterUserPassword: '@app.testing'
+    _reset_rds_database_password:
+      SingleDb:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBName: Test-Component
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              DBSnapshotIdentifier: "latest"
+              Pipeline::ResetMasterUserPassword: true
+              MasterUserPassword: '@app.testing'
+      PlainText:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBName: Test-Component
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MasterUserPassword: 'plaintext'
+              Pipeline::ResetMasterUserPassword: true
+              DBSnapshotIdentifier: "latest"
+      DBClusterMinimal:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database1:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBName: DB1
+              DBInstanceClass: "db.t3.medium"
+              OptionGroupName: "test-option-group"
+          Database2:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBInstanceClass: "db.t3.medium"
+              DBSnapshotIdentifier: "old-snap-test"
+          DatabaseCluster1:
+            IngressPoint: true
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              DatabaseName: "TempDb"
+              Pipeline::ResetMasterUserPassword: true
+              MasterUserPassword: '@app.testing'
+    Invalid:
+      ResourceName:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Data$base:
+            Type: "AWS::RDS::DBInstance"
+      MultipleDbCluster:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          DatabaseCluster1:
+            Type: "AWS::RDS::DBCluster"
+          DatabaseCluster2:
+            Type: "AWS::RDS::DBCluster"
+      MultipleOptionGroup:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          DatabaseCluster1:
+            Type: "AWS::RDS::DBCluster"
+          OptionGroup1:
+            Type: "AWS::RDS::OptionGroup"
+          OptionGroup2:
+            Type: "AWS::RDS::OptionGroup"
+      MultipleParamGroup:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          DatabaseCluster1:
+            Type: "AWS::RDS::DBCluster"
+          ParamGroup1:
+            Type: "AWS::RDS::DBParameterGroup"
+          ParamGroup2:
+            Type: "AWS::RDS::DBParameterGroup"
+      MultipleDBSubnet:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          DatabaseCluster1:
+            Type: "AWS::RDS::DBCluster"
+          SubnetGroup1:
+            Type: "AWS::RDS::DBSubnetGroup"
+          SubnetGroup2:
+            Type: "AWS::RDS::DBSubnetGroup"
+      MultipleDBClusterParam:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          DatabaseCluster1:
+            Type: "AWS::RDS::DBCluster"
+          DBClusterParameterGroup1:
+            Type: "AWS::RDS::DBClusterParameterGroup"
+          DBClusterParameterGroup2:
+            Type: "AWS::RDS::DBClusterParameterGroup"
+      UndefinedResourceType:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            TypeZ: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              DBSnapshotIdentifier: "latest"
+      UnsupportedResourceType:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Queue:
+            Type: "AWS::SQS::Queue"
+      MultipleDbNoCluster:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database1:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              DBSnapshotIdentifier: "latest"
+          Database2:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              DBSnapshotIdentifier: "latest"
+      UndefinedIrSource:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - SourceZ: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              DBSnapshotIdentifier: "latest"
+      NonHashSourceSnapshot:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBName: Test-Component
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              Pipeline::SourceSnapshot: nothash
+      InvalidSnapshotArgument:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBName: Test-Component
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              Pipeline::SourceSnapshot:
+                fakearg: fakeval
+  TestResult:
+    SecurityItems:
+      - Type: SecurityGroup
+        Name: SecurityGroup
+        Component: Test-Component
+        DefaultIpIngress: true
+    SecurityRules:
+      - !ruby/object:IpSecurityRule
+        sources:
+        - my-apptier
+        destination: Test-Component.SecurityGroup
+        ports:
+        - !ruby/object:IpPort
+          spec: ALL:*
+          protocol: "-1"
+          from: 0
+          to: 65535
+        name:
+    _process_db_subnet_group:
+      Resources:
+        DBSubnetGroup:
+          Type: AWS::RDS::DBSubnetGroup
+          Properties:
+            DBSubnetGroupDescription: Subnets available for the RDS DB Instance
+            SubnetIds: [ "subnet-123", "subnet-456" ]
+      Outputs:
+        SubnetGroupArn:
+          Description: RDS subnet group ARN
+          Value:
+            Ref: DBSubnetGroup
+    _process_db_cluster:
+      Minimal:
+        Resources:
+          DatabaseCluster1:
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              AvailabilityZones: []
+              BackupRetentionPeriod: 7
+              DatabaseName: "TempDb"
+              DBSubnetGroupName:
+                Ref: "DBSubnetGroup"
+              Engine: "MySQL"
+              StorageEncrypted: true
+              Tags: []
+              VpcSecurityGroupIds:
+                - "sg-4eb21f2a"
+                - "sg-4eb21f2b"
+        Outputs:
+          DatabaseCluster1Endpoint:
+            Description: "RDS cluster DatabaseCluster1 endpoint"
+            Value:
+              Fn::GetAtt:
+                - "DatabaseCluster1"
+                - "Endpoint.Address"
+          DatabaseCluster1Port:
+            Description: "RDS cluster DatabaseCluster1 port"
+            Value:
+              Fn::GetAtt:
+                - "DatabaseCluster1"
+                - "Endpoint.Port"
+          DatabaseCluster1Arn:
+            Description: "RDS cluster DatabaseCluster1 ARN"
+            Value:
+              Fn::Join:
+                - ":"
+                -
+                  - "arn:aws:rds"
+                  -
+                    Ref: "AWS::Region"
+                  -
+                    Ref: "AWS::AccountId"
+                  - "cluster"
+                  -
+                    Ref: "DatabaseCluster1"
+      Overloaded:
+        Resources:
+          DatabaseCluster1:
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              AvailabilityZones: []
+              BackupRetentionPeriod: 6
+              DatabaseName: "TempDb"
+              DBSubnetGroupName:
+                Ref: "DBSubnetGroup"
+              Engine: "DynamoDB"
+              StorageEncrypted: true
+              Tags: []
+              VpcSecurityGroupIds:
+                - "sg-4eb21f2a"
+                - "sg-4eb21f2b"
+        Outputs:
+          DatabaseCluster1Endpoint:
+            Description: "RDS cluster DatabaseCluster1 endpoint"
+            Value:
+              Fn::GetAtt:
+                - "DatabaseCluster1"
+                - "Endpoint.Address"
+          DatabaseCluster1Port:
+            Description: "RDS cluster DatabaseCluster1 port"
+            Value:
+              Fn::GetAtt:
+                - "DatabaseCluster1"
+                - "Endpoint.Port"
+          DatabaseCluster1Arn:
+            Description: "RDS cluster DatabaseCluster1 ARN"
+            Value:
+              Fn::Join:
+                - ":"
+                -
+                  - "arn:aws:rds"
+                  -
+                    Ref: "AWS::Region"
+                  -
+                    Ref: "AWS::AccountId"
+                  - "cluster"
+                  -
+                    Ref: "DatabaseCluster1"
+    _process_db_instances:
+      SingleDb-ExistingSnapShot:
+        Resources:
+          Database:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              AllowMajorVersionUpgrade: false
+              AutoMinorVersionUpgrade: true
+              BackupRetentionPeriod: 30
+              DBInstanceClass: db.t3.medium
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              Engine: MySQL
+              EngineVersion: '5.5'
+              MultiAZ: false
+              PubliclyAccessible: false
+              StorageEncrypted: true
+              StorageType: gp2
+              Tags: []
+              VPCSecurityGroups:
+              - sg123
+              AllocatedStorage: 10
+              DBSnapshotIdentifier: snapshot-1234
+        Outputs:
+          DatabaseEndpoint:
+            Description: RDS instance Database endpoint
+            Value:
+              Fn::GetAtt:
+              - Database
+              - Endpoint.Address
+          DatabaseEndpointPort:
+            Description: RDS instance Database port
+            Value:
+              Fn::GetAtt:
+              - Database
+              - Endpoint.Port
+          DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+      ClusterDb-OptionGroup:
+        Resources:
+          Database1:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              AllowMajorVersionUpgrade: false
+              AutoMinorVersionUpgrade: true
+              BackupRetentionPeriod: 7
+              DBInstanceClass: db.t3.medium
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              Engine: MySQL
+              EngineVersion: '5.5'
+              MultiAZ: true
+              PubliclyAccessible: false
+              StorageEncrypted: true
+              StorageType: gp2
+              Tags: []
+              VPCSecurityGroups:
+              - sg123
+              DBClusterIdentifier:
+                Ref: "DatabaseCluster1"
+              OptionGroupName: test-option-group
+              #DBName: DB1
+              MasterUsername: root
+              MasterUserPassword: "#DRsRX|eDnzb^4Hs"
+          Database2:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              AllowMajorVersionUpgrade: false
+              AutoMinorVersionUpgrade: true
+              BackupRetentionPeriod: 7
+              DBInstanceClass: db.t3.medium
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              Engine: MySQL
+              EngineVersion: '5.5'
+              MultiAZ: true
+              PubliclyAccessible: false
+              StorageEncrypted: true
+              StorageType: gp2
+              Tags: []
+              VPCSecurityGroups:
+                - sg123
+              DBClusterIdentifier:
+                Ref: "DatabaseCluster1"
+              DBSnapshotIdentifier: old-snap-test
+        Outputs:
+          Database1Endpoint:
+            Description: RDS instance Database1 endpoint
+            Value:
+              Fn::GetAtt:
+              - Database1
+              - Endpoint.Address
+          Database1Port:
+            Description: RDS instance Database1 port
+            Value:
+              Fn::GetAtt:
+              - Database1
+              - Endpoint.Port
+          Database1Arn:
+            Description: RDS instance Database1 ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database1
+          Database2Endpoint:
+            Description: RDS instance Database2 endpoint
+            Value:
+              Fn::GetAtt:
+              - Database2
+              - Endpoint.Address
+          Database2Port:
+            Description: RDS instance Database2 port
+            Value:
+              Fn::GetAtt:
+              - Database2
+              - Endpoint.Port
+          Database2Arn:
+            Description: RDS instance Database2 ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database2
+      SingleDbMinimalConfig:
+        Resources:
+          Database:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              AllowMajorVersionUpgrade: false
+              AutoMinorVersionUpgrade: true
+              BackupRetentionPeriod: 30
+              DBInstanceClass: db.m3.small
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              Engine: MySQL
+              EngineVersion: '5.5'
+              MultiAZ: true
+              PubliclyAccessible: false
+              StorageEncrypted: true
+              StorageType: gp2
+              Tags: []
+              VPCSecurityGroups:
+              - sg123
+              AllocatedStorage: 20
+              DBSnapshotIdentifier: snapshot-1234
+        Outputs:
+          DatabaseEndpoint:
+            Description: RDS instance Database endpoint
+            Value:
+              Fn::GetAtt:
+              - Database
+              - Endpoint.Address
+          DatabaseEndpointPort:
+            Description: RDS instance Database port
+            Value:
+              Fn::GetAtt:
+              - Database
+              - Endpoint.Port
+          DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+      SingleDbOverloadedConfig:
+        Resources:
+          Database:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              AllowMajorVersionUpgrade: false
+              AutoMinorVersionUpgrade: true
+              BackupRetentionPeriod: 100
+              DBInstanceClass: db.t3.medium
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              Engine: DynamoDB
+              EngineVersion: '1.5'
+              MultiAZ: false
+              PubliclyAccessible: true
+              StorageEncrypted: true
+              StorageType: gp2
+              Tags: []
+              VPCSecurityGroups:
+              - sg123
+              AllocatedStorage: 100
+              DBSnapshotIdentifier: snapshot-1234
+        Outputs:
+          DatabaseEndpoint:
+            Description: RDS instance Database endpoint
+            Value:
+              Fn::GetAtt:
+              - Database
+              - Endpoint.Address
+          DatabaseEndpointPort:
+            Description: RDS instance Database port
+            Value:
+              Fn::GetAtt:
+              - Database
+              - Endpoint.Port
+          DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+IntegrationTest:
+  ComponentName: Test-Component
+  ComponentDefinition:
+    Valid:
+      MyRds:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          MyDatabase:
+            IngressPoint: true
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              DBName: "TestDb"
+              DBSnapshotIdentifier: "latest"
+

@@ -1,0 +1,16 @@
+{
+  "DEV-BAMBOO-CI" :{
+  "Host": "10.209.251.51",
+    "Port": "8443",
+    "Protocol": "https",
+    "User": "bamboo",
+    "Pass": "xxxxxx"
+  },
+  "DEV-BAMBOO-CD" :{
+  "Host": "10.209.254.43",
+    "Port": "8443",
+    "Protocol": "https",
+    "User": "bamboo",
+    "Pass": "xxxxxx"
+  }
+}

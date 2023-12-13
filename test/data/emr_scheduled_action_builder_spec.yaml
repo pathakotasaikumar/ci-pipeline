@@ -1,0 +1,46 @@
+UnitTest:
+  Input:
+    _parse_emr_scheduled_action:
+      -
+        TasksScheduleUp:
+          Type: "Pipeline::EMR::ScheduledAction"
+          Properties:
+            InstanceGroup: "TaskGroup1"
+            InstanceCount: 4
+            Recurrence: "30 8 ? * *"
+      -
+        TasksScheduleDown:
+          Type: "Pipeline::EMR::ScheduledAction"
+          Properties:
+            InstanceGroup: "MyTaskGroup1"
+            InstanceCount: 0
+            Recurrence: "0 22 ? * *"
+      -
+        CoreScheduleUp:
+          Type: "Pipeline::EMR::ScheduledAction"
+          Properties:
+            InstanceGroup: "CoreInstanceGroup"
+            InstanceCount: 4
+            Recurrence: "30 8 ? * *"
+      -
+        CoreScheduleDown:
+          Type: "Pipeline::EMR::ScheduledAction"
+          Properties:
+            InstanceGroup: "CoreInstanceGroup"
+            InstanceCount: 1
+            Recurrence: "0 22 ? * *"
+    Invalid:
+      -
+        ScheduleUp:
+          Type: "Pipeline::EMR::ScheduledAction"
+          Properties:
+            InstanceGroup: "MasterInstanceGroup"
+            InstanceCount: 4
+            Recurrence: "30 8 ? * *"
+      -
+        ScheduleDown:
+          Type: "Pipeline::EMR::ScheduledAction"
+          Properties:
+            InstanceGroup: "CoreInstanceGroup"
+            InstanceCount: 0
+            Recurrence: "0 22 ? * *"

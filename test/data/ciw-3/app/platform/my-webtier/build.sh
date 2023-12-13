@@ -1,0 +1,8 @@
+#!/bin/bash
+COMPONENT_DIR="$1"
+PAYLOAD_DIR="$2"
+
+APP_DIR="`pwd`/app"
+PAYLOAD_APP_DIR="${PAYLOAD_DIR}/app"
+
+DUMMY_COMMAND

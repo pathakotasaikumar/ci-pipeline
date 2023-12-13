@@ -1,0 +1,51 @@
+---
+Type: aws/ecs-task
+Stage: 01-test
+Persist: false
+IngressPoint: true
+Configuration:
+  WebServerDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Security:
+    - Source: alb-ecs.SecurityGroup
+      Allow: TCP:80
+    Properties:
+      Cpu: 512
+      Memory: 1024
+      ContainerDefinitions:
+      - PortMappings:
+        - ContainerPort: 80
+        Name: WebServer
+        Image: '@latest'
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      DesiredCount: 1
+      LoadBalancers:
+      - TargetGroupArn: "@alb-ecs.HTTPTargetGroupArn"
+        ContainerPort: 80
+  ScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 1
+      MinCapacity: 1
+      ScalableDimension: ecs:service:DesiredCount
+  
+Actions:
+  PreRelease:
+  - Action: WaitForHTTPResponse
+    Stage: "01"
+    Parameters:
+      Type: get
+      URL: http://@alb-ecs.DeployDnsName/
+      SSL: false
+      Debug: true
+      ValidResponseCodes:
+      - 200
+      StopOnError: true
+  - Action: SetScalableTarget
+    Stage: "02"
+    Parameters:
+      MinCapacity: 0
+      MaxCapacity: 0
+      Target: "@deployed"

@@ -1,0 +1,259 @@
+---
+UnitTest:
+  ComponentName: Test-Component
+  ComponentDefinition:
+    Valid:
+      AuroraMinimal:
+        Type: "aws/rds-aurora"
+        Stage: "01-test"
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          MyDBCluster:
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              MasterUsername: "root"
+              MasterUserPassword: "m7SbY5&3{T^&o}lH"
+            InboundRules:
+              - Source: "Webservers.SecurityGroup"
+                Allow: "ALL:*"
+          MyDBInstance1:
+            Type: "AWS::RDS::DBInstance"
+          MyDBInstance2:
+            Type: "AWS::RDS::DBInstance"
+          MyDBInstance3:
+            Type: "AWS::RDS::DBInstance"
+
+      AuroraSnap:
+        Configuration:
+          MyDBCluster:
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              DBSnapshotIdentifier: "dummy-snap"
+          MyDBInstance1:
+            Type: "AWS::RDS::DBInstance"
+
+      AuroraServerless:
+        Type: "aws/rds-aurora"
+        Stage: "01-test"
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          MyDBCluster:
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              MasterUsername: "root"
+              MasterUserPassword: "m7SbY5&3{T^&o}lH"
+              EngineMode: serverless
+            InboundRules:
+              - Source: "Webservers.SecurityGroup"
+                Allow: "ALL:*"
+    Invalid:
+  TestResult:
+    _process_db_cluster:
+      AuroraMinimal:
+        Parameters:
+          AuroraMinimalMasterUsername:
+            NoEcho: true
+            Description: 'The database admin account username'
+            Type: 'String'
+          AuroraMinimalMasterUserPassword:
+            NoEcho: true
+            Description: 'The database admin account password'
+            Type: 'String'
+        Resources:
+          AuroraMinimal:
+            DeletionPolicy: Delete # Test changed to nonprod so deletion is delete
+            Type: AWS::RDS::DBCluster
+            Properties:
+              DBClusterIdentifier: ams01-c031-99-prod-master-5-auroraminimal-auroraminimal
+              Engine: aurora
+              BackupRetentionPeriod: 30
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              DBClusterParameterGroupName:
+                Ref: DummyClusterParameterGroup
+              VpcSecurityGroupIds:
+              - sg123
+              BackupRetentionPeriod: 30
+              MasterUsername:
+                Ref: AuroraMinimalMasterUsername
+              MasterUserPassword:
+                Ref: AuroraMinimalMasterUserPassword
+              Port: '3306'
+              StorageEncrypted: true
+              KmsKeyId: kms-dummy
+        Outputs:
+          AuroraMinimalEndpointAddress:
+            Description: RDS cluster AuroraMinimal endpoint
+            Value:
+              Fn::GetAtt:
+              - AuroraMinimal
+              - Endpoint.Address
+          AuroraMinimalEndpointPort:
+            Description: RDS cluster AuroraMinimal port
+            Value:
+              Fn::GetAtt:
+              - AuroraMinimal
+              - Endpoint.Port
+          AuroraMinimalArn:
+            Description: RDS Cluster AuroraMinimal ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - cluster
+                - Ref: AuroraMinimal
+          AuroraMinimalReaderEndpointAddress:
+            Description: RDS cluster AuroraMinimal endpoint
+            Value:
+              Fn::Join:
+              - "."
+              - - Fn::Select:
+                  - 0
+                  - Fn::Split:
+                    - "."
+                    - Fn::GetAtt:
+                      - AuroraMinimal
+                      - Endpoint.Address
+                - Fn::Join:
+                  - "-"
+                  - - cluster-ro
+                    - Fn::Select:
+                      - 1
+                      - Fn::Split:
+                        - "-"
+                        - Fn::Select:
+                          - 1
+                          - Fn::Split:
+                            - "."
+                            - Fn::GetAtt:
+                              - AuroraMinimal
+                              - Endpoint.Address
+                - Ref: AWS::Region
+                - rds.amazonaws.com
+      AuroraSnap:
+        Resources:
+          AuroraSnap:
+            Type: AWS::RDS::DBCluster
+            Properties:
+              DBClusterIdentifier: ams01-c031-99-dev-master-5-aurorasnap-aurorasnap
+              Engine: aurora
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              VpcSecurityGroupIds:
+              - sg123
+              StorageEncrypted: true
+              BackupRetentionPeriod: 30
+              SnapshotIdentifier: dummy-snapshot
+              KmsKeyId: kms-dummy
+            DeletionPolicy: Snapshot
+        Outputs:
+          AuroraSnapEndpointAddress:
+            Description: RDS cluster AuroraSnap endpoint
+            Value:
+              Fn::GetAtt:
+              - AuroraSnap
+              - Endpoint.Address
+          AuroraSnapEndpointPort:
+            Description: RDS cluster AuroraSnap port
+            Value:
+              Fn::GetAtt:
+              - AuroraSnap
+              - Endpoint.Port
+          AuroraSnapArn:
+            Description: RDS Cluster AuroraSnap ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - cluster
+                - Ref: AuroraSnap
+          AuroraSnapReaderEndpointAddress:
+            Description: RDS cluster AuroraSnap endpoint
+            Value:
+              Fn::Join:
+              - "."
+              - - Fn::Select:
+                  - 0
+                  - Fn::Split:
+                    - "."
+                    - Fn::GetAtt:
+                      - AuroraSnap
+                      - Endpoint.Address
+                - Fn::Join:
+                  - "-"
+                  - - cluster-ro
+                    - Fn::Select:
+                      - 1
+                      - Fn::Split:
+                        - "-"
+                        - Fn::Select:
+                          - 1
+                          - Fn::Split:
+                            - "."
+                            - Fn::GetAtt:
+                              - AuroraSnap
+                              - Endpoint.Address
+                - Ref: AWS::Region
+                - rds.amazonaws.com
+      AuroraServerless:
+        Parameters:
+          AuroraServerlessMasterUsername:
+            NoEcho: true
+            Description: 'The database admin account username'
+            Type: 'String'
+          AuroraServerlessMasterUserPassword:
+            NoEcho: true
+            Description: 'The database admin account password'
+            Type: 'String'
+        Resources:
+          AuroraServerless:
+            Type: AWS::RDS::DBCluster
+            Properties:
+              DBClusterIdentifier: ams01-c031-99-dev-master-5-auroraserverless-auroraserverless
+              Engine: aurora
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              DBClusterParameterGroupName:
+                Ref: DummyClusterParameterGroup
+              VpcSecurityGroupIds:
+              - sg123
+              Port: '3306'
+              BackupRetentionPeriod: 30
+              StorageEncrypted: true
+              EngineMode: serverless
+              EngineVersion: 5.6.10a
+              MasterUsername:
+                Ref: AuroraServerlessMasterUsername
+              MasterUserPassword:
+                Ref: AuroraServerlessMasterUserPassword
+              KmsKeyId: kms-dummy
+            DeletionPolicy: Snapshot
+        Outputs:
+          AuroraServerlessEndpointAddress:
+            Description: RDS cluster AuroraServerless endpoint
+            Value:
+              Fn::GetAtt:
+              - AuroraServerless
+              - Endpoint.Address
+          AuroraServerlessEndpointPort:
+            Description: RDS cluster AuroraServerless port
+            Value:
+              Fn::GetAtt:
+              - AuroraServerless
+              - Endpoint.Port
+          AuroraServerlessArn:
+            Description: RDS Cluster AuroraServerless ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - cluster
+                - Ref: AuroraServerless

@@ -1,0 +1,56 @@
+_process_emr_steps:
+  step_definitions:
+    App1:
+      Type: "AWS::EMR::Step"
+      Properties:
+        ActionOnFailure: CONTINUE
+        HadoopJarStep:
+          Args: [ "all_the_data", "arg2" ]
+          Jar: "/home/hadoop/payload/App1.jar"
+    App2:
+      Type: "AWS::EMR::Step"
+      Properties:
+        ActionOnFailure: CONTINUE
+        HadoopJarStep:
+          Args: [ "other_app", "@@blah!", "@comp.var1" ]
+          Jar: "/home/hadoop/payload/other/App2.jar"
+  component_name: "cluster"
+  cluster_name: "MyCluster"
+
+  OutputTemplate:
+    Resources:
+      App1:
+        Type: AWS::EMR::Step
+        Properties:
+          ActionOnFailure: CONTINUE
+          HadoopJarStep:
+            Args:
+            - all_the_data
+            - arg2
+            Jar: /home/hadoop/payload/App1.jar
+          JobFlowId:
+            Ref: MyCluster
+          Name: ams01-c031-99-dev-master-5-App1
+      App2:
+        Type: AWS::EMR::Step
+        DependsOn: App1
+        Properties:
+          ActionOnFailure: CONTINUE
+          HadoopJarStep:
+            Args:
+            - other_app
+            - "@blah!"
+            - compvar1value
+            Jar: /home/hadoop/payload/other/App2.jar
+          JobFlowId:
+            Ref: MyCluster
+          Name: ams01-c031-99-dev-master-5-App2
+    Outputs:
+      App1Id:
+        Description: EMR step id
+        Value:
+          Ref: App1
+      App2Id:
+        Description: EMR step id
+        Value:
+          Ref: App2

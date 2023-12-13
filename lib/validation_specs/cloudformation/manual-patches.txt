@@ -1,0 +1,7 @@
+1.
+Property "AsTags" in AWS::AutoScaling::AutoScalingGroup should be "Tags"
+  "AWS::AutoScaling::AutoScalingGroup": {
+    "Properties": {
+      "AsTags": {
+
+

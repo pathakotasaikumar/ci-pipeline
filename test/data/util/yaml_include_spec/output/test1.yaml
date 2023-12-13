@@ -1,0 +1,109 @@
+---
+Type: aws/instance
+Stage: 01-test
+IngressPoint: true
+Persist: false
+Configuration:
+  Instance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          commands:
+            bootstrap:
+              command: bash bootstrap.sh
+              cwd: "/root/payload"
+    Properties:
+      AvailabilityZone: "@a"
+      ImageId: amazon-latest
+      InstanceType: c3.large
+Actions:
+  PreRelease:
+  - Action: HTTPRequest
+    Stage: 00-test-endpoint
+    Parameters:
+      Type: get
+      URL: http://@api.DeployDnsName/qcp-pipeline-dev/build
+      SSL: false
+      ValidResponseCodes:
+      - 200
+      StopOnError: true
+  - Action: RegisterApi
+    Stage: 01-register-api
+    Parameters:
+      Basepath: qcp-pipeline-dev
+      Payload:
+        swagger:
+          swagger: '2.0'
+          info:
+            version: v1
+            title: Countries API
+            description: Demonstrates api registration
+          host: "@api.DeployDnsName"
+          basePath: "/qcp-pipeline-dev"
+          schemes:
+          - http
+          paths:
+            "/build":
+              get:
+                description: Get the build number of registered endpoint
+                operationId: get_build
+                produces:
+                - application/json
+                responses:
+                  '200':
+                    description: response
+                    schema:
+                      "$ref": "#/definitions/ResponseModel"
+                  default:
+                    description: unexpected error
+                    schema:
+                      "$ref": "#/definitions/ErrorModel"
+            "/environment":
+              get:
+                description: Get environment variables
+                operationId: get_environment
+                produces:
+                - application/json
+                responses:
+                  '200':
+                    description: response
+                    schema:
+                      "$ref": "#/definitions/ResponseModel"
+                  default:
+                    description: unexpected error
+                    schema:
+                      "$ref": "#/definitions/ErrorModel"
+          definitions:
+            ResponseModel:
+              type: object
+              required:
+              - method
+              - path
+              - args
+              - headers
+              properties:
+                method:
+                  type: string
+                path:
+                  type: string
+                args:
+                  type: string
+                headers:
+                  type: object
+            ErrorModel:
+              type: object
+              required:
+              - code
+              - message
+              properties:
+                code:
+                  type: integer
+                  format: int32
+                message:
+                  type: string
+        apiConf:
+          name: qcp-pipeline-dev
+          domain: "/customer"
+          includeVersion: false
+        apiConfText: "11-22"

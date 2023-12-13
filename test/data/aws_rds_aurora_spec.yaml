@@ -1,0 +1,307 @@
+---
+UnitTest:
+  ComponentName: Test-Component
+  ComponentDefinition:
+    Valid:
+      AuroraMinimal:
+        Type: "aws/rds-aurora"
+        Stage: "01-test"
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          MyDBCluster:
+            Type: "AWS::RDS::DBCluster"
+            InboundRules:
+              - Source: "Webservers.SecurityGroup"
+                Allow: "ALL:*"
+          MyDBInstance1:
+            Type: "AWS::RDS::DBInstance"
+          MyDBInstance2:
+            Type: "AWS::RDS::DBInstance"
+          MyDBInstance3:
+            Type: "AWS::RDS::DBInstance"
+      AuroraFullBuild:
+        Type: "aws/rds-aurora"
+        Stage: "01-test"
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          MyDBCluster:
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              EnableCloudwatchLogExports:
+                - audit
+          SubscriptionFilter:
+            Type: AWS::Logs::SubscriptionFilter
+            Properties:
+              DestinationArn: "@lambda.DeployArn"
+    Invalid:
+      AuroraProdT2:
+        Type: "aws/rds-aurora"
+        Stage: "01-test"
+        Configuration:
+          MyDBCluster:
+            Type: "AWS::RDS::DBCluster"
+          MyDBInstance1:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              # I think this test case is wrong, should be for db.t2.medium
+              DBInstanceClass: t2.medium 
+  TestResult:
+    _process_db_cluster:
+      Minimal:
+        Resources:
+          DatabaseCluster1:
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              AvailabilityZones: []
+              BackupRetentionPeriod: 7
+              DatabaseName: "TempDb"
+              DBSubnetGroupName:
+                Ref: "DBSubnetGroup"
+              Engine: "MySQL"
+              PubliclyAccessible: true
+              PreferredBackupWindow: "15:00-17:00"
+              PreferredMaintenanceWindow: "Mon:17:00-Mon:20:00"
+              StorageEncrypted: false
+              Tags: []
+              VpcSecurityGroupIds:
+                - "sg-4eb21f2a"
+                - "sg-4eb21f2b"
+        Outputs:
+          DatabaseCluster1EndpointAddress:
+            Description: "RDS cluster DatabaseCluster1 endpoint"
+            Value:
+              Fn::GetAtt:
+                - "DatabaseCluster1"
+                - "Endpoint.Address"
+          DatabaseCluster1EndpointPort:
+            Description: "RDS cluster DatabaseCluster1 port"
+            Value:
+              Fn::GetAtt:
+                - "DatabaseCluster1"
+                - "Endpoint.Port"
+          DatabaseCluster1Arn:
+            Description: "RDS cluster DatabaseCluster1 ARN"
+            Value:
+              Fn::Join:
+                - ":"
+                -
+                  - "arn:aws:rds"
+                  -
+                    Ref: "AWS::Region"
+                  -
+                    Ref: "AWS::AccountId"
+                  - "cluster"
+                  -
+                    Ref: "DatabaseCluster1"
+      Overloaded:
+        Resources:
+          DatabaseCluster1:
+            Type: "AWS::RDS::DBCluster"
+            Properties:
+              AvailabilityZones: []
+              BackupRetentionPeriod: 6
+              DatabaseName: "TempDb"
+              DBSubnetGroupName:
+                Ref: "DBSubnetGroup"
+              Engine: "DynamoDB"
+              PreferredBackupWindow: "15:00-17:00"
+              PreferredMaintenanceWindow: "Mon:17:00-Mon:20:00"
+              StorageEncrypted: true
+              Tags: []
+              VpcSecurityGroupIds:
+                - "sg-4eb21f2a"
+                - "sg-4eb21f2b"
+              EnableCloudwatchLogExports:
+                - audit
+        Outputs:
+          DatabaseCluster1EndpointAddress:
+            Description: "RDS cluster DatabaseCluster1 endpoint"
+            Value:
+              Fn::GetAtt:
+                - "DatabaseCluster1"
+                - "Endpoint.Address"
+          DatabaseCluster1EndpointPort:
+            Description: "RDS cluster DatabaseCluster1 port"
+            Value:
+              Fn::GetAtt:
+                - "DatabaseCluster1"
+                - "Endpoint.Port"
+          DatabaseCluster1Arn:
+            Description: "RDS cluster DatabaseCluster1 ARN"
+            Value:
+              Fn::Join:
+                - ":"
+                -
+                  - "arn:aws:rds"
+                  -
+                    Ref: "AWS::Region"
+                  -
+                    Ref: "AWS::AccountId"
+                  - "cluster"
+                  -
+                    Ref: "DatabaseCluster1"
+    _process_db_instances:
+      MySQLSingleDb:
+        Resources:
+          Database:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              Engine: MySQL
+              PreferredBackupWindow: 15:00-17:00
+              PreferredMaintenanceWindow: Mon:17:00-Mon:20:00
+              PubliclyAccessible: false
+              VPCSecurityGroups:
+              - sg123
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              AllocatedStorage: '50'
+              StorageType: gp2
+              DBInstanceClass: db.t3.medium
+              Port: '3306'
+              DBName: mydb
+              MasterUsername: root
+              MasterUserPassword: Pa$$w0rd99
+              StorageEncrypted: true
+              MultiAZ: false
+              AllowMajorVersionUpgrade: false
+              AutoMinorVersionUpgrade: true
+              BackupRetentionPeriod: '30'
+        Outputs:
+          DatabaseEndpointAddress:
+            Description: RDS instance Database endpoint
+            Value:
+              Fn::GetAtt:
+              - Database
+              - Endpoint.Address
+          DatabaseEndpointPort:
+            Description: RDS instance Database port
+            Value:
+              Fn::GetAtt:
+              - Database
+              - Endpoint.Port
+          DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+      MySQLSingleReplica:
+        Resources:
+          MySqlPrimary:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              Engine: MySQL
+              PreferredBackupWindow: 15:00-17:00
+              PreferredMaintenanceWindow: Mon:17:00-Mon:20:00
+              PubliclyAccessible: false
+              VPCSecurityGroups:
+              - sg123
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              AllocatedStorage: '50'
+              StorageType: gp2
+              DBInstanceClass: db.t3.medium
+              Port: '3306'
+              DBName: mydb
+              MasterUsername: root
+              MasterUserPassword: Pa$$w0rd99
+              StorageEncrypted: true
+              MultiAZ: false
+              AllowMajorVersionUpgrade: false
+              AutoMinorVersionUpgrade: true
+              BackupRetentionPeriod: '30'
+          MySqlReplica1:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              Engine: MySQL
+              PreferredBackupWindow: 15:00-17:00
+              PreferredMaintenanceWindow: Mon:17:00-Mon:20:00
+              PubliclyAccessible: false
+              VPCSecurityGroups:
+              - sg123
+              SourceDBInstanceIdentifier:
+                Ref: MySQLPrimary
+              StorageType: gp2
+        Outputs:
+          MySqlPrimaryEndpointAddress:
+            Description: RDS instance MySqlPrimary endpoint
+            Value:
+              Fn::GetAtt:
+              - MySqlPrimary
+              - Endpoint.Address
+          MySqlPrimaryEndpointPort:
+            Description: RDS instance MySqlPrimary port
+            Value:
+              Fn::GetAtt:
+              - MySqlPrimary
+              - Endpoint.Port
+          MySqlPrimaryArn:
+            Description: RDS instance MySqlPrimary ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: MySqlPrimary
+          MySqlReplica1EndpointAddress:
+            Description: RDS instance MySqlReplica1 endpoint
+            Value:
+              Fn::GetAtt:
+              - MySqlReplica1
+              - Endpoint.Address
+          MySqlReplica1EndpointPort:
+            Description: RDS instance MySqlReplica1 port
+            Value:
+              Fn::GetAtt:
+              - MySqlReplica1
+              - Endpoint.Port
+          MySqlReplica1Arn:
+            Description: RDS instance MySqlReplica1 ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: MySqlReplica1
+    AuroraFullBuild:
+      SecurityItems:
+        - Type: SecurityGroup
+          Name: SecurityGroup
+          Component: Test-Component
+          DefaultIpIngress: true
+      SecurityRules: []
+
+IntegrationTest:
+  ComponentName: Test-Component
+  ComponentDefinition:
+    Valid:
+      MyRds:
+        Type: "aws/rds"
+        Stage: "001-datatier"
+        Configuration:
+          MyDatabase:
+            IngressPoint: true
+            Type: "AWS::RDS::DBInstance"
+            InboundRules:
+              # Allow access to database from my-apptier
+              - Source: "my-apptier"
+                Allow: "ALL:*"
+            Properties:
+              DBInstanceClass: "db.t3.medium"
+              AllocatedStorage: 10
+              MultiAZ: false
+              DBName: "TestDb"
+              DBSnapshotIdentifier: "latest"

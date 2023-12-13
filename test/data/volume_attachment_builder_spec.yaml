@@ -1,0 +1,71 @@
+Input:
+  Valid1:
+    VolumeAttachment:
+      Type: "Pipeline::Autoheal::VolumeAttachment"
+      Properties:
+        VolumeId: "@volume1.MyVolumeId"
+        Device: "/dev/xvdm"
+  Valid2:
+    VolumeAttachment:
+      Type: "Pipeline::Autoheal::VolumeAttachment"
+      Properties:
+        VolumeId: "@volume2.MyVolumeId"
+        Device: /dev/xvdn
+  Invalid1:
+    VolumeAttachment:
+      Type: "Pipeline::Autoheal::VolumeAttachment"
+      Properties:
+        VolumeId: "@volume3.MyVolumeId"
+        Device: /dev/xvdn
+  Invalid2:
+    VolumeAttachment:
+      Type: "Pipeline::Autoheal::VolumeAttachment"
+      Properties:
+        VolumeId: "@volume2.MyVolumeId"
+        Device: xvdn
+  Invalid3:
+    VolumeAttachment:
+      Type: "Pipeline::Autoheal::VolumeAttachment"
+      Propertes:
+        VolumeId: "@volume2.MyVolumeId"
+        Device: ""
+
+Output:
+  _parse_volume_attachments:
+    Valid1:
+      -
+        VolumeId: vol-123456780
+        Device: /dev/xvdm
+    Valid2:
+      -
+        VolumeId: vol-098765432
+        Device: /dev/xvdn
+
+  _volume_attachment_security_rules:
+    Valid1:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - autoheal.TestRol1
+        resources:
+        - arn:aws:ec2:ap-southeast-2:dummy-account:volume/vol-123456780
+        - arn:aws:ec2:ap-southeast-2:dummy-account:instance/*
+        actions:
+        - ec2:AttachVolume
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - autoheal.TestRol1
+        resources:
+        - arn:aws:logs:*:*:*
+        actions:
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - autoheal.TestRol1
+        actions:
+        - kms:CreateGrant
+        resources:
+        - kms-dummy
+        condition:

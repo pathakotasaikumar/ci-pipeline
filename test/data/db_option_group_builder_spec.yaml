@@ -1,0 +1,132 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    Definitions:
+      -
+        OptionMirrorSQL:
+          Type: "AWS::RDS::OptionGroup"
+          Properties:
+            EngineName: sql-server-ee
+            MajorEngineVersion: "12.00"
+            OptionConfigurations:
+              - OptionName: "Mirroring"
+      -
+        OptionTDE:
+          Type: "AWS::RDS::OptionGroup"
+          DeletionPolicy: Delete
+          Properties:
+            EngineName: oracle-ee
+            MajorEngineVersion: "12.1"
+            OptionGroupDescription: "Encryption Option for Oracle EE 12.1"
+            OptionConfigurations:
+              - OptionName: "TDE"
+      -
+        OptionPipeline:
+          Type: "AWS::RDS::OptionGroup"
+          Properties:
+            EngineName: oracle-ee
+            MajorEngineVersion: "11.2"
+            OptionGroupDescription: Oracle Option Group with SSL
+            OptionConfigurations:
+              - OptionName: "JVM"
+              - OptionName: "SSL"
+                OptionSettings:
+                  - Name: "SQLNET.SSL_VERSION"
+                    Value: "1.2 or 1.0"
+                VpcSecurityGroupMemberships:
+                  - "@test.SecuritySecurityGroupId"
+                  - "@_asir.DestinationSecurityGroupId"
+                  - sg-111
+                Port: 2048
+              - OptionName: "Dummy"
+                OptionSettings:
+                  - Name: "My_Settings_Password"
+                    Value: "@app.test"
+                VpcSecurityGroupMemberships:
+                  - "@_asir.SourceSecurityGroupId"
+    Invalid:
+      NoSecretManager:
+        OptionGroup:
+          Type: "AWS::RDS::OptionGroup"
+          Properties:
+            EngineName: sql-server-ee
+            MajorEngineVersion: "12.00"
+            OptionConfigurations:
+              - OptionName: "Password"
+                OptionSettings:
+                  - Name: "something_something_password"
+                    Value: "notsecretmanager"
+    Mock:
+  Output:
+    _process_db_option_group:
+      -
+        Resources:
+          OptionMirrorSQL:
+            Type: AWS::RDS::OptionGroup
+            DeletionPolicy: Delete
+            Properties:
+              EngineName: sql-server-ee
+              MajorEngineVersion: '12.00'
+              OptionGroupDescription: Custom Option Group
+              OptionConfigurations:
+              - OptionName: Mirroring
+        Outputs:
+          OptionMirrorSQLName:
+            Description: DB option group name
+            Value:
+              Ref: OptionMirrorSQL
+      -
+        Resources:
+          OptionTDE:
+            Type: AWS::RDS::OptionGroup
+            DeletionPolicy: Delete
+            Properties:
+              EngineName: oracle-ee
+              MajorEngineVersion: '12.1'
+              OptionGroupDescription: Encryption Option for Oracle EE 12.1
+              OptionConfigurations:
+              - OptionName: TDE
+        Outputs:
+          OptionTDEName:
+            Description: DB option group name
+            Value:
+              Ref: OptionTDE
+      -
+        Parameters:
+          OptionPipelineMySettingsPassword:
+            NoEcho: true
+            Description: 'RDS option group settings password'
+            Type: 'String'
+        Resources:
+          OptionPipeline:
+            Type: AWS::RDS::OptionGroup
+            DeletionPolicy: Delete
+            Properties:
+              EngineName: oracle-ee
+              MajorEngineVersion: "11.2"
+              OptionGroupDescription: Oracle Option Group with SSL
+              OptionConfigurations:
+              - OptionName: "JVM"
+              - OptionName: "SSL"
+                OptionSettings:
+                  - Name: "SQLNET.SSL_VERSION"
+                    Value: "1.2 or 1.0"
+                VpcSecurityGroupMemberships:
+                  - sg-123
+                  - sg-456
+                  - sg-111
+                Port: 2048
+              - OptionName: "Dummy"
+                OptionSettings:
+                  - Name: "My_Settings_Password"
+                    Value:
+                      Ref: OptionPipelineMySettingsPassword
+                VpcSecurityGroupMemberships:
+                  - sg-789
+        Outputs:
+          OptionPipelineName:
+            Description: DB option group name
+            Value:
+              Ref: OptionPipeline

@@ -1,0 +1,38 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    _process_ecs_service:
+      DummyService:
+        Type: AWS::ECS::Service
+        Properties:
+          LoadBalancers:
+          - TargetGroupArn: "@alb.HTTPTargetGroupArn"
+            ContainerPort: 80
+
+  Output:
+    _process_ecs_service:
+      Resources:
+        DummyService:
+          Type: AWS::ECS::Service
+          Properties:
+            Cluster:
+              Fn::ImportValue: qcp-ecs-default-cluster
+            DesiredCount: 1
+            EnableECSManagedTags: true
+            NetworkConfiguration:
+              AwsvpcConfiguration:
+                AssignPublicIp: DISABLED
+                SecurityGroups:
+                  - sg-12345
+                Subnets:
+                  - subnet-123
+            PropagateTags: TASK_DEFINITION
+            TaskDefinition:
+              Ref: DummyTaskDefinition
+            EnableExecuteCommand: true
+            LoadBalancers:
+              - TargetGroupArn: "@alb.HTTPTargetGroupArn"
+                ContainerPort: 80
+                ContainerName: DummyContainerName

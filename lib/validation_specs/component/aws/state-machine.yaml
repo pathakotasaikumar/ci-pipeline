@@ -1,0 +1,130 @@
+---
+StateMachine:
+  Type: AWS::StepFunctions::StateMachine
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::StepFunctions::StateMachine:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Type: List
+          ItemType: Common.SecurityItem
+          Required: false
+        Properties:
+          DefinitionString:
+            Configurable: true
+            Required: true
+            PrimitiveItemType: String
+
+Activity:
+  Type: AWS::StepFunctions::Activity
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::StepFunctions::Activity:
+        Properties:
+          Activity:
+            Configurable: false
+            Required: false
+
+StateMachineLambda:
+  Type: AWS::Lambda::Function
+  Cardinality: 0-20
+  Specification:
+    ResourceTypes:
+      AWS::Lambda::Function:
+        Properties:
+          Code:
+            Configurable: true
+            TypeOverride: true
+            Required: true
+          Handler:
+            Configurable: true
+            Required: true
+          Environment:
+            Configurable: true
+            Type: Environment
+            Required: false
+          DeadLetterConfig:
+            Configurable: true
+            Required: false
+          MemorySize:
+            Configurable: true
+            Required: true
+          ReservedConcurrentExecutions:
+            Configurable: true
+            Required: false
+          Runtime:
+            Configurable: true
+            Required: true
+          Timeout:
+            Configurable: true
+            Required: true
+          TracingConfig:
+            Configurable: true
+            Required: false
+            Type: Enum
+            EnumValues: [Active, PassThrough]
+    PropertyTypes:
+      AWS::Lambda::Function.Environment:
+        Properties:
+          Variables:
+            Configurable: true
+            PrimitiveType: Json
+            Required: true
+
+StateMachineEventRule:
+  Type: AWS::Events::Rule
+  Cardinality: 0-20
+  Specification:
+    ResourceTypes:
+      AWS::Events::Rule:
+        Properties:
+          EventPattern:
+            Configurable: true
+            Required: false
+          ScheduleExpression:
+            Configurable: true
+            Required: false
+          Pipeline::EventTarget:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+            EnumValues: ["@deployed", "@released"]
+          Pipeline::EventInput:
+            Configurable: true
+            PrimitiveType: Map
+            Required: true
+
+StateMachineSubscriptionFilter:
+  Type: AWS::Logs::SubscriptionFilter
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::Logs::SubscriptionFilter:
+        Properties:
+          DestinationArn:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+          FilterPattern:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+          LogGroupName:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features

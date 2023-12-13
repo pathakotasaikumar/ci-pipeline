@@ -1,0 +1,64 @@
+---
+Type: "aws/autoscale"
+Stage: "02"
+Persist: true
+
+Configuration:
+  # Bake instance configuration
+  BakeInstance:
+    Type: "AWS::EC2::Instance"
+    Properties:
+      ImageId: "@rhel6-latest"
+      InstanceType: "m3.medium"
+
+  # Elastic Load Balancer configuration
+  LoadBalancer:
+    Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+    Properties:
+      Scheme: "internal"
+      Listeners:
+        - LoadBalancerPort: "80"
+          InstancePort: "80"
+          Protocol: "HTTP"
+      HealthCheck:
+        HealthyThreshold: "2"
+        Interval: "10"
+        Target: "TCP:22"
+        Timeout: "5"
+        UnhealthyThreshold: "2"
+  # Autoscaling Group configuration
+  AutoScalingGroup:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+    Properties:
+      MinSize: 0
+      MaxSize: 1
+      DesiredCapacity: 0
+      HealthCheckGracePeriod: 900
+
+  # Launch Configuration configuration
+  LaunchConfiguration:
+    Type: "AWS::AutoScaling::LaunchConfiguration"
+    Properties:
+      InstanceType: "t2.micro"
+Environments:
+  HOME:
+    Configuration:
+      BakeInstance:
+        Properties:
+          KeyName: "yl"
+          ImageId: "@amazon-latest"
+      LaunchConfiguration:
+        Properties:
+          KeyName: "yl"
+Actions:
+  PreRelease:
+    - Action: SetDesiredCapacity
+      Stage: "00"
+      Parameters:
+        Capacity: 0
+        Target: "@released"
+    - Action: SetDesiredCapacity
+      Stage: "03"
+      Parameters:
+        Capacity: 1
+        Target: "@deployed"

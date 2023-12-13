@@ -1,0 +1,38 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    Definition:
+      Database:
+        Type: "AWS::RDS::DBInstance"
+        InboundRules:
+          # Allow access to database from my-instance
+          - Source: "test-instance.SecurityGroup"
+            Allow: "ALL:*"
+        Properties:
+          AllocatedStorage: 10
+          DBInstanceClass: "db.t2.medium"
+          DBName: "mydb"
+          Engine: "MySQL"
+          MultiAZ: false
+          StorageEncrypted: false
+    Mock:
+      - Object: Context
+        MessageChain: environment.subnet_ids
+        Return: ['sub123','sub456']
+  Output:
+    _process_db_subnet_group:
+      Resources:
+        DBSubnetGroup:
+          Type: AWS::RDS::DBSubnetGroup
+          Properties:
+            DBSubnetGroupDescription: Subnets available for the RDS DB Instance
+            SubnetIds:
+            - sub123
+            - sub456
+      Outputs:
+        DBSubnetGroupArn:
+          Description: RDS subnet group ARN
+          Value:
+            Ref: DBSubnetGroup

@@ -1,0 +1,31 @@
+UnitTest:
+  PolicyTest:
+    Valid:
+      Type: aws/rds-aurora-postgresql
+      Stage: 01-test
+      Persist: true
+
+      Configuration:
+        Database:
+          Type: AWS::RDS::DBCluster
+          Properties:
+            Port: 5432
+            DatabaseName: "db_name"
+            Engine: "aurora-postgresql"
+            EngineVersion: "10.18"
+        CardinalityBackupPolicy:
+          Type: Pipeline::DBCluster::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy3:
+          Type: Pipeline::DBCluster::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@nonp"
+              RetentionPeriod: PT15M

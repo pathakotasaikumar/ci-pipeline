@@ -1,0 +1,26 @@
+---
+ResourceTypes: {}
+PropertyTypes:
+  Common.CreationPolicy:
+    Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-creationpolicy.html
+    Properties:
+      ResourceSignal:
+        Configurable: true
+        Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-creationpolicy.html#cfn-attributes-creationpolicy-resourcesignal
+        Required: false
+        Type: Common.ResourceSignal
+
+  Common.ResourceSignal:
+    Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-creationpolicy.html#cfn-attributes-creationpolicy-resourcesignal
+    Properties:
+      Count:
+        Configurable: false
+        Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-creationpolicy.html#cfn-attributes-creationpolicy-resourcesignal-count
+        PrimitiveType: Integer
+        Required: false
+      Timeout:
+        Configurable: true
+        Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-creationpolicy.html#cfn-attributes-creationpolicy-resourcesignal-timeout
+        PrimitiveType: String
+        Regex: ^PT|[0-9]+H|[0-9]+M|[0-9]+S$
+        Required: false

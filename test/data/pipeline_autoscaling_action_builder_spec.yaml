@@ -1,0 +1,160 @@
+UnitTest:
+  Input:
+    Test1:
+      MyVolumeMount1:
+        Type: "Pipeline::Autoheal::VolumeAttachment"
+        Properties:
+          Volume: "@volume1.MyVolumeId"
+          Device: "/dev/xvdm"
+      MyVolumeMount2:
+        Type: "Pipeline::Autoheal::VolumeAttachment"
+        Properties:
+          Volume: "@volume2.MyVolumeId"
+          Device: "/dev/xvdn"
+  Output:
+    Resources:
+      VolumeAttachmentLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+          Handler: index.handler
+          Role: arn:aws:iam:ap-southeast-2:111111111111:role/LambdaExecutionRole
+          Runtime: python3.9
+          Timeout: 300
+          KmsKeyArn: arn:aws:kms:ap-southeast-2:123456789012:key/12345678-1234-1234-1234-123456789012
+      VolumeAttachmentLambdaLogGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+          LogGroupName:
+            Fn::Join:
+            - ''
+            - - "/aws/lambda/"
+              - Ref: VolumeAttachmentLambda
+          RetentionInDays: 30
+      VolumeAttachmentTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+          Subscription:
+          - Endpoint:
+              Fn::GetAtt:
+              - VolumeAttachmentLambda
+              - Arn
+            Protocol: lambda
+      VolumeAttachmentLifecycleHook:
+        Type: AWS::AutoScaling::LifecycleHook
+        Properties:
+          AutoScalingGroupName:
+            Ref: AutoscalingGroup
+          DefaultResult: ABANDON
+          LifecycleTransition: autoscaling:EC2_INSTANCE_LAUNCHING
+          NotificationTargetARN:
+            Ref: VolumeAttachmentTopic
+          RoleARN: arn:aws:ap-southeast-2:111111111111:autoscaling:lifecyclehook
+          HeartbeatTimeout: 60
+          NotificationMetadata: '[{"Volume"=>"vol-123456789","Device"=>"/dev/xvdm1"}]'
+      VolumeAttachmentLambdaPermission:
+        Type: AWS::Lambda::Permission
+        Properties:
+          Action: lambda:InvokeFunction
+          FunctionName:
+            Fn::GetAtt:
+            - VolumeAttachmentLambda
+            - Arn
+          Principal: sns.amazonaws.com
+          SourceArn:
+            Ref: VolumeAttachmentTopic
+    Outputs:
+      VolumeAttachmentLambdaName:
+        Description: Name of the function
+        Value:
+          Ref: VolumeAttachmentLambda
+
+      VolumeAttachmentLambdaArn:
+        Description: Arn of the function
+        Value:
+          Fn::GetAtt:
+          - VolumeAttachmentLambda
+          - Arn
+
+      VolumeAttachmentTopicName:
+        Description: Topic Name
+        Value:
+          Fn::GetAtt:
+          - VolumeAttachmentTopic
+          - TopicName
+
+      VolumeAttachmentTopicArn:
+        Description: Topic Arn
+        Value:
+          Ref: VolumeAttachmentTopic
+  SecretManagementOutput:
+    Resources:
+      SecretManagementLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+          Handler: index.handler
+          Role: arn:aws:iam:ap-southeast-2:111111111111:role/LambdaSecretManagementExecutionRole
+          Runtime: python3.9
+          Timeout: 300
+          KmsKeyArn: arn:aws:kms:ap-southeast-2:123456789012:key/12345678-1234-1234-1234-123456789012
+      SecretManagementLambdaLogGroup:
+        Type: AWS::Logs::LogGroup
+        Properties:
+          LogGroupName:
+            Fn::Join:
+            - ''
+            - - "/aws/lambda/"
+              - Ref: SecretManagementLambda
+          RetentionInDays: 30
+      SecretManagementTopic:
+        Type: AWS::SNS::Topic
+        Properties:
+          Subscription:
+          - Endpoint:
+              Fn::GetAtt:
+              - SecretManagementLambda
+              - Arn
+            Protocol: lambda
+      SecretManagementLifecycleHook:
+        Type: AWS::AutoScaling::LifecycleHook
+        Properties:
+          AutoScalingGroupName:
+            Ref: AutoscalingGroup
+          DefaultResult: ABANDON
+          LifecycleTransition: autoscaling:EC2_INSTANCE_LAUNCHING
+          NotificationTargetARN:
+            Ref: SecretManagementTopic
+          RoleARN: arn:aws:ap-southeast-2:111111111111:autoscaling:lifecyclehook
+          HeartbeatTimeout: '240'
+          NotificationMetadata: '[{"ams"=>"ams01","qda"=>"c031","as"=>"01","ase"=>"dev"}]'
+      SecretManagementLambdaPermission:
+        Type: AWS::Lambda::Permission
+        Properties:
+          Action: lambda:InvokeFunction
+          FunctionName:
+            Fn::GetAtt:
+            - SecretManagementLambda
+            - Arn
+          Principal: sns.amazonaws.com
+          SourceArn:
+            Ref: SecretManagementTopic
+    Outputs:
+      SecretManagementLambdaName:
+        Description: Name of the function
+        Value:
+          Ref: SecretManagementLambda
+      SecretManagementLambdaArn:
+        Description: Arn of the function
+        Value:
+          Fn::GetAtt:
+          - SecretManagementLambda
+          - Arn
+      SecretManagementTopicName:
+        Description: Topic Name
+        Value:
+          Fn::GetAtt:
+          - SecretManagementTopic
+          - TopicName
+      SecretManagementTopicArn:
+        Description: Topic Arn
+        Value:
+          Ref: SecretManagementTopic

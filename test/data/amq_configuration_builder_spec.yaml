@@ -1,0 +1,84 @@
+---
+UnitTest:
+  Input:
+    amq_Configuration:
+      component_name: amq_configuration
+      Type: "aws/amq"
+      Stage: "00-test"
+      Persist: true
+      IngressPoint: true
+      Configuration:
+        AMQConfiguration:
+          Type: "AWS::AmazonMQ::Configuration"
+          Properties:
+            EngineType: ACTIVEMQ
+            EngineVersion: "5.15.0"
+            Data: |
+              <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+              <broker xmlns="http://activemq.apache.org/schema/core" start="false">
+                  <destinationPolicy>
+                      <policyMap>
+                          <policyEntries>
+                              <policyEntry topic=">">
+                                  <pendingMessageLimitStrategy>
+                                      <constantPendingMessageLimitStrategy limit="3000"/>
+                                  </pendingMessageLimitStrategy>
+                              </policyEntry>
+                              <policyEntry queue="&gt;">
+                                  <deadLetterStrategy>
+                                      <individualDeadLetterStrategy queuePrefix="DLQ." useQueueForQueueMessages="true"/>
+                                  </deadLetterStrategy>
+                              </policyEntry>
+                          </policyEntries>
+                      </policyMap>
+                  </destinationPolicy>
+                  <plugins/>
+              </broker>
+  Output:
+    Resources:
+      AMQConfiguration:
+        Type: AWS::AmazonMQ::Configuration
+        Properties:
+          Name: "ams01-c031-99-dev-master-amqconfiguration-AMQConfiguration"
+          Description: Configuration file for AMQConfiguration
+          EngineType: ACTIVEMQ
+          EngineVersion: 5.15.0
+          Data:
+            Fn::Base64: |
+              <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+              <broker xmlns="http://activemq.apache.org/schema/core" start="false">
+                  <destinationPolicy>
+                      <policyMap>
+                          <policyEntries>
+                              <policyEntry topic=">">
+                                  <pendingMessageLimitStrategy>
+                                      <constantPendingMessageLimitStrategy limit="3000"/>
+                                  </pendingMessageLimitStrategy>
+                              </policyEntry>
+                              <policyEntry queue="&gt;">
+                                  <deadLetterStrategy>
+                                      <individualDeadLetterStrategy queuePrefix="DLQ." useQueueForQueueMessages="true"/>
+                                  </deadLetterStrategy>
+                              </policyEntry>
+                          </policyEntries>
+                      </policyMap>
+                  </destinationPolicy>
+                  <plugins/>
+              </broker>
+    Outputs:
+      AMQConfigurationId:
+        Description: AMQConfiguration AMQ Configuration Id
+        Value:
+          Ref: AMQConfiguration
+      AMQConfigurationRevision:
+        Description: AMQConfiguration AMQ Configuration Revision
+        Value:
+          Fn::GetAtt:
+            - AMQConfiguration
+            - Revision
+      AMQConfigurationArn:
+        Description: AMQConfiguration AMQ Configuration Arn
+        Value:
+          Fn::GetAtt:
+            - AMQConfiguration
+            - Arn

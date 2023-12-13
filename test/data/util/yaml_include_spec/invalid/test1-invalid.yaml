@@ -1,0 +1,2 @@
+ValidFile: !include/yaml test1_apiconf.yaml
+InvalidFile: !include/yaml test1_apiconf_invalid.yaml

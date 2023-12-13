@@ -1,0 +1,123 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    Configurations:
+      -
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+          Properties:
+            # ConnectionDrainingPolicy: # Auto default
+            #   Enabled: 'true' # Auto default
+            #   Timeout: '60' # Auto default
+            # CrossZone: 'true' # Auto default
+            Listeners:
+            HealthCheck:
+              dummy_key: dummy_value # should not be picked
+              # HealthyThreshold: '2' # Auto default
+              # Interval: '60' # Auto default
+              # Target: HTTP:80/ # Auto default
+              # Timeout: '5' # Auto default
+              # UnhealthyThreshold: '2' # Auto default
+      -
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+          Properties:
+            ConnectionDrainingPolicy:
+              Enabled: 'false' # should be picked
+              Timeout: '90' # should be picked
+            ConnectionSettings:
+              IdleTimeout : 50
+            CrossZone: 'false' # should not be picked
+            Scheme: "external" # should be picked
+            Listeners:
+              - LoadBalancerPort: "80" # should be picked
+                InstancePort: "80" # should be picked
+                Protocol: "HTTP" # should be picked
+              - LoadBalancerPort: "80" # should be picked
+                InstancePort: "80" # should be picked
+                Protocol: "HTTP" # should be picked
+                SSLCertificateId: "@wildcard-qcpaws"
+            HealthCheck:
+              HealthyThreshold: "3" # should be picked
+              Interval: "70" # should be picked
+              Target: "HTTP:80/health" # should be picked
+              Timeout: "50" # should be picked
+              UnhealthyThreshold: "4" # should be picked
+            Policies:
+              SomeKey: SomeValue # should be picked
+  Output:
+    _process_load_balancer:
+      -
+        Resources:
+          LoadBalancer:
+            Type: AWS::ElasticLoadBalancing::LoadBalancer
+            Properties:
+              ConnectionDrainingPolicy:
+                Enabled: 'true'
+                Timeout: '60'
+              CrossZone: 'true'
+              HealthCheck:
+                HealthyThreshold: '2'
+                Interval: '60'
+                Target: HTTP:80/
+                Timeout: '5'
+                UnhealthyThreshold: '2'
+              Listeners: []
+              Scheme: internal
+              SecurityGroups:
+              - sg-123
+              - sg-456
+              Subnets:
+              - subnet-123
+              - subnet-456
+              Policies: []
+        Outputs:
+          LoadBalancerDNSName:
+            Description: ELB endpoint address
+            Value:
+              Fn::GetAtt:
+              - LoadBalancer
+              - DNSName
+      -
+        Resources:
+          LoadBalancer:
+            Type: AWS::ElasticLoadBalancing::LoadBalancer
+            Properties:
+              ConnectionDrainingPolicy:
+                Enabled: 'false'
+                Timeout: '90'
+              CrossZone: 'true'
+              HealthCheck:
+                HealthyThreshold: '3'
+                Interval: '70'
+                Target: HTTP:80/health
+                Timeout: '50'
+                UnhealthyThreshold: '4'
+              Listeners:
+              - LoadBalancerPort: '80'
+                InstancePort: '80'
+                Protocol: HTTP
+              - LoadBalancerPort: '80'
+                InstancePort: '80'
+                Protocol: HTTP
+                SSLCertificateId: '{{resolve:ssm:/qcp/acm_certificate_arn}}'
+              Scheme: external
+              SecurityGroups:
+              - sg-123
+              - sg-456
+              Subnets:
+              - subnet-123
+              - subnet-456
+              Policies:
+                SomeKey: SomeValue
+              ConnectionSettings:
+                IdleTimeout: 50
+        Outputs:
+          LoadBalancerDNSName:
+            Description: ELB endpoint address
+            Value:
+              Fn::GetAtt:
+              - LoadBalancer
+              - DNSName

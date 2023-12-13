@@ -1,0 +1,141 @@
+UnitTest:
+  Input:
+    ComponentName: TestComponent
+    Initialize:
+      Valid:
+        Type: "aws/instance"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Volume:
+            Type: "AWS::EC2::Volume"
+            DeletionPolicy: "Delete"
+            Security:
+             - Allow: "write"
+               Source: "test-instance.InstanceRole"
+            Properties:
+              AvailabilityZone: "@a"
+              Size: "10"
+              VolumeType: "standard"
+      ValidSourceSnapshot:
+        Type: "aws/instance"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Volume:
+            Type: "AWS::EC2::Volume"
+            DeletionPolicy: "Delete"
+            Security:
+             - Allow: "write"
+               Source: "test-instance.InstanceRole"
+            Properties:
+              AvailabilityZone: "@a"
+              Size: "10"
+              VolumeType: "standard"
+              Pipeline::SourceSnapshot:
+                ase: STG
+                branch: master
+      ValidPRODSourceSnapshot:
+        Type: "aws/instance"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Volume:
+            Type: "AWS::EC2::Volume"
+            DeletionPolicy: "Delete"
+            Security:
+             - Allow: "write"
+               Source: "test-instance.InstanceRole"
+            Properties:
+              AvailabilityZone: "@a"
+              Size: "10"
+              VolumeType: "standard"
+              Pipeline::SourceSnapshot:
+                ase: PROD
+                branch: master
+      Invalid:
+        Type: "aws/instance"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Volume:
+            Type: "AWS::EC2::Volume"
+            DeletionPolicy: "Delete"
+            Security:
+             - Allow: "write"
+               Source: "test-instance.InstanceRole"
+            Properties:
+              AvailabilityZone: "@a"
+              Size: "10"
+              VolumeType: "standard"
+          Volume2:
+            Type: "AWS::EC2::Volume"
+            DeletionPolicy: "Delete"
+            Security:
+             - Allow: "write"
+               Source: "test-instance.InstanceRole"
+            Properties:
+              AvailabilityZone: "@a"
+              Size: "10"
+              VolumeType: "standard"
+    Mock1:
+        - Object: Context
+          MessageChain: component.stack_id
+          Return : "stack123"
+        - Object: AwsHelper
+          MessageChain: cfn_delete_stack
+        - Object: AwsHelper
+          MessageChain: ec2_wait_until_volume_available
+        - Object: Context
+          MessageChain: component.security_stack_id
+          Return : "sec-stack123"
+        - Object: Context
+          MessageChain: component.variable
+          With: [ 'TestComponent', 'DeployDnsName' ]
+          Return : "deploy-dns-name.com"
+        - Object: Util::Nsupdate
+          MessageChain: delete_dns_record
+        - Object: AwsHelper
+          MessageChain: ec2_detach_volume
+        - Object: Context
+          MessageChain: component.variable
+          With: [ 'TestComponent', 'TempSnapshots' ]
+          Return : ['dummy-snap']
+        - Object: AwsHelper
+          MessageChain: ec2_delete_snapshots
+    Mock2:
+        - Object: Context
+          MessageChain: component.variable
+          Return : test.com.au
+        - Object: Util::Nsupdate
+          MessageChain: create_dns_record
+    Mock3:
+        - Object: AwsVolume
+          AnyInstance:
+          MessageChain: _build_template
+        - Object: AwsHelper
+          MessageChain: ancestors
+        - Object: AwsHelper
+          MessageChain: cfn_create_stack
+        - Object: Context
+          MessageChain: component.set_variables
+        - Object: Context
+          MessageChain: component.variable
+          Return : test.com.au
+        - Object: Util::Nsupdate
+          MessageChain: create_dns_record
+  Output:
+    security_rules:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - test-instance.InstanceRole
+        resources:
+        actions:
+        - ec2:AttachVolume
+        - ec2:DetachVolume
+        - ec2:EnableVolumeIO
+        condition:

@@ -1,0 +1,126 @@
+Mock:
+  ContextSections:
+    :ams: "ams01"
+    :qda: "c008"
+    :as: "04"
+    :ase: "dev"
+    :ase_number: 123
+    :plan_key: "ams01-c008s04dev6"
+    :branch: "master"
+    :build: "5"
+    :env: "nonp"
+    :asbp_type: "qda"
+UnitTest:
+  get_backup_tags:
+    Input:
+      - "my_daily_policy+snaps"
+      - "my_weekly_policy+snaps"
+      - "my_monthly_policy"
+      - "my_yearly_policy"
+    OutputCustom:
+      -
+        :key: "cpm backup"
+        :value: "AMS01_C008_04_my_daily_policy_snaps:my_daily_policy+snaps AMS01_C008_04_my_weekly_policy_snaps:my_weekly_policy+snaps AMS01_C008_04_my_monthly_policy:my_monthly_policy AMS01_C008_04_my_yearly_policy:my_yearly_policy"
+    OutputDefault:
+      -
+        :key: "cpm backup"
+        :value: "AMS01_C008_04_daily:skeleton_template_daily+only-snaps AMS01_C008_04_weekly:skeleton_template_weekly+only-snaps AMS01_C008_04_monthly:skeleton_template_monthly+only-snaps AMS01_C008_04_yearly:skeleton_template_yearly+only-snaps"
+  get_tags:
+    Input: Database001
+    OutputWithComponent:
+      - :key: AMSID
+        :value: "AMS01"
+      - :key: EnterpriseAppID
+        :value: C008
+      - :key: ApplicationServiceID
+        :value: "04"
+      - :key: Environment
+        :value: DEV
+      - :key: AsbpType
+        :value: QDA
+      - :key: Name
+        :value: ams01-c008-04-dev-master-5-Database001
+      - :key: Branch
+        :value: master
+      - :key: Build
+        :value: "5"
+    OutputWithOutComponent:
+      - :key: AMSID
+        :value: "AMS01"
+      - :key: EnterpriseAppID
+        :value: C008
+      - :key: ApplicationServiceID
+        :value: "04"
+      - :key: Environment
+        :value: DEV
+      - :key: AsbpType
+        :value: QDA
+      - :key: Name
+        :value: ams01-c008-04-dev-master-5
+      - :key: Branch
+        :value: master
+      - :key: Build
+        :value: "5"
+  get_sections:
+    Input:
+      - AMS01-C008S04PROD123
+      - branch_name
+      - build_number
+      - prod
+    Output:
+      :ams: ams01
+      :qda: c008
+      :as: '04'
+      :ase: prod
+      :ase_number: '123'
+      :plan_key: ams01-c008s04prod123
+      :branch: branch_name
+      :build: build_number
+      :env: prod
+      :asbp_type: qda
+  as_env:
+    Output: ams01-c008-04-dev
+  kms_stack_name:
+    Output: ams01-c008-04-nonp-kms
+  component_stack_name:
+    Input:  Database001
+    Output: ams01-c008-04-dev-master-5-Database001
+  image_name:
+    Input:
+      source_image_name: "qf-1234-rhel6"
+      component_name: "my-component"
+    Output: "qf-1234-rhel6-AMS01-C008-04-NoRelease-my-component-master-5-[0-9]+"
+  deployment_dns_name:
+    Component:  my-db
+    Resource: database01
+    Output: my-db-database01.master-5.dev.c008-04.ams01.nonp.qcpaws.qantas.com.au
+  deployment_dns_name_ad:
+      Component:  my-db
+      Resource: database01
+      Output: my-db-database01.master-5.dev.c008-04.ams01.nonp.qcpaws.qantas.com.au
+  deployment_dns_name_r53:
+      Component:  my-db
+      Resource: database01
+      Output: my-db-database01.master-5.dev.c008-04.ams01.nonp.aws.qcp
+  release_dns_name:
+    Component:  Database001
+    Output: database001.master.dev.c008-04.ams01.nonp.qcpaws.qantas.com.au
+  release_dns_name_ad:
+      Component:  Database001
+      Output: database001.master.dev.c008-04.ams01.nonp.qcpaws.qantas.com.au
+  release_dns_name_r53:
+      Component:  Database001
+      Output: database001.master.dev.c008-04.ams01.nonp.aws.qcp
+  component_security_stack_name:
+    Input:  Database001
+    Output: ams01-c008-04-dev-master-5-Database001-Security
+  security_rules_stack_name:
+    Input: "TestComponent"
+    Output: ams01-c008-04-dev-master-5-TestComponent-Rules
+  asir_source_group_stack_name:
+    Input: asir001
+    Output: ams01-c008-04-nonp-asir001-AsirSourceGroup
+  asir_destination_group_stack_name:
+    Output: ams01-c008-04-nonp-AsirDestinationGroup
+  asir_destination_rules_stack_name:
+    Output: ams01-c008-04-nonp-AsirDestinationGroupRules

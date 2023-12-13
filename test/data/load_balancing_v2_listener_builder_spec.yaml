@@ -1,0 +1,58 @@
+UnitTest:
+  Input:
+    Configurations:
+      -
+        Listener:
+          Type: AWS::ElasticLoadBalancingV2::Listener
+          Properties:
+            Port: 80
+            Protocol: HTTP
+            DefaultActions:
+              - TargetGroupArn: GroupA
+                Type: forward
+      -
+        Listener:
+          Type: AWS::ElasticLoadBalancingV2::Listener
+          Properties:
+            Port: 443
+            Protocol: HTTPS
+            Certificates:
+              - dummy-ssl-cert-arn
+            SslPolicy: dummy-ssl-policy
+            DefaultActions:
+              - TargetGroupArn:
+                - Ref: TargetGroupArn
+                Type: forward
+  Output:
+    _process_load_balancer_v2_listener:
+      -
+        Resources:
+          Listener:
+            Type: AWS::ElasticLoadBalancingV2::Listener
+            Properties:
+              DefaultActions:
+              - TargetGroupArn:
+                  Ref: GroupA
+                Type: forward
+              LoadBalancerArn:
+                Ref: dummy-load-balancer
+              Port: 80
+              Protocol: HTTP
+        Outputs: {}
+      -
+        Resources:
+          Listener:
+            Type: AWS::ElasticLoadBalancingV2::Listener
+            Properties:
+              DefaultActions:
+              - TargetGroupArn:
+                - Ref: TargetGroupArn
+                Type: forward
+              LoadBalancerArn:
+                Ref: dummy-load-balancer
+              Port: 443
+              Protocol: HTTPS
+              Certificates:
+              - dummy-ssl-cert-arn
+              SslPolicy: dummy-ssl-policy
+        Outputs: {}

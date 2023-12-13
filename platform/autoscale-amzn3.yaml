@@ -1,0 +1,186 @@
+# RHEL6 autoscale component
+# - Runs HTTP server with /index.html /health pages
+---
+Type: aws/autoscale
+Stage: 01-test
+Persist: true
+
+Configuration:
+  # Bake instance configuration
+  Features:
+    Type: Pipeline::Features
+    Properties:
+      Features:
+        Datadog: enabled
+        Qualys:
+          Enabled: true
+          Recipients: ["csi@qantas.com.au"]
+        IPS:
+          Enabled: true
+          Behaviour: detective
+
+  BakeInstance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          Deploy: [ "Configure" , "Install" ]
+        Configure:
+          commands:
+            bootstrap:
+              command: bash bootstrap.sh
+              cwd: /root/payload
+        Install:
+          commands:
+            01-copy-files:
+              command: mkdir /root/app && cp -r /root/payload/* /root/app
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT45M
+    Properties:
+      ImageId: "@amazon3-beta"
+      InstanceType: m4.large
+
+  # Elastic Load Balancer configuration
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Security:
+      # Allow access by test-instance
+      - Source: test-instance.SecurityGroup
+        Allow: TCP:80
+      - Source: lambda.SecurityGroup
+        Allow: TCP:80
+    Properties:
+      Scheme: internal
+      Listeners:
+        - LoadBalancerPort: 80
+          InstancePort: 80
+          Protocol: HTTP
+        - LoadBalancerPort: 443
+          InstancePort: 80
+          InstanceProtocol: "HTTP"
+          Protocol: HTTPS
+          SSLCertificateId: "@wildcard-qcpaws"
+      HealthCheck:
+        HealthyThreshold: 2
+        Interval: 10
+        Target: TCP:22
+        Timeout: 5
+        UnhealthyThreshold: 2
+
+  # Autoscaling Group configuration
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    Properties:
+      MinSize: 1
+      MaxSize: 1
+      HealthCheckGracePeriod: 900
+
+  # Launch Configuration configuration
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          Deploy: [ "Install" ]
+        Install:
+          commands:
+            01-run-schedule:
+              command: 'bash /root/app/schedule.sh'
+    Properties:
+      InstanceType: m4.large
+      SpotPrice: "@ondemand"
+
+  # High-CPU alarm
+  AlarmHighCpu:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions: ScaleUpPolicy
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      MetricName: CPUUtilization
+      Period: 60
+      Statistic: Average
+      Threshold: 75
+
+  # DNS Failover alarm
+  UnhealthyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      MetricName: HealthyHostCount
+      Period: 60
+      Statistic: Minimum
+      Threshold: 1
+      Namespace: AWS/ELB
+      Dimensions:
+        - Name: LoadBalancerName
+          Value:
+            Ref: LoadBalancer
+
+  # Scaling Policy to add instances
+  ScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      ScalingAdjustment: 1
+      Cooldown: 300
+
+  StepScalingAlarmHighCpu:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions: StepScalingUpPolicy
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      MetricName: CPUUtilization
+      Period: 60
+      Statistic: Average
+      Threshold: 75
+
+  StepScalingUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ExactCapacity
+      PolicyType: StepScaling
+      EstimatedInstanceWarmup: '180'
+      StepAdjustments:
+      - MetricIntervalLowerBound: '75'
+        MetricIntervalUpperBound: '80'
+        ScalingAdjustment: '4'
+      - MetricIntervalLowerBound: '80'
+        ScalingAdjustment: '6'
+
+
+  # Low-CPU alarm
+  AlarmLowCpu:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions: ScaleDownPolicy
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 4
+      MetricName: CPUUtilization
+      Period: 60
+      Statistic: Average
+      Threshold: 35
+
+  # Scaling policy to remove instances
+  ScaleDownPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      ScalingAdjustment: -1
+      Cooldown: 60
+
+Environments:
+  DEV:
+    Configuration:
+      BakeInstance:
+        Properties:
+          KeyName: pipeline
+      LaunchConfiguration:
+        Properties:
+          KeyName: pipeline

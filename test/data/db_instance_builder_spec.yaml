@@ -1,0 +1,20 @@
+---
+UnitTest:
+  ComponentName: Test-Component
+  _process_db_password:
+    ValidDefinition:
+      Type: "aws/rds"
+      Stage: "001-datatier"
+      Configuration:
+        Database:
+          Type: "AWS::RDS::DBInstance"
+          Security:
+            # Allow access to database from my-apptier
+            - Source: "my-apptier"
+              Allow: "ALL:*"
+          Properties:
+            DBName: Test-Component
+            DBInstanceClass: "db.t3.medium"
+            AllocatedStorage: 10
+            MultiAZ: false
+            MasterUserPassword: '@app.testing'

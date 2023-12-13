@@ -1,0 +1,21 @@
+---
+Type: aws/lambda
+Stage: 00-test
+Persist: false
+IngressPoint: false
+
+Configuration:
+  TestFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: function.handler
+      Runtime: python3.9
+      Timeout: 300
+      MemorySize: 512
+      Code: package.zip
+      Environment:
+        Variables:
+          KMS: "@pipeline.KmsKeyArn"
+      EphemeralStorage:
+        Size: 1024
+      TracingConfig: Active

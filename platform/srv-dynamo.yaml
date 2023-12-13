@@ -1,0 +1,42 @@
+# DynamoDB table component
+---
+Type: aws/dynamodb-table
+Stage: "00"
+Persist: true
+
+Configuration:
+  MyTable:
+    Type: AWS::DynamoDB::Table
+    Security:
+      - Source: srv-func-stream.ExecutionRole
+        Allow: write
+      - Source: srv-func-load.ExecutionRole
+        Allow: write
+    Properties:
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      AttributeDefinitions:
+        - AttributeName: hashKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: hashKey
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 50
+        WriteCapacityUnits: 50
+
+  ThroughputScheduleUp:
+    Type: Pipeline::DynamoDB::ScheduledAction
+    Properties:
+      TableName: MyTable
+      SetReadCapacity: 100
+      SetWriteCapacity: 100
+      Recurrence: 15 0,6,12,18 * * ?
+
+  ThroughputScheduleDown:
+    Type: Pipeline::DynamoDB::ScheduledAction
+    Properties:
+      TableName: MyTable
+      SetReadCapacity: 50
+      SetWriteCapacity: 50
+      Recurrence: 45 0,6,12,18 * * ?

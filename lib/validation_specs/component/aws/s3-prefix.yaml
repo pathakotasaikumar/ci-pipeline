@@ -1,0 +1,35 @@
+---
+PublicS3:
+  Type: AWS::S3::Prefix
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::S3::Prefix:
+        Properties:
+          BucketType:
+            Configurable: true
+            Required: true
+            Type: Enum
+            EnumValues: [ public, private ]
+          Headers:
+            Configurable: true
+            Required: false
+            PrimitiveType: Json
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Required: false
+          Type: List
+          ItemType: Common.SecurityItem
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features

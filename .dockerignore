@@ -1,0 +1,10 @@
+# Typical things to ignore
+.git
+.DS_Store
+.gitignore
+
+# pipeline specific
+/target
+/tmp
+/coverage
+/logs

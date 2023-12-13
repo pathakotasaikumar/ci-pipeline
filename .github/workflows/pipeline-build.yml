@@ -1,0 +1,22 @@
+name: Pipeline Build
+
+on:
+  push:
+
+concurrency:
+  group: build-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-southeast-2
+
+jobs:
+  pipeline-build:
+    name: Pipeline - Build Artefacts
+    runs-on: self-hosted
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: pipeline ci
+      uses: ./actions/ci-action

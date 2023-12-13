@@ -1,0 +1,334 @@
+---
+UnitTest:
+  Input:
+    initialize:
+      correct:
+        Type: aws/sqs
+        Stage: 001-datatier
+        Configuration:
+          Queue:
+            Type: AWS::SQS::Queue
+          Features:
+            Type: Pipeline::Features
+            Properties:
+              Features:
+                Datadog : enabled
+
+      wrong-type:
+        Type:  aws/sqs
+        Stage: 02-test
+        Configuration:
+          MyTable:
+            Type: AWS::Lambda::Function
+
+      missing-resource:
+        Type: aws/sqs
+        Stage: 02-test
+        Configuration: {}
+
+      multiple:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Configuration:
+          MyStream1:
+            Type: AWS::SQS::Queue
+          MyStream2:
+            Type: AWS::SQS::Queue
+
+      nil:
+        Type: aws/kinesis
+        Stage: 02-test
+        Configuration:
+          MyTable:
+            Type:
+    _build_template:
+      Minimal:
+        Type: "aws/sqs"
+        Stage: "001-datatier"
+        Configuration:
+          Queue:
+            Type: "AWS::SQS::Queue"
+      Customised:
+        Type: "aws/sqs"
+        Stage: "001-datatier"
+        Configuration:
+          Queue:
+            Type: "AWS::SQS::Queue"
+            Properties:
+              DelaySeconds: 1234
+              MaximumMessageSize : 5678
+              MessageRetentionPeriod : 5556
+              ReceiveMessageWaitTimeSeconds : 8989
+              VisibilityTimeout: 138
+          ReceiveSns1:
+            Type: AWS::SNS::Subscription
+            Properties:
+              TopicArn: dummy-topic-arn1
+          ReceiveSns2:
+            Type: AWS::SNS::Subscription
+            Properties:
+              TopicArn: dummy-topic-arn2
+          ReceiveSns3:
+            Type: AWS::SNS::Subscription
+            Properties:
+              TopicArn: dummy-topic-arn3
+              DeliveryPolicy:
+                healthyRetryPolicy:
+                  numRetries: 20
+              FilterPolicy: {} 
+
+  Output:
+    _build_template:
+      Minimal:
+        Default:
+          Resources:
+            Queue:
+              Type: "AWS::SQS::Queue"
+              Properties:
+                DelaySeconds: 0
+                MaximumMessageSize: 262144
+                MessageRetentionPeriod: 345600
+                ReceiveMessageWaitTimeSeconds: 0
+                VisibilityTimeout: 30
+          Outputs:
+            QueueEndpoint:
+              Description: "Queue endpoint URL"
+              Value:
+                Ref: "Queue"
+            QueueArn:
+              Description: "Queue ARN"
+              Value:
+                Fn::GetAtt:
+                  - "Queue"
+                  - "Arn"
+            QueueQueueName:
+              Description: "Queue name"
+              Value:
+                Fn::GetAtt:
+                  - "Queue"
+                  - "QueueName"
+        Route53:
+          Resources:
+            Queue:
+              Type: AWS::SQS::Queue
+              Properties:
+                DelaySeconds: 0
+                MaximumMessageSize: 262144
+                MessageRetentionPeriod: 345600
+                ReceiveMessageWaitTimeSeconds: 0
+                VisibilityTimeout: 30
+            DeployDns:
+              Type: AWS::Route53::RecordSet
+              Properties:
+                HostedZoneName: ams01.nonp.aws.qcp.
+                Name: sqs.master-5.dev.c031-99.ams01.nonp.aws.qcp
+                Type: TXT
+                TTL: '60'
+                ResourceRecords:
+                - Fn::Join:
+                  - ''
+                  - - "\""
+                    - Fn::GetAtt:
+                      - Queue
+                      - Arn
+                    - "\""
+          Outputs:
+            QueueEndpoint:
+              Description: Queue endpoint URL
+              Value:
+                Ref: Queue
+            QueueQueueName:
+              Description: Queue name
+              Value:
+                Fn::GetAtt:
+                - Queue
+                - QueueName
+            QueueArn:
+              Description: Queue ARN
+              Value:
+                Fn::GetAtt:
+                - Queue
+                - Arn
+
+      Customised:
+        Default:
+          Resources:
+            Queue:
+              Type: AWS::SQS::Queue
+              Properties:
+                DelaySeconds: 1234
+                MaximumMessageSize: 5678
+                MessageRetentionPeriod: 5556
+                ReceiveMessageWaitTimeSeconds: 8989
+                VisibilityTimeout: 138
+            ReceiveSns1SnsSubscription:
+              Type: AWS::SNS::Subscription
+              Properties:
+                Protocol: sqs
+                TopicArn: dummy-topic-arn1
+                DeliveryPolicy: {}
+                FilterPolicy: {}
+                Endpoint:
+                  Fn::GetAtt:
+                  - Queue
+                  - Arn
+            ReceiveSns2SnsSubscription:
+              Type: AWS::SNS::Subscription
+              Properties:
+                Protocol: sqs
+                TopicArn: dummy-topic-arn2
+                DeliveryPolicy: {}
+                FilterPolicy: {}
+                Endpoint:
+                  Fn::GetAtt:
+                  - Queue
+                  - Arn
+                DeliveryPolicy: {}
+                FilterPolicy: {}
+            ReceiveSns3SnsSubscription:
+              Type: AWS::SNS::Subscription
+              Properties:
+                Protocol: sqs
+                TopicArn: dummy-topic-arn3
+                DeliveryPolicy:
+                  healthyRetryPolicy:
+                    numRetries: 20
+                FilterPolicy: {}
+                Endpoint:
+                  Fn::GetAtt:
+                  - Queue
+                  - Arn
+            QueueQueuePolicy:
+              Type: AWS::SQS::QueuePolicy
+              Properties:
+                PolicyDocument:
+                  Version: '2012-10-17'
+                  Id: QueueQueuePolicy
+                  Statement:
+                  - Effect: Allow
+                    Principal: "*"
+                    Action:
+                    - sqs:SendMessage
+                    Resource: "*"
+                    Condition:
+                      ArnEquals:
+                        aws:SourceArn:
+                          - dummy-topic-arn1
+                          - dummy-topic-arn2
+                          - dummy-topic-arn3
+                Queues:
+                - Ref: Queue
+          Outputs:
+            QueueEndpoint:
+              Description: Queue endpoint URL
+              Value:
+                Ref: Queue
+            QueueQueueName:
+              Description: Queue name
+              Value:
+                Fn::GetAtt:
+                - Queue
+                - QueueName
+            QueueArn:
+              Description: Queue ARN
+              Value:
+                Fn::GetAtt:
+                - Queue
+                - Arn
+        Route53:
+          Resources:
+            Queue:
+              Type: AWS::SQS::Queue
+              Properties:
+                DelaySeconds: 1234
+                MaximumMessageSize: 5678
+                MessageRetentionPeriod: 5556
+                ReceiveMessageWaitTimeSeconds: 8989
+                VisibilityTimeout: 138
+            ReceiveSns1SnsSubscription:
+              Type: AWS::SNS::Subscription
+              Properties:
+                Protocol: sqs
+                TopicArn: dummy-topic-arn1
+                DeliveryPolicy: {}
+                FilterPolicy: {}
+                Endpoint:
+                  Fn::GetAtt:
+                  - Queue
+                  - Arn
+            ReceiveSns2SnsSubscription:
+              Type: AWS::SNS::Subscription
+              Properties:
+                Protocol: sqs
+                TopicArn: dummy-topic-arn2
+                DeliveryPolicy: {}
+                FilterPolicy: {}
+                Endpoint:
+                  Fn::GetAtt:
+                  - Queue
+                  - Arn
+            ReceiveSns3SnsSubscription:
+              Type: AWS::SNS::Subscription
+              Properties:
+                Protocol: sqs
+                TopicArn: dummy-topic-arn3
+                DeliveryPolicy:
+                  healthyRetryPolicy:
+                    numRetries: 20
+                FilterPolicy: {}                
+                Endpoint:
+                  Fn::GetAtt:
+                  - Queue
+                  - Arn
+            QueueQueuePolicy:
+              Type: AWS::SQS::QueuePolicy
+              Properties:
+                PolicyDocument:
+                  Version: '2012-10-17'
+                  Id: QueueQueuePolicy
+                  Statement:
+                  - Effect: Allow
+                    Principal: "*"
+                    Action:
+                    - sqs:SendMessage
+                    Resource: "*"
+                    Condition:
+                      ArnEquals:
+                        aws:SourceArn:
+                          - dummy-topic-arn1
+                          - dummy-topic-arn2
+                          - dummy-topic-arn3
+                Queues:
+                - Ref: Queue
+            DeployDns:
+              Type: AWS::Route53::RecordSet
+              Properties:
+                Name: sqs.master-5.dev.c031-99.ams01.nonp.aws.qcp
+                Type: TXT
+                TTL: '60'
+                ResourceRecords:
+                - Fn::Join:
+                  - ''
+                  - - "\""
+                    - Fn::GetAtt:
+                      - Queue
+                      - Arn
+                    - "\""
+                HostedZoneName: ams01.nonp.aws.qcp.
+          Outputs:
+            QueueEndpoint:
+              Description: Queue endpoint URL
+              Value:
+                Ref: Queue
+            QueueQueueName:
+              Description: Queue name
+              Value:
+                Fn::GetAtt:
+                - Queue
+                - QueueName
+            QueueArn:
+              Description: Queue ARN
+              Value:
+                Fn::GetAtt:
+                - Queue
+                - Arn

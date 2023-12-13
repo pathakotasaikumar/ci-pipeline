@@ -1,0 +1,281 @@
+UnitTest:
+  Input:
+    initialize:
+      correct:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          MyTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+              AttributeDefinitions:
+                - AttributeName: PartitionKey
+                  AttributeType: S
+                - AttributeName: SortKey
+                  AttributeType: S
+              KeySchema:
+                - AttributeName: PartitionKey
+                  KeyType: HASH
+                - AttributeName: SortKey
+                  KeyType: RANGE
+              ProvisionedThroughput:
+                ReadCapacityUnits: 3
+                WriteCapacityUnits: 1
+          TestPolicy:
+            Type: Pipeline::DynamoDB::BackupPolicy
+          ScheduleDownPolicy:
+            Type: Pipeline::DynamoDB::ScheduledAction
+
+          WriteCapacityScalableTarget:
+            Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+            Properties:
+              MaxCapacity: 15
+              MinCapacity: 5
+              ResourceId:
+                - table
+                - Ref: MyTable
+              ScalableDimension: dynamodb:table:WriteCapacityUnits
+          WriteScalingPolicy:
+            Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+            Properties:
+              PolicyName: WriteAutoScalingPolicy
+              PolicyType: TargetTrackingScaling
+              ScalingTargetId:
+                Ref: WriteCapacityScalableTarget
+              TargetTrackingScalingPolicyConfiguration:
+                TargetValue: 50.0
+                ScaleInCooldown: 60
+                ScaleOutCooldown: 60
+                PredefinedMetricSpecification:
+                  PredefinedMetricType: DynamoDBWriteCapacityUtilization
+      autoscaling:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          MyTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+              AttributeDefinitions:
+                - AttributeName: PartitionKey
+                  AttributeType: S
+                - AttributeName: SortKey
+                  AttributeType: S
+              KeySchema:
+                - AttributeName: PartitionKey
+                  KeyType: HASH
+                - AttributeName: SortKey
+                  KeyType: RANGE
+              ProvisionedThroughput:
+                ReadCapacityUnits: 3
+                WriteCapacityUnits: 1
+          WriteCapacityScalableTarget:
+            Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+            Properties:
+              MaxCapacity: 15
+              MinCapacity: 5
+              ResourceId:
+                - table
+                - Ref: MyTable
+              ScalableDimension: dynamodb:table:WriteCapacityUnits
+          WriteScalingPolicy:
+            Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+            Properties:
+              PolicyName: WriteAutoScalingPolicy
+              PolicyType: TargetTrackingScaling
+              ScalingTargetId:
+                Ref: WriteCapacityScalableTarget
+              TargetTrackingScalingPolicyConfiguration:
+                TargetValue: 50.0
+                ScaleInCooldown: 60
+                ScaleOutCooldown: 60
+                PredefinedMetricSpecification:
+                  PredefinedMetricType: DynamoDBWriteCapacityUtilization
+                  
+      wrong-type:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Configuration:
+          MyTable:
+            Type: AWS::Lambda::Function
+
+      missing-table:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Configuration:
+          MyTable:
+            Type: Pipeline::DynamoDB::ScheduledAction
+
+      multiple:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Configuration:
+          MyTable1:
+            Type: AWS::DynamoDB::Table
+          MyTable2:
+            Type: AWS::DynamoDB::Table
+
+      nil:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Configuration:
+          MyTable:
+            Type:
+      ondemand:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          MyTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+              AttributeDefinitions:
+                - AttributeName: PartitionKey
+                  AttributeType: S
+                - AttributeName: SortKey
+                  AttributeType: S
+              KeySchema:
+                - AttributeName: PartitionKey
+                  KeyType: HASH
+                - AttributeName: SortKey
+                  KeyType: RANGE
+              BillingMode: PAY_PER_REQUEST
+      ondemand-provisioned:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          MyTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+              AttributeDefinitions:
+                - AttributeName: PartitionKey
+                  AttributeType: S
+                - AttributeName: SortKey
+                  AttributeType: S
+              KeySchema:
+                - AttributeName: PartitionKey
+                  KeyType: HASH
+                - AttributeName: SortKey
+                  KeyType: RANGE
+              BillingMode: PROVISIONED
+              ProvisionedThroughput:
+                ReadCapacityUnits: 3
+                WriteCapacityUnits: 1
+      ondemand-invalid:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          MyTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+              AttributeDefinitions:
+                - AttributeName: PartitionKey
+                  AttributeType: S
+                - AttributeName: SortKey
+                  AttributeType: S
+              KeySchema:
+                - AttributeName: PartitionKey
+                  KeyType: HASH
+                - AttributeName: SortKey
+                  KeyType: RANGE
+              BillingMode: PAY_PER_REQUEST
+              ProvisionedThroughput:
+                ReadCapacityUnits: 3
+                WriteCapacityUnits: 1
+
+    _full_template:
+      Valid:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Persist: false
+        IngressPoint: false
+        Configuration:
+          MyTable:
+            Type: AWS::DynamoDB::Table
+            Properties:
+              AttributeDefinitions:
+                - AttributeName: PartitionKey
+                  AttributeType: S
+                - AttributeName: SortKey
+                  AttributeType: S
+              KeySchema:
+                - AttributeName: PartitionKey
+                  KeyType: HASH
+                - AttributeName: SortKey
+                  KeyType: RANGE
+              ProvisionedThroughput:
+                ReadCapacityUnits: 3
+                WriteCapacityUnits: 1
+          WriteCapacityScalableTarget:
+            Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+            Properties:
+              MaxCapacity: 15
+              MinCapacity: 5
+              ResourceId:
+                - table
+                - Ref: MyTable
+              ScalableDimension: dynamodb:table:WriteCapacityUnits
+          WriteScalingPolicy:
+            Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+            Properties:
+              PolicyName: WriteAutoScalingPolicy
+              PolicyType: TargetTrackingScaling
+              ScalingTargetId:
+                Ref: WriteCapacityScalableTarget
+              TargetTrackingScalingPolicyConfiguration:
+                TargetValue: 50.0
+                ScaleInCooldown: 60
+                ScaleOutCooldown: 60
+                PredefinedMetricSpecification:
+                  PredefinedMetricType: DynamoDBWriteCapacityUtilization
+  Output:
+    security_items:
+      - Name: DynamoDBScalingExecutionRole
+        Type: Role
+        Component: correct
+        Service: lambda.amazonaws.com
+      - Name: AutoscalingScalingRole
+        Type: Role
+        Component: correct
+        Service: application-autoscaling.amazonaws.com
+    security_rules:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.AutoscalingScalingRole
+        resources:
+        - "*"
+        actions:
+        - dynamodb:DescribeTable
+        - dynamodb:UpdateTable
+        - cloudwatch:PutMetricAlarm
+        - cloudwatch:DescribeAlarms
+        - cloudwatch:GetMetricStatistics
+        - cloudwatch:SetAlarmState
+        - cloudwatch:DeleteAlarms
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.DynamoDBScalingExecutionRole
+        resources:
+        - "*"
+        actions:
+        - dynamodb:UpdateTable
+        - dynamodb:DescribeTable
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.DynamoDBScalingExecutionRole
+        resources:
+        - arn:aws:logs:*:*:*
+        actions:
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+        condition:

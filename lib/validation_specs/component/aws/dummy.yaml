@@ -1,0 +1,14 @@
+---
+Dummy:
+  Type: Pipeline::Dummy
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Dummy:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Required: false
+          Type: List
+          ItemType: Common.SecurityItem
+        Properties: {}

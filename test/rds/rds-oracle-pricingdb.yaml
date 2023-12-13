@@ -1,0 +1,39 @@
+---
+Type: "aws/rds-oracle"
+Stage: "01-data"
+Configuration:
+  Database:
+    Type: "AWS::RDS::DBInstance"
+    Security:
+      # Allow access to database from pricing
+      - Source: "rds-oracle-pricingdb.SecurityGroup"
+        Allow: "ALL:*"
+    Properties:
+      AllocatedStorage: 10
+      BackupRetentionPeriod: 0
+      Engine: oracle-ee
+      EngineVersion: "12.1.0.1.v1"
+      DBInstanceClass: db.m3.medium
+      DBName: pricing
+      LicenseModel: bring-your-own-license
+      MasterUsername: root
+      MasterUserPassword: Password1234
+      MultiAZ: false
+      PreferredBackupWindow: 15:00-17:00
+      StorageType: gp2
+
+Environments:
+  STG:
+    Configuration:
+      Database:
+        Properties:
+          DBInstanceClass: db.m3.large
+          BackupRetentionPeriod: 7
+  PROD:
+    Configuration:
+      Database:
+        Properties:
+          DBInstanceClass: db.m3.large
+          AllocatedStorage: 50
+          MultiAZ: true
+          BackupRetentionPeriod: 14

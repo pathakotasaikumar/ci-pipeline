@@ -1,0 +1,29 @@
+UnitTest:
+  PolicyTest:
+    Valid:
+      Type: aws/rds-aurora
+      Stage: 01-test
+      Persist: true
+ 
+      Configuration:
+        Database:
+          Type: AWS::RDS::DBCluster
+          Properties:
+            DatabaseName: example2
+            MasterUsername: dbadmin
+        CardinalityBackupPolicy:
+          Type: Pipeline::DBCluster::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy3:
+          Type: Pipeline::DBCluster::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@nonp"
+              RetentionPeriod: PT15M

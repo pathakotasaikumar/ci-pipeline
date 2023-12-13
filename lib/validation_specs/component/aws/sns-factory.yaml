@@ -1,0 +1,25 @@
+---
+SNS:
+  Type: Pipeline::SNS::Factory
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      Pipeline::SNS::Factory:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Required: true
+          Type: List
+          ItemType: Common.SecurityItem
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features

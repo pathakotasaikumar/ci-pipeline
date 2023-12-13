@@ -1,0 +1,41 @@
+---
+Variables01: {}
+Input01: "some random string"
+Result01:
+  - "some random string"
+
+Variables02:
+  Item1: {"key1" : "value1"}
+  Item2: {"key2" : "value2"}
+Input02: >
+          some <| Item1 |> and some <| Item2 |> random string
+Result02:
+  - "some "
+  -
+    key1: "value1"
+  - " and some "
+  -
+    key2: "value2"
+  - " random string\n"
+
+Variables03:
+  Item1: {"key3" : "value4"}
+  Item2: {"key3" : "value4"}
+Input03A: >
+  some <| Item1 |> string
+Input03B: >
+  followed by <| Item2 |> random string
+Result03:
+  Fn::Base64:
+    Fn::Join:
+      - ""
+      -
+        - "some "
+        -
+          key3: "value4"
+        - " string\n"
+        - "followed by "
+        -
+          key3: "value4"
+        - " random string\n"
+

@@ -1,0 +1,162 @@
+UnitTest:
+
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    AMI: ami-123
+    UserData: UserData-123
+    SGs: ['sg-123','sg-456']
+    Configurations:
+      -
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+      -
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Metadata:
+            AWS::CloudFormation::Init:
+              config:
+                commands:
+                  01-test: "test"
+          Properties:
+            InstanceType: m3.medium
+            KeyName: MyKey
+            SpotPrice: "@ondemand"
+      -
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Metadata:
+            AWS::CloudFormation::Init:
+              config:
+                commands:
+                  01-test: "test"
+          Properties:
+            InstanceType: m3.medium
+            KeyName: MyKey
+            SpotPrice: "0.01"
+      -
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Metadata:
+            AWS::CloudFormation::Init:
+              config:
+                commands:
+                  01-test: "test"
+          Properties:
+            InstanceType: m3.medium
+            KeyName: MyKey
+            SpotPrice: "0.1"
+
+  Output:
+    _process_launch_configuration:
+      -
+        Resources:
+          LaunchConfiguration:
+            Type: AWS::AutoScaling::LaunchConfiguration
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Prepare:
+                  - PrePrepare
+                  Deploy: []
+                PrePrepare: Metadata here
+              AWS::CloudFormation::Authentication:
+                MyAuth: Test
+            Properties:
+              IamInstanceProfile:
+                Ref: InstanceProfile
+              ImageId: ami-123
+              InstanceType: m3.medium
+              SecurityGroups:
+              - sg-123
+              - sg-456
+              UserData: UserData-123
+        Outputs: {}
+      -
+        Resources:
+          LaunchConfiguration:
+            Type: AWS::AutoScaling::LaunchConfiguration
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Prepare:
+                  - PrePrepare
+                  Deploy:
+                    - Userconfig
+                PrePrepare: Metadata here
+                Userconfig:
+                  commands:
+                    01-test: "test"
+              AWS::CloudFormation::Authentication:
+                MyAuth: Test
+            Properties:
+              IamInstanceProfile:
+                Ref: InstanceProfile
+              ImageId: ami-123
+              InstanceType: m3.medium
+              SecurityGroups:
+              - sg-123
+              - sg-456
+              UserData: UserData-123
+              KeyName: MyKey
+              SpotPrice: 0.093
+        Outputs: {}
+      -
+        Resources:
+          LaunchConfiguration:
+            Type: AWS::AutoScaling::LaunchConfiguration
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Prepare:
+                  - PrePrepare
+                  Deploy:
+                    - Userconfig
+                PrePrepare: Metadata here
+                Userconfig:
+                  commands:
+                    01-test: "test"
+              AWS::CloudFormation::Authentication:
+                MyAuth: Test
+            Properties:
+              IamInstanceProfile:
+                Ref: InstanceProfile
+              ImageId: ami-123
+              InstanceType: m3.medium
+              SecurityGroups:
+              - sg-123
+              - sg-456
+              UserData: UserData-123
+              KeyName: MyKey
+              SpotPrice: 0.01
+        Outputs: {}
+      -
+        Resources:
+          LaunchConfiguration:
+            Type: AWS::AutoScaling::LaunchConfiguration
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Prepare:
+                  - PrePrepare
+                  Deploy:
+                    - Userconfig
+                PrePrepare: Metadata here
+                Userconfig:
+                  commands:
+                    01-test: "test"
+              AWS::CloudFormation::Authentication:
+                MyAuth: Test
+            Properties:
+              IamInstanceProfile:
+                Ref: InstanceProfile
+              ImageId: ami-123
+              InstanceType: m3.medium
+              SecurityGroups:
+              - sg-123
+              - sg-456
+              UserData: UserData-123
+              KeyName: MyKey
+              SpotPrice: 0.093
+        Outputs: {}

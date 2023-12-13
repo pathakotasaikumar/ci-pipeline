@@ -1,0 +1,37 @@
+UnitTest:
+  PolicyTest:
+    Valid:
+      Type: "aws/volume"
+      Stage: "01-test"
+      Persist: false
+      Configuration:
+        MyVolume:
+          Type: "AWS::EC2::Volume"
+          Properties:
+            AvailabilityZone: "@a"
+            Size: 10
+        CardinalityBackupPolicy:
+          Type: Pipeline::Volume::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy2:
+          Type: Pipeline::Volume::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy3:
+          Type: Pipeline::Volume::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@nonp"
+              RetentionPeriod: PT15M
+     

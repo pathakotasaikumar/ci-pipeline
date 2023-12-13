@@ -1,0 +1,42 @@
+UnitTest:
+  PolicyTest:
+    Valid:
+      Type: aws/rds-oracle
+      Stage: 01-test
+      Persist: true
+
+      Configuration:
+        Database:
+          Type: AWS::RDS::DBInstance
+          Properties:
+            AllocatedStorage: 200
+            DBInstanceClass: db.m4.large
+            MultiAZ: false
+            DBSnapshotIdentifier: "@take-snapshot"
+            StorageType: io1
+            Iops: 2000
+            DBName: mydb
+        CardinalityBackupPolicy:
+          Type: Pipeline::DBInstance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy2:
+          Type: Pipeline::DBInstance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy3:
+          Type: Pipeline::DBInstance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@nonp"
+              RetentionPeriod: PT15M

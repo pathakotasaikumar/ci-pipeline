@@ -1,0 +1,452 @@
+---
+UnitTest:
+  ComponentName: Test-Component
+  ComponentDefinition:
+    Valid:
+      PostgresqlMinimal:
+        Type: "aws/rds-postgresql"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              EngineVersion: "9.5.2"
+              DBName: pgdb
+              MasterUserPassword: Pa$$w0rd99
+              MasterUsername: root
+      PostgresqlReplica:
+        Type: "aws/rds-postgresql"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              EngineVersion: "9.5.2"
+              SourceDBInstanceIdentifier: 'DummyDatabase'
+      PostgresqlParameterGroup:
+        Type: "aws/rds-postgresql"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              EngineVersion: "9.5.2"
+              DBName: pgdb
+              MasterUserPassword: Pa$$w0rd99
+              MasterUsername: root
+      PostgresqlSnapshot:
+        Type: "aws/rds-postgresql"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            DeletionPolicy: Snapshot
+            Properties:
+              EngineVersion: "9.5.2"
+              DBName: pgdb
+              MasterUserPassword: Pa$$w0rd99
+              MasterUsername: root
+      PostgresqlRestore:
+        Type: "aws/rds-postgresql"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              MultiAZ: true
+              AllocatedStorage: '30'
+              DBSnapshotIdentifier: rds:aphodx67ufe3cm-2016-07-06-16-46
+      PostgresqlOverride:
+        Type: "aws/rds-postgresql"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              AllocatedStorage: 90
+              AllowMajorVersionUpgrade: true
+              AutoMinorVersionUpgrade: false
+              BackupRetentionPeriod: 60
+              DBInstanceClass: db.t3.medium
+              DBName: pgdb
+              MasterUserPassword: Pa$$w0rd99
+              MasterUsername: root
+              MultiAZ: false
+              EngineVersion: "9.5.2"
+              Port: 1234
+              PreferredBackupWindow:
+              PreferredMaintenanceWindow:
+              StorageEncrypted: false
+              StorageType: io
+      PostgresqlFullBuild:
+        Type: "aws/rds-postgresql"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              EngineVersion: "10.4"
+              DBName: pgdb
+              MasterUsername: root
+              EnableCloudwatchLogExports:
+                - postgresql
+          SubscriptionFilter:
+            Type: AWS::Logs::SubscriptionFilter
+            Properties:
+              DestinationArn: "@lambda.DeployArn"
+
+  TestResult:
+    PostgresqlMinimal:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            Engine: postgres
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            AllocatedStorage: '100'
+            StorageType: gp2
+            DBInstanceClass: db.t3.medium
+            Port: '5432'
+            DBName: pgdb
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            EngineVersion: 9.5.2
+            StorageEncrypted: true
+            MultiAZ: true
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            BackupRetentionPeriod: '30'
+            KmsKeyId: kms-dummy
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+    PostgresqlReplica:
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            Engine: postgres
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            StorageEncrypted: true
+            Port: '5432'
+            StorageType: gp2
+            SourceDBInstanceIdentifier:
+              Ref: DummyDatabase
+          DeletionPolicy: Snapshot
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+          Description: RDS instance Database ARN
+          Value:
+            Fn::Join:
+            - ":"
+            - - arn:aws:rds
+              - Ref: AWS::Region
+              - Ref: AWS::AccountId
+              - db
+              - Ref: Database
+    PostgresqlParameterGroup:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            Engine: postgres
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            DBParameterGroupName:
+              Ref: DummyParameterGroup
+            AllocatedStorage: '100'
+            StorageType: gp2
+            DBInstanceClass: db.t3.medium
+            Port: '5432'
+            DBName: pgdb
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            EngineVersion: 9.5.2
+            StorageEncrypted: true
+            MultiAZ: true
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            BackupRetentionPeriod: '30'
+            KmsKeyId: kms-dummy
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+    PostgresqlSnapshot:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            Engine: postgres
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            AllocatedStorage: '100'
+            StorageType: gp2
+            DBInstanceClass: db.t3.medium
+            Port: '5432'
+            DBName: pgdb
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            EngineVersion: 9.5.2
+            StorageEncrypted: true
+            MultiAZ: true
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            BackupRetentionPeriod: '30'
+            KmsKeyId: kms-dummy
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+    PostgresqlRestore:
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            AllocatedStorage: '30'
+            Engine: postgres
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            BackupRetentionPeriod: "30"
+            VPCSecurityGroups:
+            - sg123
+            DBSnapshotIdentifier: rds:aphodx67ufe3cm-2016-07-06-16-46
+            MultiAZ: true
+            StorageType: gp2
+            Port: "5432"
+            StorageEncrypted: true
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+    PostgresqlOverride:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            Engine: postgres
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            AllocatedStorage: 90
+            AllowMajorVersionUpgrade: true
+            AutoMinorVersionUpgrade: false
+            BackupRetentionPeriod: 60
+            DBInstanceClass: db.t3.medium
+            DBName: pgdb
+            Port: 1234
+            EngineVersion: "9.5.2"
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            MultiAZ: false
+            PreferredBackupWindow:
+            PreferredMaintenanceWindow:
+            StorageEncrypted: true
+            StorageType: io
+            KmsKeyId: kms-dummy
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+    PostgresqlFullBuild:
+      SecurityItems:
+      - Type: SecurityGroup
+        Name: SecurityGroup
+        Component: Test-Component
+        DefaultIpIngress: true
+      SecurityRules: []

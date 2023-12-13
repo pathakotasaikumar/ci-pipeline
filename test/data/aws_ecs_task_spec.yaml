@@ -1,0 +1,146 @@
+UnitTest:
+  Input:
+    initialize:
+      correct:
+        Type: aws/ecs-task
+        Stage: 01-ecstask
+        Persist: false
+        IngressPoint: true
+        Configuration:
+          Features:
+            Type: Pipeline::Features
+            Properties:
+              Features:
+                CustomTags:
+                  Enabled: true
+                  Tags:
+                    TestFeature: dummy
+          MyTaskDefinition:
+            Type: AWS::ECS::TaskDefinition
+            Properties:
+              ContainerDefinitions:
+              - Image: dummy-image
+              Cpu: 256
+              Memory: 512
+          EventRule:
+            Type: AWS::Events::Rule
+            Properties:
+              ScheduleExpression: rate(1 minute)
+
+      invalid-resource:
+        Type: aws/ecs-task
+        Stage: 01-ecstask
+        Configuration:
+          MyTaskDefinition:
+            Type: AWS::ECS::NotValid
+            Properties:
+              ContainerDefinitions:
+              - Image: dummy-image
+              Cpu: 256
+              Memory: 512
+
+  Output:
+    SecurityItems:
+      - Name: SecurityGroup
+        Type: SecurityGroup
+        Component: correct
+      - Name: ExecutionRole
+        Type: Role
+        Component: correct
+        Service: ecs-tasks.amazonaws.com
+      - Name: TaskRole
+        Type: Role
+        Component: correct
+        Service: ecs-tasks.amazonaws.com
+        ManagedPolicyArns: arn::policy/managed-policy
+
+    SecurityRules:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.ExecutionRole
+        resources:
+        - "*"
+        actions:
+        - ecr:GetAuthorizationToken
+        - ecr:BatchCheckLayerAvailability
+        - ecr:GetDownloadUrlForLayer
+        - ecr:BatchGetImage
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.TaskRole
+        resources:
+        - "*"
+        actions:
+        - cloudwatch:PutMetricData
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.TaskRole
+        resources:
+        - arn:aws:kms:ap-southeast-2:111122223333:key/dummyarn
+        actions:
+        - kms:Decrypt
+        - kms:Describe*
+        - kms:Encrypt
+        - kms:GenerateDataKey
+        - kms:GenerateDataKeyWithoutPlaintext
+        - kms:GenerateRandom
+        - kms:ReEncrypt*
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.TaskRole
+        actions:
+        - s3:GetBucketLocation
+        - s3:GetObject
+        - s3:GetObjectVersion
+        - s3:ListBucket
+        - s3:ListBucketMultipartUploads
+        - s3:ListBucketVersions
+        resources:
+        - arn:aws:s3:::bucket-ams-test
+        - arn:aws:s3:::bucket-qda-test
+        - arn:aws:s3:::bucket-as-test
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.TaskRole
+        actions:
+        - s3:PutObject
+        - s3:PutObjectAcl
+        - s3:DeleteObject
+        - s3:DeleteObjectVersion
+        - s3:RestoreObject
+        - s3:ListMultipartUploadParts
+        - s3:AbortMultipartUpload
+        resources:
+        - arn:aws:s3:::bucket-qda-test
+        - arn:aws:s3:::bucket-as-test
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.TaskRole
+        actions:
+        - s3:GetBucketNotification
+        - s3:GetBucketVersioning
+        - s3:GetLifecycleConfiguration
+        - s3:PutBucketNotification
+        - s3:PutBucketVersioning
+        - s3:PutLifecycleConfiguration
+        resources:
+        - arn:aws:s3:::bucket-as-test
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.TaskRole
+        resources:
+        - "*"
+        actions:
+        - ssmmessages:CreateControlChannel
+        - ssmmessages:CreateDataChannel
+        - ssmmessages:OpenControlChannel
+        - ssmmessages:OpenDataChannel
+        condition:

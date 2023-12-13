@@ -1,0 +1,12 @@
+version: 0.0
+os: linux
+files:
+  - source: index-codedeploy.html
+    destination: /var/www/html/index.html
+
+hooks:
+  BeforeInstall:
+    - location: codedeploy-scripts/01-files-backup.sh
+  ApplicationStart:
+    - location: codedeploy-scripts/02-reload-apache.sh
+      timeout: 10

@@ -1,0 +1,28 @@
+---
+Type: aws/lambda
+Stage: "00-test"
+Persist: false
+
+Configuration:
+  LoadFuction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: load.handler
+      Runtime: python3.10
+      Timeout: 60
+      MemorySize: 256
+      Code: package.zip
+      Environment:
+        Variables:
+          Build: "@pipeline.Build"
+          Environment: "@pipeline.Ase"
+
+Actions:
+  PreRelease:
+    - Action: RegisterApi
+      Stage: "00"
+      Parameters:
+        Basepath: qcp-pipeline-dev-lambda
+        Target: '@Deployed'
+        Swagger: !include/json platform/apigateway-lambda/swagger.json
+        ApiConf: !include/yaml platform/apigateway-lambda/apiconf.yaml

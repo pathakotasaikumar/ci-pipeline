@@ -1,0 +1,27 @@
+UnitTest:
+  Input:
+    _parse_db_cluster_backup_policy:
+      Valid:
+        -
+          BackupPolicy1:
+            Type: Pipeline::DBCluster::BackupPolicy
+            Properties:
+              RetentionPeriod: PT7D
+              Recurrence: 30 8 ? * *
+              CopyTargets:
+                - Target: '@dr'
+                  RetentionPeriod: PT12M
+
+  Output:
+    _parse_db_cluster_backup_policy:
+      Valid:
+        -
+          BackupPolicy1:
+            schedule_expression: cron(30 8 ? * * *)
+            inputs:
+              Fn::Sub:
+              - '{"type":"aws/rds-cluster","source":{"id":"${resource_id}","consistent":"false","target_alias":"@ams01-origin-nonp","account_id":"012345678912","region":"ap-southeast-2","name":"ams01-c031-99-dev-master-5-dbcluster","key_alias":"alias/ams01-c031-99-nonp"},"targets":[{"account_alias":"@ams01-dr-nonp","retention_period":"PT12M"},{"account_alias":"@ams01-origin-nonp","retention_period":"PT7D"}],"tags":{"AMSID":"AMS01","EnterpriseAppID":"C031","ApplicationServiceID":"99","Environment":"DEV","AsbpType":"QDA","Name":"ams01-c031-99-dev-master-5-dbcluster","Branch":"master","Build":"5"}}'
+              - resource_id: a1234567890
+
+
+

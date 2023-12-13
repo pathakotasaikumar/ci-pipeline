@@ -1,0 +1,20 @@
+---
+Type: aws/lambda
+Stage: "01"
+Persist: false
+
+Configuration:
+  LoadFuction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: load.handler
+      Runtime: python3.9
+      Timeout: 60
+      MemorySize: 256
+      Code: package.zip
+
+  NotifySNS:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Pipeline::EventTarget: '@released'
+      TopicArn: "@srv-sns.DataLoaderArn"

@@ -1,0 +1,49 @@
+# https://github.com/qantas-cloud/c036-ctrl/blob/master/platform/retainer-db.yaml
+# DynamoDB table component
+---
+Type: aws/dynamodb-table
+Stage: "00"
+Persist: true
+
+Configuration:
+
+  Features:
+    Type: Pipeline::Features
+    Properties:
+      Features:
+        Datadog: enabled
+
+  Table:
+    Type: AWS::DynamoDB::Table
+    Security:
+      - Source: sweeper-volume.ExecutionRole
+        Allow: write
+      - Source: sweeper-dbinstance.ExecutionRole
+        Allow: write
+      - Source: sweeper-dbcluster.ExecutionRole
+        Allow: write
+      - Source: sweeper-instance.ExecutionRole
+        Allow: write
+      - Source: retainer.ExecutionRole
+        Allow: write
+      - Source: terminator-trigger.ExecutionRole
+        Allow: read
+    Properties:
+      TimeToLiveSpecification:
+        AttributeName: expiry_date
+        Enabled: true
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      AttributeDefinitions:
+        - AttributeName: buid
+          AttributeType: S
+        - AttributeName: backup_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: buid
+          KeyType: HASH
+        - AttributeName: backup_id
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 10
+        WriteCapacityUnits: 10

@@ -1,0 +1,400 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    _process_autoscaling_group:
+      -
+        WriteCapacityScalableTarget:
+          Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+          Properties:
+            MaxCapacity: 15
+            MinCapacity: 5
+            ResourceId:
+              - table
+              - Ref: MyTable
+            ScalableDimension: dynamodb:table:WriteCapacityUnits
+
+        ReadCapacityScalableTarget:
+          Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+          Properties:
+            MaxCapacity: 15
+            MinCapacity: 5
+            ResourceId:
+              - table
+              - Ref: MyTable
+            ScalableDimension: dynamodb:table:ReadCapacityUnits
+
+        WriteIndexCapacityScalableTarget:
+          Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+          Properties:
+            MaxCapacity: 15
+            MinCapacity: 5
+            ResourceId:
+              - table
+              - Ref: MyTable
+              - index
+              - amsPartnerIndex
+            ScalableDimension: dynamodb:index:WriteCapacityUnits
+
+        ReadIndexCapacityScalableTarget:
+          Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+          Properties:
+            MaxCapacity: 15
+            MinCapacity: 5
+            ResourceId:
+              - table
+              - Ref: MyTable
+              - index
+              - amsPartnerIndex
+            ScalableDimension: dynamodb:index:ReadCapacityUnits
+
+        WriteScalingPolicy:
+          Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+          Properties:
+            PolicyName: WriteAutoScalingPolicy
+            PolicyType: TargetTrackingScaling
+            ScalingTargetId:
+              Ref: WriteCapacityScalableTarget
+            TargetTrackingScalingPolicyConfiguration:
+              TargetValue: 50.0
+              ScaleInCooldown: 60
+              ScaleOutCooldown: 60
+              PredefinedMetricSpecification:
+                PredefinedMetricType: DynamoDBWriteCapacityUtilization
+
+        ReadScalingPolicy:
+          Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+          Properties:
+            PolicyName: ReadAutoScalingPolicy
+            PolicyType: TargetTrackingScaling
+            ScalingTargetId:
+              Ref: ReadCapacityScalableTarget
+            TargetTrackingScalingPolicyConfiguration:
+              TargetValue: 50.0
+              ScaleInCooldown: 60
+              ScaleOutCooldown: 60
+              PredefinedMetricSpecification:
+                PredefinedMetricType: DynamoDBReadCapacityUtilization
+
+        WriteIndexScalingPolicy:
+          Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+          Properties:
+            PolicyName: WriteIndexScalingPolicy
+            PolicyType: TargetTrackingScaling
+            ScalingTargetId:
+              Ref: WriteIndexCapacityScalableTarget
+            TargetTrackingScalingPolicyConfiguration:
+              TargetValue: 50.0
+              ScaleInCooldown: 60
+              ScaleOutCooldown: 60
+              PredefinedMetricSpecification:
+                PredefinedMetricType: DynamoDBWriteCapacityUtilization
+
+        ReadIndexScalingPolicy:
+          Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+          Properties:
+            PolicyName: ReadIndexScalingPolicy
+            PolicyType: TargetTrackingScaling
+            ScalingTargetId:
+              Ref: ReadIndexCapacityScalableTarget
+            TargetTrackingScalingPolicyConfiguration:
+              TargetValue: 50.0
+              ScaleInCooldown: 60
+              ScaleOutCooldown: 60
+              PredefinedMetricSpecification:
+                PredefinedMetricType: DynamoDBReadCapacityUtilization
+    _process_application_autoscaling_targets_dynamodb:
+      invalid_resource_id:
+        NotValidResourceId:
+          Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+          Properties:
+            ResourceId:
+              NotEmpty: dummy1
+              NotHash: dummy2
+      valid:
+        WriteCapacityScalableTarget:
+          Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+          Properties:
+            MaxCapacity: 15
+            MinCapacity: 5
+            ResourceId:
+              - table
+              - Ref: MyTable
+            ScalableDimension: dynamodb:table:WriteCapacityUnits
+
+        ReadCapacityScalableTarget:
+          Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+          Properties:
+            MaxCapacity: 15
+            MinCapacity: 5
+            ResourceId:
+              - table
+              - Ref: MyTable
+            ScalableDimension: dynamodb:table:ReadCapacityUnits
+    _process_application_autoscaling_targets:
+      ecs_resource_id: service/cluster/servicename
+      ecs:
+        ECSTarget:
+          Type: AWS::ApplicationAutoScaling::ScalableTarget
+          Properties:
+            MaxCapacity: 10
+            MinCapacity: 1
+            ScalableDimension: ecs:service:DesiredCount
+    _process_application_autoscaling_policies:
+      StepScaling:
+        ScalingPolicy:
+          Type: AWS::ApplicationAutoScaling::ScalingPolicy
+          Properties:
+            ScalingTargetId:
+              Ref: ScalableTarget
+            StepScalingPolicyConfiguration:
+              AdjustmentType: PercentChangeInCapacity
+              Cooldown: 60
+              MetricAggregationType: Average
+              MinAdjustmentMagnitude: 1
+              StepAdjustments:
+              - MetricIntervalLowerBound: 30
+                ScalingAdjustment: 100
+
+  Output:
+    _process_autoscaling_group:
+      -
+        Resources:
+          WriteCapacityScalableTarget:
+            Type: AWS::ApplicationAutoScaling::ScalableTarget
+            Properties:
+              ServiceNamespace: dynamodb
+              ResourceId:
+                Fn::Join:
+                - "/"
+                - - table
+                  - Ref: MyTable
+              RoleARN: service-role-arn
+              MaxCapacity: 15
+              MinCapacity: 5
+              ScalableDimension: dynamodb:table:WriteCapacityUnits
+          ReadCapacityScalableTarget:
+            Type: AWS::ApplicationAutoScaling::ScalableTarget
+            Properties:
+              ServiceNamespace: dynamodb
+              ResourceId:
+                Fn::Join:
+                - "/"
+                - - table
+                  - Ref: MyTable
+              RoleARN: service-role-arn
+              MaxCapacity: 15
+              MinCapacity: 5
+              ScalableDimension: dynamodb:table:ReadCapacityUnits
+          WriteIndexCapacityScalableTarget:
+            Type: AWS::ApplicationAutoScaling::ScalableTarget
+            Properties:
+              ServiceNamespace: dynamodb
+              ResourceId:
+                Fn::Join:
+                - "/"
+                - - table
+                  - Ref: MyTable
+                  - index
+                  - amsPartnerIndex
+              RoleARN: service-role-arn
+              MaxCapacity: 15
+              MinCapacity: 5
+              ScalableDimension: dynamodb:index:WriteCapacityUnits
+          ReadIndexCapacityScalableTarget:
+            Type: AWS::ApplicationAutoScaling::ScalableTarget
+            Properties:
+              ServiceNamespace: dynamodb
+              ResourceId:
+                Fn::Join:
+                - "/"
+                - - table
+                  - Ref: MyTable
+                  - index
+                  - amsPartnerIndex
+              RoleARN: service-role-arn
+              MaxCapacity: 15
+              MinCapacity: 5
+              ScalableDimension: dynamodb:index:ReadCapacityUnits
+          WriteScalingPolicy:
+            Type: AWS::ApplicationAutoScaling::ScalingPolicy
+            Properties:
+              ScalingTargetId:
+                Ref: WriteCapacityScalableTarget
+              PolicyName: WriteAutoScalingPolicy
+              PolicyType: TargetTrackingScaling
+              TargetTrackingScalingPolicyConfiguration:
+                TargetValue: 50.0
+                ScaleInCooldown: 60
+                ScaleOutCooldown: 60
+                PredefinedMetricSpecification:
+                  PredefinedMetricType: DynamoDBWriteCapacityUtilization
+          ReadScalingPolicy:
+            Type: AWS::ApplicationAutoScaling::ScalingPolicy
+            Properties:
+              ScalingTargetId:
+                Ref: ReadCapacityScalableTarget
+              PolicyName: ReadAutoScalingPolicy
+              PolicyType: TargetTrackingScaling
+              TargetTrackingScalingPolicyConfiguration:
+                TargetValue: 50.0
+                ScaleInCooldown: 60
+                ScaleOutCooldown: 60
+                PredefinedMetricSpecification:
+                  PredefinedMetricType: DynamoDBReadCapacityUtilization
+          WriteIndexScalingPolicy:
+            Type: AWS::ApplicationAutoScaling::ScalingPolicy
+            Properties:
+              ScalingTargetId:
+                Ref: WriteIndexCapacityScalableTarget
+              PolicyName: WriteIndexScalingPolicy
+              PolicyType: TargetTrackingScaling
+              TargetTrackingScalingPolicyConfiguration:
+                TargetValue: 50.0
+                ScaleInCooldown: 60
+                ScaleOutCooldown: 60
+                PredefinedMetricSpecification:
+                  PredefinedMetricType: DynamoDBWriteCapacityUtilization
+          ReadIndexScalingPolicy:
+            Type: AWS::ApplicationAutoScaling::ScalingPolicy
+            Properties:
+              ScalingTargetId:
+                Ref: ReadIndexCapacityScalableTarget
+              PolicyName: ReadIndexScalingPolicy
+              PolicyType: TargetTrackingScaling
+              TargetTrackingScalingPolicyConfiguration:
+                TargetValue: 50.0
+                ScaleInCooldown: 60
+                ScaleOutCooldown: 60
+                PredefinedMetricSpecification:
+                  PredefinedMetricType: DynamoDBReadCapacityUtilization
+        Outputs:
+          WriteCapacityScalableTargetName:
+            Description: Scalable Target Name
+            Value:
+              Ref: WriteCapacityScalableTarget
+          ReadCapacityScalableTargetName:
+            Description: Scalable Target Name
+            Value:
+              Ref: ReadCapacityScalableTarget
+          WriteIndexCapacityScalableTargetName:
+            Description: Scalable Target Name
+            Value:
+              Ref: WriteIndexCapacityScalableTarget
+          ReadIndexCapacityScalableTargetName:
+            Description: Scalable Target Name
+            Value:
+              Ref: ReadIndexCapacityScalableTarget
+          WriteScalingPolicyName:
+            Description: Scaling Policy Name
+            Value:
+              Ref: WriteScalingPolicy
+          ReadScalingPolicyName:
+            Description: Scaling Policy Name
+            Value:
+              Ref: ReadScalingPolicy
+          WriteIndexScalingPolicyName:
+            Description: Scaling Policy Name
+            Value:
+              Ref: WriteIndexScalingPolicy
+          ReadIndexScalingPolicyName:
+            Description: Scaling Policy Name
+            Value:
+              Ref: ReadIndexScalingPolicy
+    _process_application_autoscaling_targets_dynamodb:
+      valid:
+        Resources:
+          WriteCapacityScalableTarget:
+            Type: AWS::ApplicationAutoScaling::ScalableTarget
+            Properties:
+              ServiceNamespace: dynamodb
+              ResourceId:
+                Fn::Join:
+                - "/"
+                - - table
+                  - Ref: MyTable
+              RoleARN: service-role-arn
+              MaxCapacity: 15
+              MinCapacity: 5
+              ScalableDimension: dynamodb:table:WriteCapacityUnits
+          ReadCapacityScalableTarget:
+            Type: AWS::ApplicationAutoScaling::ScalableTarget
+            Properties:
+              ServiceNamespace: dynamodb
+              ResourceId:
+                Fn::Join:
+                - "/"
+                - - table
+                  - Ref: MyTable
+              RoleARN: service-role-arn
+              MaxCapacity: 15
+              MinCapacity: 5
+              ScalableDimension: dynamodb:table:ReadCapacityUnits
+        Outputs:
+          WriteCapacityScalableTargetName:
+            Description: Scalable Target Name
+            Value:
+              Ref: WriteCapacityScalableTarget
+          ReadCapacityScalableTargetName:
+            Description: Scalable Target Name
+            Value:
+              Ref: ReadCapacityScalableTarget
+    _process_application_autoscaling_targets:
+      ecs:
+        Resources:
+          ECSTarget:
+            Type: AWS::ApplicationAutoScaling::ScalableTarget
+            Properties:
+              MaxCapacity: 10
+              MinCapacity: 1
+              ScalableDimension: ecs:service:DesiredCount
+              ServiceNamespace: ecs
+              ResourceId: service/cluster/servicename
+              RoleARN:
+                Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService
+        Outputs:
+          ECSTargetName:
+            Description: Scalable Target Name
+            Value:
+              Ref: ECSTarget
+
+    _process_application_autoscaling_policies:
+      StepScaling:
+        Resources:
+          ScalingPolicy:
+            Type: AWS::ApplicationAutoScaling::ScalingPolicy
+            Properties:
+              PolicyName: dummy-resource-name
+              ScalingTargetId:
+                Ref: ScalableTarget
+              PolicyType: StepScaling
+              StepScalingPolicyConfiguration:
+                AdjustmentType: PercentChangeInCapacity
+                Cooldown: 60
+                MetricAggregationType: Average
+                MinAdjustmentMagnitude: 1
+                StepAdjustments:
+                - MetricIntervalLowerBound: 30
+                  ScalingAdjustment: 100
+        Outputs:
+          ScalingPolicyName:
+            Description: Scaling Policy Name
+            Value:
+              Ref: ScalingPolicy
+
+    security_rules:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.AutoscalingScalingRole
+        resources:
+        - "*"
+        actions:
+        - dynamodb:DescribeTable
+        - dynamodb:UpdateTable
+        - cloudwatch:PutMetricAlarm
+        - cloudwatch:DescribeAlarms
+        - cloudwatch:GetMetricStatistics
+        - cloudwatch:SetAlarmState
+        - cloudwatch:DeleteAlarms
+        condition:

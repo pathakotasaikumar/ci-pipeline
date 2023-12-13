@@ -1,0 +1,233 @@
+UnitTest:
+  Tags:
+    Input: [{key: "Name",value: "ams01-c031-06-test"},{key: "AMSID",value: "AMS01"},{key: "EnterpriseAppID",value: "C031"},
+    {key: "ApplicationServiceID",value: "06"},{key: "Environment",value: "DEV"},{key: "AsbpType",value: "QDA"},
+    {key: "Branch",value: "Master"},{key: "Build",value: "1"},{key: "ReleaseID",value: "TEST11"},{key: "feature_datadog",value: "enabled"},
+    {key: "test",value: "testing"}]
+  Input:
+    initialize:
+      correct:
+        Type: aws/kinesis-stream
+        Stage: 00-test
+        Persist: true
+        Configuration:
+          MyStream:
+            Type: AWS::Kinesis::Stream
+            Security:
+              - Source:
+                  - test-instance.InstanceRole
+                  - emr.InstanceRole
+                Allow: write
+            Properties:
+              ShardCount: 1
+              Pipeline::RetentionPeriod: 48
+          LogCollector:
+            Type: AWS::Logs::Destination
+
+      wrong-type:
+        Type: aws/kinesis-stream
+        Stage: 02-test
+        Configuration:
+          MyTable:
+            Type: AWS::Lambda::Function
+
+      missing-resource:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Configuration:
+          MyTable:
+            Type: Pipeline::DynamoDB::ScheduledAction
+
+      multiple:
+        Type: aws/dynamodb-table
+        Stage: 02-test
+        Configuration:
+          MyStream1:
+            Type: AWS::Kinesis::Stream
+          MyStream2:
+            Type: AWS::Kinesis::Stream
+
+      wrong_retention:
+        Type: aws/kinesis-stream
+        Stage: 00-test
+        Persist: true
+        Configuration:
+          MyStream:
+            Type: AWS::Kinesis::Stream
+            Security:
+              - Source:
+                  - test-instance.InstanceRole
+                  - emr.InstanceRole
+                Allow: write
+            Properties:
+              ShardCount: 1
+              Pipeline::RetentionPeriod: 240
+          LogCollector:
+            Type: AWS::Logs::Destination
+
+      nil:
+        Type: aws/kinesis
+        Stage: 02-test
+        Configuration:
+          MyTable:
+            Type:
+
+    _full_template:
+      Valid:
+        Type: aws/kinesis-stream
+        Stage: 00-test
+        Persist: true
+        Configuration:
+          MyStream:
+            Type: AWS::Kinesis::Stream
+            Security:
+              - Source:
+                  - test-instance.InstanceRole
+                  - emr.InstanceRole
+                Allow: write
+            Properties:
+              ShardCount: 1
+              Pipeline::RetentionPeriod: 48
+          LogCollector:
+            Type: AWS::Logs::Destination
+
+    _full_template_stream_encryption:
+      Valid:
+        Type: aws/kinesis-stream
+        Stage: 00-test
+        Persist: true
+        Configuration:
+          CustomStream:
+            Type: AWS::Kinesis::Stream
+            Security:
+              - Source:
+                  - test-instance.InstanceRole
+                  - emr.InstanceRole
+                Allow: write
+            Properties:
+              Name: ams01-c031-99-dev-master-5-kinesis-CustomStream
+              ShardCount: 1             
+              StreamEncryption:
+                EncryptionType: "KMS"
+                KeyId: arn:aws:kms:ap-southeast-2:695837244598:key/test-1234
+              Pipeline::RetentionPeriod: 48
+          LogCollector:
+            Type: AWS::Logs::Destination
+
+
+  Output:
+    security_rules:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - test-instance.InstanceRole
+        - emr.InstanceRole
+        resources:
+        - dummy-arn
+        actions:
+        - kinesis:DescribeStream
+        - kinesis:GetRecords
+        - kinesis:GetShardIterator
+        - kinesis:PutRecord
+        - kinesis:PutRecords
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.LogsDestinationRole
+        resources:
+        - dummy-kms-arn
+        actions:
+        - kms:GenerateDataKey
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - correct.LogsDestinationRole
+        resources:
+        - dummy-arn
+        actions:
+        - kinesis:PutRecord
+        condition:
+    security_items:
+      - Name: LogsDestinationRole
+        Type: Role
+        Component: correct
+        Service: logs.amazonaws.com
+
+    _full_template:
+      Resources:
+        MyStream:
+          Type: AWS::Kinesis::Stream
+          Properties:
+            ShardCount: 1
+            Name: "ams01-c031-99-dev-master-5-kinesis-MyStream"
+            StreamEncryption:
+              EncryptionType: "KMS"
+              KeyId: "arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab"
+        LogCollector:
+          Type: AWS::Logs::Destination
+          Properties:
+            DestinationName: ams01-c031-99-dev-master-5-kinesis-LogCollector
+            RoleArn:
+            TargetArn:
+              Fn::GetAtt:
+              - MyStream
+              - Arn
+            DestinationPolicy: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"dummy-source-account\",\"dummy-account-1\",\"dummy-account-2\"]},\"Action\":\"logs:*\",\"Resource\":\"*\"}]}"
+
+      Outputs:
+          MyStreamArn:
+            Description: Kinesis stream ARN
+            Value:
+              Fn::GetAtt:
+              - MyStream
+              - Arn
+          MyStreamName:
+            Description: Kinesis stream name
+            Value:
+              Ref: MyStream
+          LogCollectorArn:
+            Description: Log Destination ARN
+            Value:
+              Fn::GetAtt:
+              - LogCollector
+              - Arn
+
+    _full_template_stream_encryption:
+      Resources:
+        CustomStream:
+          Type: AWS::Kinesis::Stream
+          Properties:
+            ShardCount: 1 
+            StreamEncryption:
+              EncryptionType: "KMS"
+              KeyId: "arn:aws:kms:ap-southeast-2:695837244598:key/test-1234"
+            Name: ams01-c031-99-dev-master-5-kinesis-CustomStream
+        LogCollector:
+          Type: AWS::Logs::Destination
+          Properties:
+            DestinationName: ams01-c031-99-dev-master-5-kinesis-LogCollector
+            RoleArn:
+            TargetArn:
+              Fn::GetAtt:
+              - CustomStream
+              - Arn
+            DestinationPolicy: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"dummy-source-account\",\"dummy-account-1\",\"dummy-account-2\"]},\"Action\":\"logs:*\",\"Resource\":\"*\"}]}"         
+
+      Outputs:
+        CustomStreamArn:
+          Description: Kinesis stream ARN
+          Value:
+            Fn::GetAtt:
+            - CustomStream
+            - Arn
+        CustomStreamName:
+          Description: Kinesis stream name
+          Value:
+            Ref: CustomStream       
+        LogCollectorArn:
+          Description: Log Destination ARN
+          Value:
+            Fn::GetAtt:
+            - LogCollector
+            - Arn
+
+

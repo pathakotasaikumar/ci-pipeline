@@ -1,0 +1,88 @@
+UnitTest:
+  Input:
+    initialize:
+      correct:
+        Type: aws/sns-topic
+        Stage: "00"
+        Persist: true
+        Configuration:
+          NotifyRetainer:
+            Security:
+              -
+                Source: my-app.InstanceRole
+                Allow: read
+            Type: AWS::SNS::Topic
+
+      wrong-type:
+        Type: aws/sns-topic
+        Stage: 02-test
+        Configuration:
+          MyTable:
+            Type: AWS::Lambda::Function
+
+      missing-resource:
+        Type: aws/sns-topic
+        Stage: 02-test
+        Configuration:
+          MyTable:
+            Type: Pipeline::DynamoDB::ScheduledAction
+
+      multiple:
+        Type: aws/sns-topic
+        Stage: 02-test
+        Configuration:
+          MyStream1:
+            Type: AWS::SNS::Topic
+          MyStream2:
+            Type: AWS::SNS::Topic
+
+      nil:
+        Type: aws/sns-topic
+        Stage: 02-test
+        Configuration:
+          MyTable:
+            Type:
+
+    _full_template:
+      Valid:
+        Type: aws/sns-topic
+        Stage: "00"
+        Persist: true
+        Configuration:
+          NotifyRetainer:
+            Type: AWS::SNS::Topic
+
+
+  Output:
+    security_rules:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - my-app.InstanceRole
+        resources:
+        - dummy-arn
+        actions:
+        - sns:Describe*
+        - sns:List*
+        condition:
+    _full_template:
+      Resources:
+        NotifyRetainer:
+          Type: AWS::SNS::Topic
+          Properties: {}
+        NotifyRetainerSourceAccountsPolicy:
+          Type: AWS::SNS::TopicPolicy
+          Properties:
+            PolicyDocument: '{"Version":"2012-10-17","Statement":[{"Sid":"SourceAccounts","Effect":"Allow","Principal":{"AWS":["dummy-source-account","dummy-account-1","dummy-account-2"]},"Action":"sns:Publish","Resource":"*"}]}'
+            Topics:
+            - Ref: NotifyRetainer
+      Outputs:
+        NotifyRetainerName:
+          Description: Topic Name
+          Value:
+            Fn::GetAtt:
+            - NotifyRetainer
+            - TopicName
+        NotifyRetainerArn:
+          Description: Topic Arn
+          Value:
+            Ref: NotifyRetainer

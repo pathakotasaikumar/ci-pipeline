@@ -1,0 +1,12 @@
+UnitTest:
+  Test1:
+    MyVolumeMount1:
+      Type: "Pipeline::Autoheal::VolumeAttachment"
+      Properties:
+        Volume: "@volume1.MyVolumeId"
+        Device: "/dev/xvdm"
+    MyVolumeMount2:
+      Type: "Pipeline::Autoheal::VolumeAttachment"
+      Properties:
+        Volume: "@volume2.MyVolumeId"
+        Device: "/dev/xvdn"

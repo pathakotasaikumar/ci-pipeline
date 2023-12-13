@@ -1,0 +1,234 @@
+_process_alarms:
+  Mocks:
+  - Object: Context
+    MessageChain: component.build_number
+    Return: "5"
+  - Object: Context
+    MessageChain: component.replace_variables
+    Return: "arn:aws:sqs:123::my-queue-123ABC"
+  template:
+    Resources: {}
+    Outputs: {}
+  alarm_definitions:
+    AlarmHighCpu:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+        AlarmActions:
+          - "ScaleUpPolicy"
+        ComparisonOperator: "GreaterThanThreshold"
+        EvaluationPeriods: 2
+        MetricName: CPUUtilization
+        Period: 60
+        Statistic: Average
+        Threshold: 75
+        Namespace: AWS/EC2
+        MetricName: CPUUtilization
+        Dimensions:
+          - Name: AutoScalingGroupName
+            Value:
+              Ref: AutoScalingGroup
+
+    AlarmLowCpu:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+        AlarmActions:
+          - "ScaleDownPolicy"
+        AlarmDescription : AlarmLowCpuDescriptionTest # this should be picked
+        ComparisonOperator: "LessThanThreshold"
+        EvaluationPeriods: 4 # this should be picked
+        Period: 70 # this should be picked
+        Statistic: "Median"  # this should be picked
+        Threshold: 35
+        Namespace: AWS/EC2
+        MetricName: MemoryUtilization # this should be picked
+        Dimensions:
+          - Name: AutoScalingGroupName
+            Value:
+              Ref: AutoScalingGroup
+
+    AlarmCustomDimensions:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+        AlarmActions:
+          - "ScaleUpPolicy"
+        ComparisonOperator: "GreaterThanThreshold"
+        EvaluationPeriods: 4 # this should be picked
+        Period: 60 # this should be picked
+        Statistic: "Average"  # this should be picked
+        Threshold: 1000
+        Namespace: QCP/Custom
+        MetricName: NumUsers
+        Dimensions:
+          - Name: Component
+            Value: my-app
+
+    AlarmOtherComponent:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+        AlarmActions:
+          - "ScaleUpPolicy"
+        ComparisonOperator: "GreaterThanThreshold"
+        EvaluationPeriods: 4 # this should be picked
+        Period: 60 # this should be picked
+        Threshold: 100
+        Statistic: Average
+        Namespace: AWS/SQS
+        MetricName: ApproximateNumberOfMessagesVisible
+        Dimensions:
+          - Name: QueueName
+            Value: "@my-queue.QueueName"
+
+    AlarmInsufficientData:
+      Type: "AWS::CloudWatch::Alarm"
+      Properties:
+        AlarmActions:
+          - "ScaleDownPolicy"
+        ComparisonOperator: "LessThanOrEqualToThreshold"
+        EvaluationPeriods: 1
+        Period: 60
+        Statistic: Maximum
+        Threshold: 0
+        Namespace: QCP/Custom
+        MetricName: SomeCustomMetricName
+        InsufficientDataActions:
+          - "ScaleDownPolicy"
+        Dimensions:
+          - Name: Component
+            Value: my-app
+
+  Output:
+    Resources:
+      AlarmHighCpu:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+          ActionsEnabled: true
+          AlarmActions:
+          - Ref: ScaleUpPolicy
+          AlarmDescription: Alarm AlarmHighCpu
+          ComparisonOperator: GreaterThanThreshold
+          EvaluationPeriods: 2
+          Period: 60
+          Statistic: Average
+          Threshold: 75
+          Namespace: AWS/EC2
+          MetricName: CPUUtilization
+          Dimensions:
+          - Name: AutoScalingGroupName
+            Value:
+              Ref: AutoScalingGroup
+      AlarmLowCpu:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+          ActionsEnabled: true
+          AlarmActions:
+          - Ref: ScaleDownPolicy
+          AlarmDescription: AlarmLowCpuDescriptionTest
+          ComparisonOperator: LessThanThreshold
+          EvaluationPeriods: 4
+          Period: 70
+          Statistic: Median
+          Threshold: 35
+          Namespace: AWS/EC2
+          MetricName: MemoryUtilization
+          Dimensions:
+          - Name: AutoScalingGroupName
+            Value:
+              Ref: AutoScalingGroup
+      AlarmCustomDimensions:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+          ActionsEnabled: true
+          AlarmActions:
+          - Ref: ScaleUpPolicy
+          AlarmDescription: Alarm AlarmCustomDimensions
+          ComparisonOperator: GreaterThanThreshold
+          EvaluationPeriods: 4
+          Period: 60
+          Statistic: Average
+          Threshold: 1000
+          Namespace: QCP/Custom
+          MetricName: NumUsers
+          Dimensions:
+          - Name: AMSID
+            Value: ams01
+          - Name: EnterpriseAppID
+            Value: c031
+          - Name: ApplicationServiceID
+            Value: "99"
+          - Name: Environment
+            Value: dev
+          - Name: Branch
+            Value: master
+          - Name: Build
+            Value: "5"
+          - Name: Component
+            Value: my-app
+      AlarmOtherComponent:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+          ActionsEnabled: true
+          AlarmActions:
+          - Ref: ScaleUpPolicy
+          AlarmDescription: Alarm AlarmOtherComponent
+          ComparisonOperator: GreaterThanThreshold
+          EvaluationPeriods: 4
+          Period: 60
+          Statistic: Average
+          Threshold: 100
+          Namespace: AWS/SQS
+          MetricName: ApproximateNumberOfMessagesVisible
+          Dimensions:
+          - Name: QueueName
+            Value: "arn:aws:sqs:123::my-queue-123ABC"
+      AlarmInsufficientData:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+          ActionsEnabled: true
+          AlarmActions:
+          - Ref: ScaleDownPolicy
+          AlarmDescription: Alarm AlarmInsufficientData
+          ComparisonOperator: LessThanOrEqualToThreshold
+          EvaluationPeriods: 1
+          Period: 60
+          Statistic: Maximum
+          Threshold: 0
+          Namespace: QCP/Custom
+          MetricName: SomeCustomMetricName
+          InsufficientDataActions:
+            - Ref: ScaleDownPolicy
+          Dimensions:
+          - Name: AMSID
+            Value: ams01
+          - Name: EnterpriseAppID
+            Value: c031
+          - Name: ApplicationServiceID
+            Value: "99"
+          - Name: Environment
+            Value: dev
+          - Name: Branch
+            Value: master
+          - Name: Build
+            Value: "5"
+          - Name: Component
+            Value: my-app
+    Outputs:
+      AlarmHighCpuName:
+        Description: Alarm name
+        Value:
+          Ref: AlarmHighCpu
+      AlarmLowCpuName:
+        Description: Alarm name
+        Value:
+          Ref: AlarmLowCpu
+      AlarmCustomDimensionsName:
+        Description: Alarm name
+        Value:
+          Ref: AlarmCustomDimensions
+      AlarmOtherComponentName:
+        Description: Alarm name
+        Value:
+          Ref: AlarmOtherComponent
+      AlarmInsufficientDataName:
+        Description: Alarm name
+        Value:
+          Ref: AlarmInsufficientData

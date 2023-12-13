@@ -1,0 +1,94 @@
+# DynamoDB table component
+---
+Type: aws/dynamodb-table
+Stage: 00-test
+Persist: true
+
+Configuration:
+  MyTable:
+    Type: AWS::DynamoDB::Table
+    Security:
+      - Source: test-instance.InstanceRole
+        Allow: write
+      - Source: emr.InstanceRole
+        Allow: write
+      - Source: lambda.ExecutionRole
+        Allow: write
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: hashKey
+          AttributeType: S
+        - AttributeName: rangeKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: hashKey
+          KeyType: HASH
+        - AttributeName: rangeKey
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  WriteCapacityScalableTarget:
+    Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+    Properties:
+      MaxCapacity: 15
+      MinCapacity: 5
+      ResourceId:
+        - table
+        - Ref: MyTable
+      ScalableDimension: dynamodb:table:WriteCapacityUnits
+
+  ReadCapacityScalableTarget:
+    Type: "AWS::ApplicationAutoScaling::ScalableTarget"
+    Properties:
+      MaxCapacity: 15
+      MinCapacity: 5
+      ResourceId:
+        - table
+        - Ref: MyTable
+      ScalableDimension: dynamodb:table:ReadCapacityUnits
+
+  WriteScalingPolicy:
+    Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+    Properties:
+      PolicyName: WriteAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId:
+        Ref: WriteCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 50.0
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBWriteCapacityUtilization
+
+  ReadScalingPolicy:
+    Type: "AWS::ApplicationAutoScaling::ScalingPolicy"
+    Properties:
+      PolicyName: ReadAutoScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId:
+        Ref: ReadCapacityScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 50.0
+        ScaleInCooldown: 60
+        ScaleOutCooldown: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: DynamoDBReadCapacityUtilization
+
+  ThroughputScheduleUp:
+    Type: Pipeline::DynamoDB::ScheduledAction
+    Properties:
+      TableName: MyTable
+      SetReadCapacity: 20
+      SetWriteCapacity: 20
+      Recurrence: "0 6 * * ?"
+
+  ThroughputScheduleDown:
+    Type: Pipeline::DynamoDB::ScheduledAction
+    Properties:
+      TableName: MyTable
+      SetReadCapacity: 5
+      SetWriteCapacity: 5
+      Recurrence: "0 18 * * ?"

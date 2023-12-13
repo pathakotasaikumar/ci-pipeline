@@ -1,0 +1,16 @@
+Type: "aws/rds-aurora"
+Stage: "01-test"
+Persist: false
+IngressPoint: false
+Configuration:
+  MyDBCluster:
+    Type: "AWS::RDS::DBCluster"
+    InboundRules:
+      - Source: "ApplicationTier.SecurityGroup"
+        Allow: "ALL:*"
+  MyDBInstance1:
+    Type: "AWS::RDS::DBInstance"
+  MyDBInstance2:
+    Type: "AWS::RDS::DBInstance"
+  MyDBInstance3:
+    Type: "AWS::RDS::DBInstance"

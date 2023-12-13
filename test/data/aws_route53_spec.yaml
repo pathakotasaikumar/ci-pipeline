@@ -1,0 +1,90 @@
+UnitTest:
+  ComponentName: Test-Component
+  ComponentDefinition:
+    Valid:
+      MyRoute53:
+        Type: "aws/route53"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        
+        Configuration:
+          PrimaryApi:
+            Type: AWS::Route53::Record
+            Properties:
+              Comment: Primary Health based record
+              Failover: PRIMARY
+              HealthCheckId: PrimaryHealthCheck
+              ResourceRecords:
+                - "@api1.DeployDnsName"
+              SetIdentifier: PrimaryApi
+              TTL: 0
+              Type: CNAME
+        
+          SecondaryApi:
+            Type: AWS::Route53::Record
+            Properties:
+              Comment: Secondary Health based record
+              Failover: SECONDARY
+              HealthCheckId: SecondaryHealthCheck
+              ResourceRecords:
+                - "@api2.DeployDnsName"
+              SetIdentifier: SecondaryApi
+              TTL: 0
+              Type: CNAME
+        
+          PrimaryHealthCheck:
+            Type: AWS::Route53::HealthCheck
+            Properties:
+              HealthCheckConfig:
+                Type: CLOUDWATCH_METRIC
+                InsufficientDataHealthStatus: Unhealthy
+                AlarmIdentifier:
+                  Name: "@api1.UnhealthyAlarmName"
+                  Region: ap-southeast-2
+        
+          SecondaryHealthCheck:
+            Type: AWS::Route53::HealthCheck
+            Properties:
+              HealthCheckConfig:
+                Type: CLOUDWATCH_METRIC
+                InsufficientDataHealthStatus: Unhealthy
+                AlarmIdentifier:
+                  Name: "@api2.UnhealthyAlarmName"
+                  Region: ap-southeast-2
+
+          Features:
+            Type: Pipeline::Features
+            Properties:
+              Features:
+                Datadog : enabled
+
+          RecordSet:
+            Type: AWS::Route53::RecordSet
+
+    Invalid:
+      MyRoute53:
+        Type: "aws/route53"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        
+        Configuration:
+          Features:
+              Type: Pipeline::Features1
+              Properties:
+                Features:
+                  Datadog : enabled
+    InvalidNull:
+      MyRoute53:
+        Type: "aws/route53"
+        Stage: "02-test"
+        Persist: false
+        IngressPoint: true
+        
+        Configuration:
+          Features:
+              Type: Null
+              Properties:
+                Features:
+                  Datadog : enabled

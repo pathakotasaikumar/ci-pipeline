@@ -1,0 +1,21 @@
+# MySQL RDS database component, without persistence
+---
+Type: "aws/rds-mysql"
+Stage: "01"
+Persist: false
+Configuration:
+ MySQLMinimal:
+   Type: "AWS::RDS::DBInstance"
+   Security:
+     - Source: "autoheal.AsgSecurityGroup"
+       Allow: "TCP:3306"
+   Properties:
+     AllocatedStorage: 10
+     DBInstanceClass: "db.m3.medium"
+     DBName: "testdb"
+     MultiAZ: false
+     StorageEncrypted: true
+Actions:
+ PreRelease:
+   - Action: Snapshot
+     Stage: "02"

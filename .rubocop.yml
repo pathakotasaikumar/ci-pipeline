@@ -1,0 +1,27 @@
+AllCops:
+  Include:
+    - 'lib/**/*.rb'
+    - 'spec/**/*'
+    - 'Guardfile*.rb'
+  Exclude:
+     - '.bundle/**/*'
+     - 'Gemfile'
+     - 'bin/**/*'
+     - 'coverage/**/*'
+     - 'platform/**/*'
+     - 'target/**/*'
+     - 'test/**/*'
+  TargetRubyVersion: 3.2
+
+Layout/FirstHashElementIndentation:
+  EnforcedStyle: consistent
+
+Layout/CaseIndentation:
+  EnforcedStyle: end
+
+Style/Documentation:
+  Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*.rb'

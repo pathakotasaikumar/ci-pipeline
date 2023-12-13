@@ -1,0 +1,71 @@
+---
+ReplicationGroup:
+  Type: AWS::ElastiCache::ReplicationGroup
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::ElastiCache::ReplicationGroup:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Required: false
+          Type: List
+          ItemType: Common.SecurityItem
+        Properties:
+          AutomaticFailoverEnabled:
+            Configurable: true
+          CacheNodeType:
+            Configurable: true
+          NumCacheClusters:
+            Configurable: true
+          EngineVersion:
+            Configurable: true
+          NotificationTopicArn:
+            Configurable: true
+          Port:
+            Configurable: true
+          PreferredMaintenanceWindow:
+            Configurable: true
+          SnapshotArns:
+            Configurable: true
+          SnapshotRetentionLimit:
+            Configurable: true
+          SnapshotWindow:
+            Configurable: true
+          TransitEncryptionEnabled:
+            Configurable: true
+          AtRestEncryptionEnabled:
+            Configurable: true
+ParameterGroup:
+  Type: AWS::ElastiCache::ParameterGroup
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::ElastiCache::ParameterGroup:
+        Properties:
+          CacheParameterGroupFamily:
+            Configurable: true
+          Properties:
+            Configurable: true
+
+SubnetGroup:
+  Type: AWS::ElastiCache::SubnetGroup
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::ElastiCache::SubnetGroup:
+        Properties:
+          SubnetIds:
+            Configurable: true
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features

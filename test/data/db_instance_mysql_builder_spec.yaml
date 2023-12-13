@@ -1,0 +1,570 @@
+---
+UnitTest:
+  ComponentName: Test-Component
+  ComponentDefinition:
+    Valid:
+      MySQLSingleDb:
+        Type: "aws/rds-mysql"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              - Source: "MySQLSingleDb"
+                Allow: "ALL:*"
+            Properties:
+              DBName: mydb
+              MasterUsername: root
+              MasterUserPassword: Pa$$w0rd99
+              MultiAZ: false
+      MySQLSingleDbSnapshot:
+        Type: "aws/rds-mysql"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            DeletionPolicy: Snapshot
+            Security:
+              - Source: "MySQLSingleDb"
+                Allow: "ALL:*"
+            Properties:
+              DBName: mydb
+              DBInstanceClass: db.t3.medium
+              MasterUsername: root
+              MasterUserPassword: Pa$$w0rd99
+              MultiAZ: false
+      MySQLSingleReplica:
+        Type: "aws/rds-mysql"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          MySQLPrimary:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              - Source: "MySQLSingleReplica.SecurityGroup"
+                Allow: "ALL:*"
+            Properties:
+              DBName: mydb
+              MasterUsername: root
+              MasterUserPassword: Pa$$w0rd99
+              MultiAZ: false
+          MySQLReplica1:
+            Type: "AWS::RDS::DBInstance"
+            Security:
+              - Source: "MySQLSingleReplica.SecurityGroup"
+                Allow: "ALL:*"
+            Properties:
+              SourceDBInstanceIdentifier: MySQLPrimary
+      MySQLFullBuild:
+        Type: "aws/rds-mysql"
+        Stage: "001-datatier"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              DBName: mydb
+              MasterUsername: root
+              MultiAZ: false
+              EnableCloudwatchLogExports:
+                - audit
+          SubscriptionFilter:
+            Type: AWS::Logs::SubscriptionFilter
+            Properties:
+              DestinationArn: "@lambda.DeployArn"
+
+    Variations:
+        MySQLMinimal:
+          Type: "AWS::RDS::DBInstance"
+          Properties:
+            MasterUserPassword: static123
+        Snaps:
+          Type: "AWS::RDS::DBInstance"
+          Properties:
+            MasterUserPassword: static123
+            DBInstanceClass: db.t3.medium
+            DBSnapshotIdentifier: variation2-db
+        LatestSnap:
+          Type: "AWS::RDS::DBInstance"
+          Properties:
+            MasterUserPassword: static123
+            DBSnapshotIdentifier: "latest"
+            DBInstanceClass: db.t3.medium
+            MultiAZ: false
+            AllocatedStorage: 60
+        OtherType:
+          Type: "AWS::RDS::DBInstance"
+          Properties:
+            AllocatedStorage: 60
+            AllowMajorVersionUpgrade: true
+            AutoMinorVersionUpgrade: false
+            BackupRetentionPeriod: 50
+            DBInstanceClass: db.t3.medium
+            DBName: TestDb
+            EngineVersion: 3.5.1
+            MasterUsername: custom
+            MasterUserPassword : custom
+            MultiAZ: false
+            Port: 3307
+            PreferredBackupWindow: 123123
+            PreferredMaintenanceWindow: 456
+            StorageEncrypted: true
+            StorageType: io
+
+  Mocks:
+    -
+    -
+    -
+      - Object: AwsHelper
+        MessageChain: rds_get_latest_snapshot
+        Return: Mocked-Latest-Return
+  TestResult:
+    _process_db_instances:
+      MySQLSingleDb:
+        Parameters:
+          DatabaseMasterUsername:
+            NoEcho: true
+            Description: 'The database admin account username'
+            Type: 'String'
+          DatabaseMasterUserPassword:
+            NoEcho: true
+            Description: 'The database admin account password'
+            Type: 'String'
+        Resources:
+          Database:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+              Engine: MySQL
+              CopyTagsToSnapshot: true
+              PubliclyAccessible: false
+              VPCSecurityGroups:
+              - sg123
+              DBParameterGroupName:
+                Ref: DummyParameterGroup
+              OptionGroupName:
+                Ref: DummyOptionGroup
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              AllocatedStorage: '100'
+              StorageType: gp2
+              DBInstanceClass: db.t3.medium
+              Port: '3306'
+              DBName: mydb
+              MasterUsername:
+                Ref: DatabaseMasterUsername
+              MasterUserPassword:
+                Ref: DatabaseMasterUserPassword
+              StorageEncrypted: true
+              MultiAZ: false
+              AllowMajorVersionUpgrade: false
+              AutoMinorVersionUpgrade: true
+              BackupRetentionPeriod: '30'
+              KmsKeyId: kms-dummy
+        Outputs:
+          DatabaseEndpointAddress:
+            Description: RDS instance Database endpoint
+            Value:
+              Fn::GetAtt:
+              - Database
+              - Endpoint.Address
+          DatabaseEndpointPort:
+            Description: RDS instance Database port
+            Value:
+              Fn::GetAtt:
+              - Database
+              - Endpoint.Port
+          DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+      MySQLSingleDbSnapshot:
+        Parameters:
+          DatabaseMasterUsername:
+            NoEcho: true
+            Description: 'The database admin account username'
+            Type: 'String'
+          DatabaseMasterUserPassword:
+            NoEcho: true
+            Description: 'The database admin account password'
+            Type: 'String'
+        Resources:
+          Database:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+              Engine: MySQL
+              CopyTagsToSnapshot: true
+              PubliclyAccessible: false
+              VPCSecurityGroups:
+              - sg123
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              AllocatedStorage: '100'
+              StorageType: gp2
+              DBInstanceClass: db.t3.medium
+              Port: '3306'
+              DBName: mydb
+              MasterUsername:
+                Ref: DatabaseMasterUsername
+              MasterUserPassword:
+                Ref: DatabaseMasterUserPassword
+              StorageEncrypted: true
+              MultiAZ: false
+              AllowMajorVersionUpgrade: false
+              AutoMinorVersionUpgrade: true
+              BackupRetentionPeriod: '30'
+              KmsKeyId: kms-dummy
+        Outputs:
+          DatabaseEndpointAddress:
+            Description: RDS instance Database endpoint
+            Value:
+              Fn::GetAtt:
+              - Database
+              - Endpoint.Address
+          DatabaseEndpointPort:
+            Description: RDS instance Database port
+            Value:
+              Fn::GetAtt:
+              - Database
+              - Endpoint.Port
+          DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+      MySQLSingleReplica:
+        Parameters:
+          MySqlPrimaryMasterUsername:
+            NoEcho: true
+            Description: 'The database admin account username'
+            Type: 'String'
+          MySqlPrimaryMasterUserPassword:
+            NoEcho: true
+            Description: 'The database admin account password'
+            Type: 'String'
+        Resources:
+          MySqlPrimary:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-mysqlprimary
+              AllowMajorVersionUpgrade: false
+              AutoMinorVersionUpgrade: true
+              BackupRetentionPeriod: '30'
+              Engine: MySQL
+              CopyTagsToSnapshot: true
+              VPCSecurityGroups:
+              - sg123
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              AllocatedStorage: '100'
+              DBInstanceClass: db.t3.medium
+              DBName: mydb
+              MasterUsername:
+                Ref: MySqlPrimaryMasterUsername
+              MasterUserPassword:
+                Ref: MySqlPrimaryMasterUserPassword
+              StorageEncrypted: true
+              MultiAZ: false
+              PubliclyAccessible: false
+              Port: "3306"
+              StorageType: gp2
+              KmsKeyId: kms-dummy
+          MySqlReplica1:
+            Type: AWS::RDS::DBInstance
+            DeletionPolicy: Snapshot
+            Properties:
+              DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-mysqlreplica1
+              Engine: MySQL
+              CopyTagsToSnapshot: true
+              PubliclyAccessible: false
+              VPCSecurityGroups:
+              - sg123
+              SourceDBInstanceIdentifier:
+                Ref: MySQLPrimary
+              StorageType: gp2
+              Port: "3306"
+              StorageEncrypted: true
+              DBInstanceClass: db.t3.medium
+        Outputs:
+          MySqlPrimaryEndpointAddress:
+            Description: RDS instance MySqlPrimary endpoint
+            Value:
+              Fn::GetAtt:
+              - MySqlPrimary
+              - Endpoint.Address
+          MySqlPrimaryEndpointPort:
+            Description: RDS instance MySqlPrimary port
+            Value:
+              Fn::GetAtt:
+              - MySqlPrimary
+              - Endpoint.Port
+          MySqlPrimaryArn:
+            Description: RDS instance MySqlPrimary ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: MySqlPrimary
+          MySqlReplica1EndpointAddress:
+            Description: RDS instance MySqlReplica1 endpoint
+            Value:
+              Fn::GetAtt:
+              - MySqlReplica1
+              - Endpoint.Address
+          MySqlReplica1EndpointPort:
+            Description: RDS instance MySqlReplica1 port
+            Value:
+              Fn::GetAtt:
+              - MySqlReplica1
+              - Endpoint.Port
+          MySqlReplica1Arn:
+            Description: RDS instance MySqlReplica1 ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: MySqlReplica1
+      Variations:
+        MySQLMinimal:
+          Parameters:
+            MySQLMinimalMasterUsername:
+              NoEcho: true
+              Description: 'The database admin account username'
+              Type: 'String'
+            MySQLMinimalMasterUserPassword:
+              NoEcho: true
+              Description: 'The database admin account password'
+              Type: 'String'
+          Resources:
+            MySQLMinimal:
+              Type: AWS::RDS::DBInstance
+              DeletionPolicy: Snapshot
+              Properties:
+                Engine: MySQL
+                CopyTagsToSnapshot: true
+                PubliclyAccessible: false
+                VPCSecurityGroups:
+                - sg123
+                DBSubnetGroupName:
+                  Ref: DBSubnetGroup
+                AllocatedStorage: '100'
+                AllowMajorVersionUpgrade: false
+                AutoMinorVersionUpgrade: true
+                BackupRetentionPeriod: '30'
+                DBInstanceClass: db.t3.medium
+                MasterUsername:
+                  Ref: MySQLMinimalMasterUsername
+                MasterUserPassword:
+                  Ref: MySQLMinimalMasterUserPassword
+                MultiAZ: true
+                Port: '3306'
+                StorageEncrypted: true
+                StorageType: gp2
+                KmsKeyId: kms-dummy
+          Outputs:
+            MySQLMinimalEndpointAddress:
+              Description: RDS instance MySQLMinimal endpoint
+              Value:
+                Fn::GetAtt:
+                - MySQLMinimal
+                - Endpoint.Address
+            MySQLMinimalEndpointPort:
+              Description: RDS instance MySQLMinimal port
+              Value:
+                Fn::GetAtt:
+                - MySQLMinimal
+                - Endpoint.Port
+            MySQLMinimalArn:
+              Description: RDS instance MySQLMinimal ARN
+              Value:
+                Fn::Join:
+                - ":"
+                - - arn:aws:rds
+                  - Ref: AWS::Region
+                  - Ref: AWS::AccountId
+                  - db
+                  - Ref: MySQLMinimal
+        Snaps:
+          Resources:
+            Snaps:
+              Type: AWS::RDS::DBInstance
+              DeletionPolicy: Snapshot
+              Properties:
+                DBInstanceClass: db.t3.medium
+                DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-snaps
+                DBSubnetGroupName:
+                  Ref: DBSubnetGroup
+                Engine: MySQL
+                CopyTagsToSnapshot: true
+                PubliclyAccessible: false
+                AllowMajorVersionUpgrade: false
+                AutoMinorVersionUpgrade: true
+                BackupRetentionPeriod: '30'
+                VPCSecurityGroups:
+                - sg123
+                DBSnapshotIdentifier: variation2-db
+                MultiAZ: true
+                StorageType: gp2
+                Port: "3306"
+                StorageEncrypted: true
+          Outputs:
+            SnapsEndpointAddress:
+              Description: RDS instance Snaps endpoint
+              Value:
+                Fn::GetAtt:
+                - Snaps
+                - Endpoint.Address
+            SnapsEndpointPort:
+              Description: RDS instance Snaps port
+              Value:
+                Fn::GetAtt:
+                - Snaps
+                - Endpoint.Port
+            SnapsArn:
+              Description: RDS instance Snaps ARN
+              Value:
+                Fn::Join:
+                - ":"
+                - - arn:aws:rds
+                  - Ref: AWS::Region
+                  - Ref: AWS::AccountId
+                  - db
+                  - Ref: Snaps
+        LatestSnap:
+          Resources:
+            LatestSnap:
+              Type: AWS::RDS::DBInstance
+              DeletionPolicy: Snapshot
+              Properties:
+                DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-latestsnap
+                DBInstanceClass: db.t3.medium
+                DBSubnetGroupName:
+                  Ref: DBSubnetGroup
+                Engine: MySQL
+                CopyTagsToSnapshot: true
+                PubliclyAccessible: false
+                AllowMajorVersionUpgrade: false
+                AutoMinorVersionUpgrade: true
+                BackupRetentionPeriod: '30'
+                VPCSecurityGroups:
+                - sg123
+                DBSnapshotIdentifier: Mocked-Latest-Return
+                MultiAZ: false
+                StorageType: gp2
+                Port: "3306"
+                AllocatedStorage: 60
+                StorageEncrypted: true
+          Outputs:
+            LatestSnapEndpointAddress:
+              Description: RDS instance LatestSnap endpoint
+              Value:
+                Fn::GetAtt:
+                - LatestSnap
+                - Endpoint.Address
+            LatestSnapEndpointPort:
+              Description: RDS instance LatestSnap port
+              Value:
+                Fn::GetAtt:
+                - LatestSnap
+                - Endpoint.Port
+            LatestSnapArn:
+              Description: RDS instance LatestSnap ARN
+              Value:
+                Fn::Join:
+                - ":"
+                - - arn:aws:rds
+                  - Ref: AWS::Region
+                  - Ref: AWS::AccountId
+                  - db
+                  - Ref: LatestSnap
+        OtherType:
+          Parameters:
+            OtherTypeMasterUsername:
+              NoEcho: true
+              Description: 'The database admin account username'
+              Type: 'String'
+            OtherTypeMasterUserPassword:
+              NoEcho: true
+              Description: 'The database admin account password'
+              Type: 'String'
+          Resources:
+            OtherType:
+              Type: AWS::RDS::DBInstance
+              DeletionPolicy: Snapshot
+              Properties:
+                DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-othertype
+                Engine: MySQL
+                CopyTagsToSnapshot: true
+                PubliclyAccessible: false
+                VPCSecurityGroups:
+                - sg123
+                DBSubnetGroupName:
+                  Ref: DBSubnetGroup
+                AllocatedStorage: 60
+                AllowMajorVersionUpgrade: true
+                AutoMinorVersionUpgrade: false
+                BackupRetentionPeriod: 50
+                DBInstanceClass: db.t3.medium
+                DBName: TestDb
+                EngineVersion: 3.5.1
+                MasterUsername:
+                  Ref: OtherTypeMasterUsername
+                MasterUserPassword:
+                  Ref: OtherTypeMasterUserPassword
+                MultiAZ: false
+                Port: 3307
+                PreferredBackupWindow: 123123
+                PreferredMaintenanceWindow: 456
+                StorageEncrypted: true
+                StorageType: io
+                KmsKeyId: kms-dummy
+          Outputs:
+            OtherTypeEndpointAddress:
+              Description: RDS instance OtherType endpoint
+              Value:
+                Fn::GetAtt:
+                - OtherType
+                - Endpoint.Address
+            OtherTypeEndpointPort:
+              Description: RDS instance OtherType port
+              Value:
+                Fn::GetAtt:
+                - OtherType
+                - Endpoint.Port
+            OtherTypeArn:
+              Description: RDS instance OtherType ARN
+              Value:
+                Fn::Join:
+                - ":"
+                - - arn:aws:rds
+                  - Ref: AWS::Region
+                  - Ref: AWS::AccountId
+                  - db
+                  - Ref: OtherType
+    MySQLFullBuild:
+      SecurityItems:
+      - Type: SecurityGroup
+        Name: SecurityGroup
+        Component: Test-Component
+        DefaultIpIngress: true
+      SecurityRules: []

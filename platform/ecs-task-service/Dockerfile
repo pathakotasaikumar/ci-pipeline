@@ -1,0 +1,1 @@
+FROM nexus.qcpaws.qantas.com.au:9443/verified/nginx:1.14

@@ -1,0 +1,14 @@
+# SQS Queue for testing LifecycleHook on autoscale-rhel6 component
+---
+Type: aws/sqs
+Stage: 00-test
+Persist: true
+
+Configuration:
+  Queue:
+    Type: AWS::SQS::Queue
+    Security:
+      - Source: autoscale-rhel6.InstanceRole
+        Allow: write
+    Properties:
+      MessageRetentionPeriod: 3600

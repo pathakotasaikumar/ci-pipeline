@@ -1,0 +1,57 @@
+---
+Type: aws/instance
+Stage: 01-test
+IngressPoint: true
+Persist: false
+Configuration:
+  Instance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          Deploy:
+            - TestApi
+        TestApi:
+          commands:
+            bootstrap:
+              command: bash bootstrap.sh
+              cwd: /root/payload
+    Properties:
+      AvailabilityZone: "@a"
+      ImageId: amazon2-latest
+      InstanceType: m5a.xlarge
+      Tenancy: dedicated
+      CpuOptions:
+        CoreCount: 2
+        ThreadsPerCore: 2
+
+Actions:
+  PreRelease:
+    - Action: HTTPRequest
+      Stage: 00-test-endpoint
+      Parameters:
+        Type: get
+        URL: http://@instance-amzn.DeployDnsName/qcp-pipeline-dev/build
+        SSL: false
+        Debug: true
+        ValidResponseCodes:
+          - 200
+        StopOnError: true
+
+    - Action: RegisterApi
+      Stage: 01-register-api
+      Parameters:
+        Basepath: qcp-pipeline-dev
+        Swagger: !include/json platform/instance-amzn/swagger.json
+        ApiConf: !include/yaml platform/instance-amzn/apiconf.yaml
+
+  PostDeploy:
+    - Action: QualysWAS
+      Stage: 01-QualysWAS-testing
+      Parameters:
+        ScanConf:
+          qualys_was:
+            host: "qcom-stg.qantastesting.com"
+            base_path: /qcp-pipeline-dev/regression-build
+            recipients:
+              - csi@qantas.com.au

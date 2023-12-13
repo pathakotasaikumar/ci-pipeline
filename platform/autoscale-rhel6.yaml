@@ -1,0 +1,179 @@
+# RHEL6 autoscale component
+# - Runs HTTP server with /index.html /health pages
+---
+Type: aws/autoscale
+Stage: 01-test
+Persist: true
+
+Configuration:
+  # Bake instance configuration
+  Features:
+    Type: Pipeline::Features
+    Properties:
+      Features:
+        Datadog: enabled
+        Qualys:
+          Enabled: true
+          Recipients: ["csi@qantas.com.au"]
+
+  BakeInstance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          Deploy: [ Configure ]
+        Configure:
+          commands:
+            bootstrap:
+              command: bash bootstrap.sh
+              cwd: /root/payload
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT45M
+    Properties:
+      ImageId: "@rhel6-latest"
+      InstanceType: m4.large
+
+  # Elastic Load Balancer configuration
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Security:
+      # Allow access by test-instance
+      - Source:
+          - test-instance.SecurityGroup
+          - lambda.SecurityGroup
+        Allow: "@listeners"
+    Properties:
+      Scheme: internal
+      AppCookieStickinessPolicy:
+        - CookieName: connect.sid
+          PolicyName: HTTPSCookieStickinessPolicy
+      Listeners:
+        - LoadBalancerPort: 80
+          InstancePort: 80
+          Protocol: HTTP
+          PolicyNames:
+            - HTTPSCookieStickinessPolicy
+      HealthCheck:
+        HealthyThreshold: 2
+        Interval: 10
+        Target: HTTP:80/health
+        Timeout: 5
+        UnhealthyThreshold: 2
+
+  # Autoscaling Group configuration
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    Properties:
+      MinSize: 1
+      MaxSize: 1
+      HealthCheckGracePeriod: 900
+      VPCZoneIdentifier: "@a-private,@b-private"
+      NewInstancesProtectedFromScaleIn: true
+
+  # Launch Configuration configuration
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      InstanceType: m4.large
+
+  # High-CPU alarm
+  AlarmHighCpu:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - ScaleUpPolicy
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 2
+      MetricName: CPUUtilization
+      Period: 60
+      Statistic: Average
+      Threshold: 75
+
+  # DNS Failover alarm
+  UnhealthyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 1
+      MetricName: HealthyHostCount
+      Period: 60
+      Statistic: Minimum
+      Threshold: 1
+      Namespace: AWS/ELB
+      Dimensions:
+        - Name: LoadBalancerName
+          Value:
+            Ref: LoadBalancer
+
+  # Scaling Policy to add instances
+  ScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      ScalingAdjustment: 1
+      Cooldown: 300
+
+  # Low-CPU alarm
+  AlarmLowCpu:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - ScaleDownPolicy
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 4
+      MetricName: CPUUtilization
+      Period: 60
+      Statistic: Average
+      Threshold: 35
+
+  # Insufficient data alarm
+  AlarmLowCpu:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmActions:
+        - ScaleDownPolicy
+      ComparisonOperator: LessThanThreshold
+      EvaluationPeriods: 4
+      InsufficientDataActions:
+        - ScaleDownPolicy
+      MetricName: CPUUtilization
+      Period: 60
+      Statistic: Average
+      Threshold: 35
+
+  # Scaling policy to remove instances
+  ScaleDownPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      ScalingAdjustment: -1
+      Cooldown: 60
+
+  TerminatingHook:
+    Type: AWS::AutoScaling::LifecycleHook
+    Properties:
+      DefaultResult: CONTINUE
+      HeartbeatTimeout: 30
+      LifecycleTransition: autoscaling:EC2_INSTANCE_TERMINATING
+      NotificationTargetARN: "@lifecycle-queue.QueueArn"
+
+Environments:
+  DEV:
+    Configuration:
+      BakeInstance:
+        Properties:
+          KeyName: pipeline
+      LaunchConfiguration:
+        Properties:
+          KeyName: pipeline
+    Branches:
+      QCP-3442:
+        Configuration:
+          AutoScalingGroup:
+            Properties:
+              MinSize: 2
+              MaxSize: 2

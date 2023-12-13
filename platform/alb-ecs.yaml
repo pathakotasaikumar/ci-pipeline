@@ -1,0 +1,43 @@
+---
+Type: aws/alb
+Stage: 00-test
+Persist: false
+IngressPoint: true
+Configuration:
+  ApplicationELB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties: 
+  Listener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+      - TargetGroupArn: HTTPTargetGroup
+        Type: forward
+  Rule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn:
+          Ref: HTTPTargetGroup
+      Conditions:
+      - Field: path-pattern
+        Values:
+        - "*"
+      ListenerArn:
+        Ref: Listener
+      Priority: 1
+  HTTPTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      TargetType: ip
+      Port: 80
+      Protocol: HTTP
+      HealthCheckPort: 80
+      HealthCheckPath: "/"
+      UnhealthyThresholdCount: 4
+      HealthyThresholdCount: 3
+      HealthCheckIntervalSeconds: 15
+      HealthCheckTimeoutSeconds: 10

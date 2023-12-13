@@ -1,0 +1,56 @@
+Input:
+  Valid1:
+    NetworkAttachment:
+      Type: "Pipeline::Autoheal::NetworkAttachment"
+      Properties:
+        NetworkInterfaceId: "@eni1.MyNetworkId"
+        DeviceIndex: 1
+  Valid2:
+    NetworkAttachment:
+      Type: "Pipeline::Autoheal::NetworkAttachment"
+      Properties:
+        NetworkInterfaceId: "@eni2.MyNetworkId"
+        DeviceIndex: "1"
+  Invalid1:
+    NetworkAttachment:
+      Type: "Pipeline::Autoheal::NetworkAttachment"
+      Properties:
+        NetworkInterfaceId: "@eni3.MyNetworkId"
+        DeviceIndex: 1
+  Invalid2:
+    NetworkAttachment:
+      Type: "Pipeline::Autoheal::NetworkAttachment"
+      Properties:
+        NetworkInterfaceId: "@eni2.MyNetworkId"
+        DeviceIndex: dev1
+
+Output:
+  _parse_network_attachments:
+    Valid1:
+      -
+        NetworkInterfaceId: eni-123456780
+        DeviceIndex: "1"
+    Valid2:
+      -
+        NetworkInterfaceId: eni-098765432
+        DeviceIndex: "1"
+
+  _network_attachment_security_rules:
+    Valid1:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - autoheal.TestRol1
+        resources:
+        - "*"
+        actions:
+        - ec2:AttachNetworkInterface
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - autoheal.TestRol1
+        resources:
+        - arn:aws:logs:*:*:*
+        actions:
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+        condition:

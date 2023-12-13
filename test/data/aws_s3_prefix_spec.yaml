@@ -1,0 +1,54 @@
+UnitTest:
+  Input:
+    initialize:
+      correct:
+        Type: aws/s3-prefix
+        Stage: 02-test
+        Configuration:
+          PublicS3:
+            Type: AWS::S3::Prefix
+            Properties:
+              BucketType: private
+
+      multiple:
+        Type: aws/s3-prefix
+        Stage: 02-test
+        Configuration:
+          PublicS31:
+            Type: AWS::S3::Prefix
+            Properties:
+              BucketType: private
+          PublicS32:
+            Type: AWS::S3::Prefix
+            Properties:
+              BucketType: public
+
+
+      wrong-type:
+        Type: aws/s3-prefix
+        Stage: 02-test
+        Configuration:
+          PublicS3:
+            Type: AWS::S3::Pr
+            Properties:
+              BucketType: public
+
+      nil-bucket-type:
+        Type: aws/s3-prefix
+        Stage: 02-test
+        Configuration:
+          PublicS3:
+            Type: AWS::S3::Prefix
+            Properties:
+              BucketType:
+
+      with-cache-control:
+        Type: aws/s3-prefix
+        Stage: 02-test
+        Configuration:
+          PublicS3:
+            Type: AWS::S3::Prefix
+            Properties:
+              BucketType: public
+              Headers:
+                cache_control: "max-age=604800"

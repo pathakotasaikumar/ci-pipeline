@@ -1,0 +1,54 @@
+---
+Type: "aws/route53"
+Stage: 02-test
+Persist: false
+IngressPoint: true
+
+Configuration:
+  PrimaryDns:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Comment: Primary Health based record
+      Failover: PRIMARY
+      HealthCheckId: PrimaryHealthCheck
+      ResourceRecords:
+        - "@autoscale-rhel6.DeployDnsName"
+      SetIdentifier: PrimaryDns
+      TTL: 0
+      Type: CNAME
+
+  SecondaryDns:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Comment: Secondary Health based record
+      Failover: SECONDARY
+      HealthCheckId: SecondaryHealthCheck
+      ResourceRecords:
+        - "@autoscale-amzn.DeployDnsName"
+      SetIdentifier: SecondaryDns
+      TTL: 0
+      Type: CNAME
+
+  PrimaryHealthCheck:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Type: CLOUDWATCH_METRIC
+        InsufficientDataHealthStatus: Unhealthy
+        AlarmIdentifier:
+          Name: "@autoscale-rhel6.UnhealthyAlarmName"
+          Region: ap-southeast-2
+
+  SecondaryHealthCheck:
+    Type: AWS::Route53::HealthCheck
+    Properties:
+      HealthCheckConfig:
+        Type: CLOUDWATCH_METRIC
+        InsufficientDataHealthStatus: Unhealthy
+        AlarmIdentifier:
+          Name: "@autoscale-amzn.UnhealthyAlarmName"
+          Region: ap-southeast-2
+
+
+
+

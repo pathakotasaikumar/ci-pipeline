@@ -1,0 +1,225 @@
+---
+variables:
+  image:
+    ImageId: ami-12345678
+  emr:
+    ClusterId: J-1234567
+  dynamo:
+    MyTableName: dummy-dynamodb-table1
+  my_private_variable:
+    Name: this
+  Template:
+    Resources: {}
+    Outputs: {}
+
+unit:
+  Input1:
+    Instance:
+      Type: "AWS::EC2::Instance"
+      Properties:
+        AvailabilityZone: "@a"
+        ImageId: "@image.ImageId"
+        InstanceType: "m3.large"
+
+  Input2:
+    MyCluster:
+      Type: "AWS::EMR::Cluster"
+      Security:
+        - Source: "test-instance.InstanceRole"
+          Allow: "read"
+      Properties:
+        ReleaseLabel: "emr-5.3.1"
+        Configurations:
+        - Classification: "emrfs-site"
+          ConfigurationProperties:
+            fs.s3.consistent: true
+            fs.s3.consistent.metadata.tableName: "@dynamo.MyTableName"
+  Input3:
+    App1:
+      Type: "AWS::EMR::Step"
+      Properties:
+        ActionOnFailure: CONTINUE
+        HadoopJarStep:
+          Args: [ "--cluster @emr.ClusterId", "arg2" ]
+          Jar: "/home/hadoop/payload/App1.jar"
+    App2:
+      Type: "AWS::EMR::Step"
+      Properties:
+        ActionOnFailure: CONTINUE
+        HadoopJarStep:
+          Args: [ "other_app", "@@blah!", "@emr.ClusterId" ]
+          Jar: "/home/hadoop/payload/other/App2.jar"
+  Input4:
+    BakeInstance:
+      Type: AWS::EC2::Instance
+      CreationPolicy:
+        ResourceSignal:
+          Timeout: PT45M
+      Properties:
+        ImageId: "@amazon-latest"
+        InstanceType: m4.large
+
+    # Elastic Load Balancer configuration
+    LoadBalancer:
+      Type: AWS::ElasticLoadBalancing::LoadBalancer
+      Properties:
+        Scheme: internal
+        Listeners:
+          - LoadBalancerPort: 80
+            InstancePort: 80
+            Protocol: HTTP
+          - LoadBalancerPort: 443
+            InstancePort: 80
+            InstanceProtocol: "HTTP"
+            Protocol: HTTPS
+            SSLCertificateId: "@wildcard-qcpaws"
+        HealthCheck:
+          HealthyThreshold: 2
+          Interval: 10
+          Target: TCP:22
+          Timeout: 5
+          UnhealthyThreshold: 2
+
+    # Autoscaling Group configuration
+    AutoScalingGroup:
+      Type: AWS::AutoScaling::AutoScalingGroup
+      CreationPolicy:
+        ResourceSignal:
+          Timeout: PT15M
+      Properties:
+        MinSize: 1
+        MaxSize: 1
+        HealthCheckGracePeriod: 900
+
+    # Launch Configuration configuration
+    LaunchConfiguration:
+      Type: AWS::AutoScaling::LaunchConfiguration
+      Properties:
+        InstanceType: m4.large
+        SpotPrice: "@ondemand"
+
+  Output1:
+    Instance:
+      Type: "AWS::EC2::Instance"
+      Properties:
+        AvailabilityZone: "@a"
+        ImageId: ami-12345678
+        InstanceType: "m3.large"
+
+  Output2:
+    MyCluster:
+      Type: "AWS::EMR::Cluster"
+      Security:
+        - Source: "test-instance.InstanceRole"
+          Allow: "read"
+      Properties:
+        ReleaseLabel: "emr-5.3.1"
+        Configurations:
+        - Classification: "emrfs-site"
+          ConfigurationProperties:
+            fs.s3.consistent: true
+            fs.s3.consistent.metadata.tableName: "dummy-dynamodb-table1"
+
+  Output3:
+    App1:
+      Type: "AWS::EMR::Step"
+      Properties:
+        ActionOnFailure: CONTINUE
+        HadoopJarStep:
+          Args: [ "--cluster J-1234567", "arg2" ]
+          Jar: "/home/hadoop/payload/App1.jar"
+    App2:
+      Type: "AWS::EMR::Step"
+      Properties:
+        ActionOnFailure: CONTINUE
+        HadoopJarStep:
+          Args: [ "other_app", "@@blah!", "J-1234567" ]
+          Jar: "/home/hadoop/payload/other/App2.jar"
+
+sample_variables:
+  pipeline.PipelineBucketName: qcp-pipeline
+  pipeline.LegacyBucketName: pipeline-artefact-store
+  pipeline.ArtefactBucketName: qcp-pipeline-artefacts
+  pipeline.LambdaArtefactBucketName: qcp-pipeline-lambda-artefacts
+  pipeline.AmsBucketName: bucket-ams-test
+  pipeline.QdaBucketName: bucket-qda-test
+  pipeline.AppBucketName: bucket-as-test
+  image.ImageId: ami-12345678
+  emr.ClusterId: J-1234567
+  dynamo.MyTableName: dummy-dynamodb-table1
+  pipeline.DeploymentEnv: NonProduction
+  pipeline.Component: dummy
+  dummy.Template: {}
+  dummy.My_private_value: 'something'
+  dummy.MasterUserPassword: password123
+
+sample_variables_with_skip_regex:
+  pipeline.PipelineBucketName: qcp-pipeline
+  pipeline.LegacyBucketName: pipeline-artefact-store
+  pipeline.ArtefactBucketName: qcp-pipeline-artefacts
+  pipeline.LambdaArtefactBucketName: qcp-pipeline-lambda-artefacts
+  pipeline.AmsBucketName: bucket-ams-test
+  pipeline.QdaBucketName: bucket-qda-test
+  pipeline.AppBucketName: bucket-as-test
+  image.ImageId: ami-12345678
+  emr.ClusterId: J-1234567
+  dynamo.MyTableName: dummy-dynamodb-table1
+  pipeline.DeploymentEnv: NonProduction
+  pipeline.Component: dummy
+  dummy.Template: {}
+  dummy.My_private_value: 'something'
+  app.DummyPassword: 'somestring'
+
+dump_variables_with_skip_regex:
+  pipeline.PipelineBucketName: qcp-pipeline
+  pipeline.LegacyBucketName: pipeline-artefact-store
+  pipeline.ArtefactBucketName: qcp-pipeline-artefacts
+  pipeline.LambdaArtefactBucketName: qcp-pipeline-lambda-artefacts
+  pipeline.AmsBucketName: bucket-ams-test
+  pipeline.QdaBucketName: bucket-qda-test
+  pipeline.AppBucketName: bucket-as-test
+  image.ImageId: ami-12345678
+  emr.ClusterId: J-1234567
+  dynamo.MyTableName: dummy-dynamodb-table1
+  pipeline.DeploymentEnv: NonProduction
+  pipeline.Component: dummy
+  app.DummyPassword: 'somestring'
+
+context_variable:
+  pipeline.PipelineBucketName: qcp-pipeline
+  pipeline.LegacyBucketName: pipeline-artefact-store
+  pipeline.ArtefactBucketName: qcp-pipeline-artefacts
+  pipeline.LambdaArtefactBucketName: qcp-pipeline-lambda-artefacts
+  pipeline.AmsBucketName: bucket-ams-test
+  pipeline.QdaBucketName: bucket-qda-test
+  pipeline.AppBucketName: bucket-as-test
+  dynamo.MyTableName: dummy-dynamodb-table1
+  emr.ClusterId: J-1234567
+  image.ImageId: ami-12345678
+
+dump_variables:
+  pipeline.PipelineBucketName: qcp-pipeline
+  pipeline.LegacyBucketName: pipeline-artefact-store
+  pipeline.ArtefactBucketName: qcp-pipeline-artefacts
+  pipeline.LambdaArtefactBucketName: qcp-pipeline-lambda-artefacts
+  pipeline.AmsBucketName: bucket-ams-test
+  pipeline.QdaBucketName: bucket-qda-test
+  pipeline.AppBucketName: bucket-as-test
+  image.ImageId: ami-12345678
+  emr.ClusterId: J-1234567
+  dynamo.MyTableName: dummy-dynamodb-table1
+  pipeline.DeploymentEnv: NonProduction
+  pipeline.Component: dummy
+  dummy.MasterUserPassword: ENCRYPTED_VALUE
+
+stg_context_variable:
+  pipeline.PipelineBucketName: qcp-pipeline
+  pipeline.LegacyBucketName: pipeline-artefact-store
+  pipeline.ArtefactBucketName: qcp-pipeline-artefacts
+  pipeline.LambdaArtefactBucketName: qcp-pipeline-lambda-artefacts
+  pipeline.AmsBucketName: bucket-ams-test
+  pipeline.QdaBucketName: bucket-qda-test
+  pipeline.AppBucketName: bucket-as-test
+  pipeline.buildnumber: 10
+  pipeline.ase: stg
+  test.DBArn: aws::arn::test

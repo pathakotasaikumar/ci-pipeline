@@ -1,0 +1,38 @@
+UnitTest:
+  Input:
+    Configurations:
+      -
+        RuleA:
+          Type: AWS::ElasticLoadBalancingV2::ListenerRule
+          Properties:
+            Actions:
+              - Type: forward
+                TargetGroupArn:
+                  Ref: GroupA
+            Conditions:
+              - Field: path-pattern
+                Values:
+                  - /autoscale-win2012/*
+            ListenerArn:
+              Ref: Listener
+            Priority: 1
+
+  Output:
+    _process_load_balancer_v2_listener_rule:
+      -
+        Resources:
+          RuleA:
+            Type: AWS::ElasticLoadBalancingV2::ListenerRule
+            Properties:
+              Actions:
+              - Type: forward
+                TargetGroupArn:
+                  Ref: GroupA
+              Conditions:
+              - Field: path-pattern
+                Values:
+                - "/autoscale-win2012/*"
+              ListenerArn:
+                Ref: Listener
+              Priority: 1
+        Outputs: {}

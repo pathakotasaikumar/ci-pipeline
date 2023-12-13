@@ -1,0 +1,3 @@
+name: qcp-pipeline-dev
+domain: '/customer'
+includeVersion: false

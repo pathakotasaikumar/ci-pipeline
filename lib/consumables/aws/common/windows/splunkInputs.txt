@@ -1,0 +1,17 @@
+[monitor://C:\cfn\log\*]
+disabled = false
+sourcetype = aws:cloudformation:cfn-log
+index = qcp_win_prod
+
+[monitor://C:\Windows\Temp\trendagent_registeration.log]
+disabled = false
+sourcetype = trendagent_registeration
+index = qcp_win_prod
+
+[WinEventLog://Microsoft-Windows-PowerShell/Operational]
+disabled = false
+sourcetype = WinEventLog:Powershell
+index = qcp_win_prod
+
+[script://$SPLUNK_HOME\bin\scripts\splunk-wmi.path]
+disabled = 0

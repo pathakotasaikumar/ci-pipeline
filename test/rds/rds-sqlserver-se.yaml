@@ -1,0 +1,25 @@
+# SQL server EE with option group
+---
+Type: "aws/rds-sqlserver"
+Stage: "01-test"
+Persist: false
+
+Configuration:
+  SqlServerEE:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      Engine: sqlserver-ee
+      EngineVersion: "12.00.4422.0.v1"
+      MultiAZ: true
+      MasterUsername: sa
+      MasterUserPassword: Pa$$w0rd99
+      OptionGroupName:
+        Ref: 'OptionMirrorSQL'  
+  OptionMirrorSQL:  
+    Type: "AWS::RDS::OptionGroup"
+    Properties:
+      Engine: sql-server-ee
+      MajorEngineVersion: "12.00"
+      OptionGroupDescription: "Mirroring option for SQL Server EE 12.0"
+      OptionConfigurations:
+        - OptionName: "Mirroring"

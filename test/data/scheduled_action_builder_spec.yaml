@@ -1,0 +1,35 @@
+Input:
+  AutoScalingGroup:
+    Type: "AWS::AutoScaling::AutoScalingGroup"
+  ScheduledActionUp:
+    Type: "AWS::AutoScaling::ScheduledAction"
+    Properties:
+      MaxSize: 1
+      MinSize: 1
+      Recurrence: "0 22 * * *"
+  ScheduledActionDown:
+    Type: "AWS::AutoScaling::ScheduledAction"
+    Properties:
+      MaxSize: 0
+      MinSize: 0
+      Recurrence: "30 8 * * *"
+Output:
+  Resources:
+    ScheduledActionUp:
+      Type: "AWS::AutoScaling::ScheduledAction"
+      Properties:
+        AutoScalingGroupName:
+          Ref: "AutoScalingGroup"
+        MaxSize: 1
+        MinSize: 1
+        Recurrence: "0 22 * * *"
+    ScheduledActionDown:
+      Type: "AWS::AutoScaling::ScheduledAction"
+      Properties:
+        AutoScalingGroupName:
+          Ref: "AutoScalingGroup"
+        MaxSize: 0
+        MinSize: 0
+        Recurrence: "30 8 * * *"
+#Outputs: {}
+

@@ -1,0 +1,24 @@
+# DynamoDB table component
+---
+Type: aws/state-machine
+Stage: "02"
+Persist: true
+
+Configuration:
+  LoadDynamoContent:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      DefinitionString: !include/json platform/srv-workflow-load/load.json
+
+  LoadDynamoContentAcivity:
+    Type: AWS::StepFunctions::Activity
+
+  RunLoadDynamoContent:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(5 minutes)
+      Pipeline::EventInput:
+        TableName: "@srv-dynamo.MyTableName"
+        Attributes: 10
+        ItemCount: 1000
+        BatchSize: 100

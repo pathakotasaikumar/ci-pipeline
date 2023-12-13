@@ -1,0 +1,11 @@
+# MySQL RDS database component, without persistence
+---
+Type: "aws/rds-sqlserver"
+Stage: "01-test"
+Persist: false
+
+Configuration:
+  MySQL:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      Engine: sqlserver-se

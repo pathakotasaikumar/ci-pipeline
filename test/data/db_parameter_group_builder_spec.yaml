@@ -1,0 +1,47 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    Definition:
+      - PGParams1:
+          Type: "AWS::RDS::DBParameterGroup"
+          Properties:
+            # Description: Custom Parameter Group # Auto populates
+            Family: "postgres9.5"
+            Parameters:
+              log_min_duration_statement: 1000
+      - PGParams2:
+          Type: "AWS::RDS::DBParameterGroup"
+          DeletionPolicy: Retain
+          Properties:
+            Description: "My Group" # Auto populates
+            Family: "postgres9.5"
+  Output:
+    _process_db_parameter_groups:
+      - Resources:
+          PGParams1:
+            Type: AWS::RDS::DBParameterGroup
+            DeletionPolicy: Delete
+            Properties:
+              Description: Custom Parameter Group
+              Family: postgres9.5
+              Parameters:
+                log_min_duration_statement: 1000
+        Outputs:
+          PGParams1Name:
+            Description: DB parameter group name
+            Value:
+              Ref: PGParams1
+      - Resources:
+          PGParams2:
+            Type: AWS::RDS::DBParameterGroup
+            DeletionPolicy: Retain
+            Properties:
+              Description: My Group
+              Family: postgres9.5
+        Outputs:
+          PGParams2Name:
+            Description: DB parameter group name
+            Value:
+              Ref: PGParams2

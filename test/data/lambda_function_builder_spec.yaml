@@ -1,0 +1,125 @@
+UnitTest:
+  Input:
+    _process_lambda_function:
+      - TestFunction1:
+          Type: AWS::Lambda::Function
+          Properties:
+            Handler: function.handler
+            Runtime: python3.9
+            Timeout: 300
+            MemorySize: 512
+            ReservedConcurrentExecutions: 5
+            Code: package.zip
+            Environment:
+              Variables:
+                KMS: "@pipeline.KmsKeyArn"
+      - deadletter:
+          Type: AWS::Lambda::Function
+          Properties:
+            DeadLetterConfig: arn:sqs:dealetter
+            Handler: function.handler
+            Runtime: python3.9
+            Timeout: 300
+            MemorySize: 512
+            Code: package.zip
+            Environment:
+              Variables:
+                test: test
+
+    _process_event_source_mapping:
+      - DynamoStreamReader:
+          Type: AWS::Lambda::EventSourceMapping
+          Properties:
+            Pipeline::EventTarget: "@released"
+            EventSourceArn: "@retainer-db.TableStreamArn"
+            StartingPosition: LATEST
+
+  Output:
+    _process_lambda_function:
+      - Resources:
+          TestFunction1:
+            Type: AWS::Lambda::Function
+            Properties:
+              Handler: function.handler
+              Role:
+              Runtime: python3.9
+              Code:
+                S3Bucket: qcp-pipeline-lambda-artefacts
+                S3Key: cd/ams01/c031/99/dev/master/5/package.zip
+              MemorySize: 512
+              Timeout: 300
+              ReservedConcurrentExecutions: 5
+              Environment:
+                Variables:
+                  KMS: "@pipeline.KmsKeyArn"
+              KmsKeyArn:
+          TestFunction1LogGroup:
+            Type: AWS::Logs::LogGroup
+            Properties:
+              LogGroupName:
+                Fn::Join:
+                  - ""
+                  - - "/aws/lambda/"
+                    - Ref: TestFunction1
+              RetentionInDays: 30
+        Outputs:
+          TestFunction1Name:
+            Description: Name of the function
+            Value:
+              Ref: TestFunction1
+          TestFunction1Arn:
+            Description: Arn of the function
+            Value:
+              Fn::GetAtt:
+                - TestFunction1
+                - Arn
+      - Resources:
+          deadletter:
+            Type: AWS::Lambda::Function
+            Properties:
+              Handler: function.handler
+              Role:
+              Runtime: python3.9
+              Code:
+                S3Bucket: qcp-pipeline-lambda-artefacts
+                S3Key: cd/ams01/c031/99/dev/master/5/package.zip
+              MemorySize: 512
+              Timeout: 300
+              DeadLetterConfig:
+                TargetArn: arn:sqs:dealetter
+              Environment:
+                Variables:
+                  test: test
+              KmsKeyArn:
+          deadletterLogGroup:
+            Type: AWS::Logs::LogGroup
+            Properties:
+              LogGroupName:
+                Fn::Join:
+                  - ""
+                  - - "/aws/lambda/"
+                    - Ref: deadletter
+              RetentionInDays: 30
+        Outputs:
+          deadletterName:
+            Description: Name of the function
+            Value:
+              Ref: deadletter
+          deadletterArn:
+            Description: Arn of the function
+            Value:
+              Fn::GetAtt:
+                - deadletter
+                - Arn
+
+    _process_event_source_mapping:
+      - Resources:
+          DynamoStreamReader:
+            Type: AWS::Lambda::EventSourceMapping
+            Properties:
+              BatchSize: 10
+              Enabled: true
+              FunctionName: Function
+              EventSourceArn: "@retainer-db.TableStreamArn"
+              StartingPosition: LATEST
+        Outputs: {}

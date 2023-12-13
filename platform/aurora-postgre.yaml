@@ -1,0 +1,31 @@
+Type: aws/rds-aurora-postgresql
+Stage: 01-test
+Persist: true
+IngressPoint: false
+
+Configuration:
+  Features:
+    Type: Pipeline::Features
+    Properties:
+      Features:
+        Datadog: enabled
+  MyDBCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      Port: 5432
+      DatabaseName: "db_name"
+      Engine: "aurora-postgresql"
+      EngineVersion: "11.18"
+      DBClusterParameterGroupName: default.aurora-postgresql11
+    Security:
+      # Allow access by test-instance
+      - Source: test-instance.SecurityGroup
+        Allow: ALL:*
+  MyDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: "db.r4.large"
+  MyDBInstanceReadReplica:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceClass: "db.r4.large"

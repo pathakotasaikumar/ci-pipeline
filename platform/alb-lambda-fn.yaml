@@ -1,0 +1,17 @@
+---
+Type: aws/lambda
+Stage: 00-test
+Persist: false
+IngressPoint: true
+Configuration:
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: mylambda.lambda_handler
+      Runtime: python3.9
+      Timeout: 60
+      MemorySize: 256
+      Code: package.zip
+      Environment:
+        Variables:
+          MyText: Hello World function

@@ -1,0 +1,112 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "v1",
+    "title": "Pipeline Lambda API",
+    "description": "Demonstrates api registration",
+
+    "x-businessOwner": {
+			"name": "QCP team",
+			"email": "csi@qantas.com.au"
+		},
+		"x-technicalOwner": {
+			"name": "QCP team",
+			"email": "csi@qantas.com.au"
+		}
+  },
+  "x-lambda-arn": "@apigateway-lambda.DeployArn",
+  "basePath": "/qcp-pipeline-dev-lambda",
+  "host": "sample.com",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/lambdaBuild": {
+      "get": {
+        "description": "Get the build number of registered endpoint",
+        "operationId": "get_build",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "response",
+            "schema": {
+              "$ref": "#/definitions/ResponseModel"
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "schema": {
+              "$ref": "#/definitions/ErrorModel"
+            }
+          }
+        }
+      }
+    },
+    "/lambdaEnvironment": {
+      "get": {
+        "description": "Get environment variable",
+        "operationId": "get_environment",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "response",
+            "schema": {
+              "$ref": "#/definitions/ResponseModel"
+            }
+          },
+          "default": {
+            "description": "unexpected error",
+            "schema": {
+              "$ref": "#/definitions/ErrorModel"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "ResponseModel": {
+      "type": "object",
+      "required": [
+        "method",
+        "path",
+        "args",
+        "headers"
+      ],
+      "properties": {
+        "method": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "args": {
+          "type": "string"
+        },
+        "headers": {
+          "type": "object"
+        }
+      }
+    },
+    "ErrorModel": {
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

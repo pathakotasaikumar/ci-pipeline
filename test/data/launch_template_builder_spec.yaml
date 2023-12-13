@@ -1,0 +1,185 @@
+  UnitTest:
+      Input:
+          Template:
+              Resources: {}
+              Outputs: {}
+          AMI: ami-123
+          UserData: UserData-123
+          SGs: ['sg-123','sg-456']
+          Configurations:
+          -
+            LaunchTemplate:
+              Type: "AWS::EC2::LaunchTemplate"
+          -
+            LaunchTemplate:
+                  Type: "AWS::EC2::LaunchTemplate"
+                  Metadata:
+                      AWS::CloudFormation::Init:
+                          config:
+                              commands:
+                                  01-test: "test"
+                  Properties:
+                    LaunchTemplateData:
+                      InstanceType: m3.medium
+                      KeyName: MyKey
+                      InstanceMarketOptions:
+                        SpotOptions:
+                          MaxPrice: "@ondemand"
+          -
+            LaunchTemplate:
+                  Type: "AWS::EC2::LaunchTemplate"
+                  Metadata:
+                      AWS::CloudFormation::Init:
+                          config:
+                              commands:
+                                  01-test: "test"
+                  Properties:
+                    LaunchTemplateData:
+                      InstanceType: m3.medium
+                      KeyName: MyKey
+                      InstanceMarketOptions:
+                        SpotOptions:
+                          MaxPrice: "0.01"
+
+          -
+            LaunchTemplate:
+                  Type: "AWS::EC2::LaunchTemplate"
+                  Metadata:
+                      AWS::CloudFormation::Init:
+                          config:
+                              commands:
+                                  01-test: "test"
+                  Properties:
+                    LaunchTemplateData:
+                      InstanceType: m3.medium
+                      InstanceMarketOptions:
+                        SpotOptions:
+                          MaxPrice: "0.1"
+
+      Output:
+        _process_launch_template_configuration:
+          -
+              Resources:
+                LaunchTemplate:
+                      Type: AWS::EC2::LaunchTemplate
+                      Metadata:
+                          AWS::CloudFormation::Init:
+                              configSets:
+                                  Prepare:
+                                  - PrePrepare
+                                  Deploy: []
+                              PrePrepare: Metadata here
+                          AWS::CloudFormation::Authentication:
+                              MyAuth: Test
+                      Properties:
+                        LaunchTemplateData:
+                          IamInstanceProfile:
+                            Name:
+                              Ref: InstanceProfile
+                          ImageId: ami-123
+                          SecurityGroupIds:
+                          - sg-123
+                          - sg-456
+                          UserData: UserData-123
+                          InstanceType: m3.medium
+              Outputs: {}
+          -
+              Resources:
+                LaunchTemplate:
+                      Type: AWS::EC2::LaunchTemplate
+                      Metadata:
+                          AWS::CloudFormation::Init:
+                              configSets:
+                                  Prepare:
+                                  - PrePrepare
+                                  Deploy:
+                                  - Userconfig
+                              PrePrepare: Metadata here
+                              Userconfig:
+                                  commands:
+                                      01-test: "test"
+                          AWS::CloudFormation::Authentication:
+                              MyAuth: Test
+                      Properties:
+                        LaunchTemplateData:
+                          IamInstanceProfile:
+                            Name:
+                              Ref: InstanceProfile
+                          ImageId: ami-123
+                          SecurityGroupIds:
+                          - sg-123
+                          - sg-456
+                          UserData: UserData-123
+                          InstanceType: m3.medium
+                          KeyName: MyKey
+                          InstanceMarketOptions:
+                            SpotOptions:
+                              MaxPrice: 0.093
+
+              Outputs: {}
+          -
+              Resources:
+                LaunchTemplate:
+                      Type: AWS::EC2::LaunchTemplate
+                      Metadata:
+                          AWS::CloudFormation::Init:
+                              configSets:
+                                  Prepare:
+                                  - PrePrepare
+                                  Deploy:
+                                  - Userconfig
+                              PrePrepare: Metadata here
+                              Userconfig:
+                                  commands:
+                                      01-test: "test"
+                          AWS::CloudFormation::Authentication:
+                              MyAuth: Test
+                      Properties:
+                        LaunchTemplateData:
+                          IamInstanceProfile:
+                            Name:
+                              Ref: InstanceProfile
+                          ImageId: ami-123
+                          SecurityGroupIds:
+                          - sg-123
+                          - sg-456
+                          UserData: UserData-123
+                          InstanceType: m3.medium
+                          KeyName: MyKey
+                          InstanceMarketOptions:
+                            SpotOptions:
+                              MaxPrice: 0.01
+              Outputs: {}
+          -
+              Resources:
+                LaunchTemplate:
+                      Type: AWS::EC2::LaunchTemplate
+                      Metadata:
+                          AWS::CloudFormation::Init:
+                              configSets:
+                                  Prepare:
+                                  - PrePrepare
+                                  Deploy:
+                                  - Userconfig
+                              PrePrepare: Metadata here
+                              Userconfig:
+                                  commands:
+                                      01-test: "test"
+                          AWS::CloudFormation::Authentication:
+                              MyAuth: Test
+                      Properties:
+                        LaunchTemplateData:
+                          IamInstanceProfile:
+                            Name:
+                              Ref: InstanceProfile
+                          ImageId: ami-123
+                          SecurityGroupIds:
+                          - sg-123
+                          - sg-456
+                          UserData: UserData-123
+                          InstanceType: m3.medium
+                          InstanceMarketOptions:
+                            SpotOptions:
+                              MaxPrice: 0.093
+
+              Outputs: {}

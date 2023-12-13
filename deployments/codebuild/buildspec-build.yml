@@ -1,0 +1,37 @@
+version: 0.2
+env:
+  variables:
+    BUILD_DIR: '/build-dir'
+phases:
+  install:
+    runtime-versions:
+      docker: 18
+  pre_build:
+    commands:
+      - echo Entered the pre_build phase...
+      - $(aws ecr get-login --no-include-email --region ap-southeast-2)
+      - aws ssm get-parameters --names "/Application/ams01/c031/01/_common/0" --with-decryption --query "Parameters[0].Value" | tr -d '"' | tr "'" '"' | jq -r '.["SVCP-AMS01-C031-01"]' | base64 -d > ENCRYPTED_DATA.txt
+      - export PROXY_PASSWORD=$(aws kms decrypt --ciphertext-blob fileb://${CODEBUILD_SRC_DIR}/ENCRYPTED_DATA.txt --query Plaintext --output text | base64 -d)
+      - export COMMIT_ID=`cat .gitcommitid`
+    finally:
+      - echo pre_build phase completed on `date`
+  build:
+    commands:
+      - echo Entered the build phase...
+      - docker build . --file ./deployments/files/Dockerfile --tag qcp/pipeline:latest --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` --build-arg RBENV_VERSION='2.6.6' --build-arg PROXY_PASSWORD=$PROXY_PASSWORD
+      - |
+        if [ ${BranchName} = "master" ]; then
+          docker tag qcp/pipeline:latest 221295517176.dkr.ecr.ap-southeast-2.amazonaws.com/pipeline:latest
+        else
+          echo "Branch is not master, therefore not tagging as :latest"
+        fi
+      - docker tag qcp/pipeline:latest 221295517176.dkr.ecr.ap-southeast-2.amazonaws.com/pipeline:branch-${BranchName}-latest
+      - docker tag qcp/pipeline:latest 221295517176.dkr.ecr.ap-southeast-2.amazonaws.com/pipeline:${COMMIT_ID}
+    finally:
+      - echo build phase completed on `date`
+  post_build:
+    commands:
+      - echo Entered the post_build phase...
+      - docker push 221295517176.dkr.ecr.ap-southeast-2.amazonaws.com/pipeline
+    finally:
+      - echo post_build phase completed on `date`

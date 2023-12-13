@@ -1,0 +1,14 @@
+# Hello world state machine to be tested from the 'test-instance' intance
+---
+Type: aws/state-machine
+Stage: "02"
+Persist: false
+
+Configuration:
+  HelloWorld:
+    Type: AWS::StepFunctions::StateMachine
+    Security:
+      - Source: test-instance.InstanceRole
+        Allow: execute
+    Properties:
+      DefinitionString: !include/json platform/state-machine/hello.json

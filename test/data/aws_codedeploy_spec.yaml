@@ -1,0 +1,201 @@
+UnitTest:
+  Input:
+    ComponentName: TestComponent
+    Initialize:
+      Valid:
+        Type: "aws/codedeploy"
+        Stage: "02-test"
+        Configuration:
+          MyApp:
+            Type: "AWS::CodeDeploy::Application"
+            Properties:
+              ApplicationName: "@rhel7"
+          MyAppDeploymentGroup:
+            Type: "AWS::CodeDeploy::DeploymentGroup"
+      ValidDatadog:
+          Type: "aws/codedeploy"
+          Stage: "02-test"
+          Configuration:
+            Features:
+              Type: Pipeline::Features
+              Properties:
+                Features:
+                  Datadog: enabled
+            MyApp:
+              Type: "AWS::CodeDeploy::Application"
+              Properties:
+                ApplicationName: "@rhel7"
+            MyAppDeploymentGroup:
+              Type: "AWS::CodeDeploy::DeploymentGroup"
+      ValidAutoScale:
+        Type: "aws/codedeploy"
+        Stage: "02-test"
+        Configuration:
+          MyApp:
+            Type: "AWS::CodeDeploy::Application"
+            Properties:
+              ApplicationName: "@rhel7-autoscale"
+          MyAppDeploymentGroup:
+            Type: "AWS::CodeDeploy::DeploymentGroup"
+      ValidLoadBalancer:
+        Type: "aws/codedeploy"
+        Stage: "02-test"
+        Configuration:
+          MyApp:
+            Type: "AWS::CodeDeploy::Application"
+            Properties:
+              ApplicationName: "@rhel7-autoscale"
+          MyAppDeploymentGroup:
+            Type: "AWS::CodeDeploy::DeploymentGroup"
+            Properties:
+              LoadBalancerInfo:
+                TargetGroupInfoList:
+                  - Name: "load_balancer_target_group_name"
+              DeploymentStyle:
+                DeploymentOption: "WITH_TRAFFIC_CONTROL"
+      ValidUpdateRevision:
+        Type: "aws/codedeploy"
+        Stage: "02-test"
+        Configuration:
+          MyApp:
+            Type: "AWS::CodeDeploy::Application"
+            Properties:
+              ApplicationName: "@rhel7-update-revision"
+          MyAppDeploymentGroup:
+            Type: "AWS::CodeDeploy::DeploymentGroup"
+
+      Invalid:
+        MutlipleInstances:
+          Type: "aws/codedeploy"
+          Stage: "02-test"
+          Configuration:
+            MyApp:
+              Type: "AWS::CodeDeploy::Application"
+              Properties:
+                ApplicationName: "@rhel7"
+            MyApp2:
+              Type: "AWS::CodeDeploy::Application"
+              Properties:
+                ApplicationName: "@rhel7"
+        EmptyType:
+          Type: "aws/codedeploy"
+          Stage: "02-test"
+          Configuration:
+            MyApp:
+              Type: NULL
+              Properties:
+                ApplicationName: "@rhel7"
+        NotSupportedType:
+          Type: "aws/codedeploy"
+          Stage: "02-test"
+          Configuration:
+            MyApp:
+              Type: 'custom-type'
+              Properties:
+                ApplicationName: "@rhel7"
+
+  Output:
+    Initialize:
+      Invalid:
+        MutlipleInstances: "This component does not support multiple AWS::CodeDeploy::Application resources"
+        IamRole: "Resource type \"AWS::IAM::Role\" is not supported by this component"
+
+    _full_template:
+      Resources:
+        MyApp:
+          Type: "AWS::CodeDeploy::Application"
+          Properties:
+            ApplicationName: "@rhel7"
+        # ams01c03199devmaster5:
+        #   Type: AWS::CodeDeploy::DeploymentGroup
+        #   Properties:
+        #     DeploymentGroupName: ams01-c031-99-dev-master-5
+        #     ApplicationName: ams01-c031-99-dev-master-5-TestComponent-CodeDeployApp
+        #     ServiceRoleArn: CodeDeployExecutionRole-123
+        #     Ec2TagFilters:
+        #     - Key: Name
+        #       Value: ams01-c031-99-dev-master-5-rhel7
+        #       Type: KEY_AND_VALUE
+        #   DependsOn: MyApp
+      Outputs: {}
+    _deployment_groups_template:
+      Resources:
+        MyAppDeploymentGroup:
+          Type: "AWS::CodeDeploy::DeploymentGroup"
+          Properties:
+            DeploymentGroupName: "ams01-c031-99-dev-master-5-ABCD1"
+            ApplicationName: "ams01-c031-99-dev-master-5-TestComponent"
+            ServiceRoleArn: "CodeDeployExecutionRole-123"
+            Ec2TagFilters:
+              -
+                Key: Name
+                Value: ams01-c031-99-dev-master-5-rhel7
+                Type: KEY_AND_VALUE
+      Outputs: {}
+    _deployment_groups_template_autoscale:
+      Resources:
+        MyAppDeploymentGroup:
+          Type: "AWS::CodeDeploy::DeploymentGroup"
+          Properties:
+            DeploymentGroupName: "ams01-c031-99-dev-master-5-ABCD1"
+            ApplicationName: "ams01-c031-99-dev-master-5-TestComponent"
+            ServiceRoleArn: "CodeDeployExecutionRole-123"
+            AutoScalingGroups:
+              - auto-scale-group-name
+      Outputs: {}
+    _deployment_groups_template_loadbalancer:
+      Resources:
+        MyAppDeploymentGroup:
+          Type: "AWS::CodeDeploy::DeploymentGroup"
+          Properties:
+            DeploymentGroupName: "ams01-c031-99-dev-master-5-ABCD1"
+            ApplicationName: "ams01-c031-99-dev-master-5-TestComponent"
+            ServiceRoleArn: "CodeDeployExecutionRole-123"
+            AutoScalingGroups:
+              - auto-scale-group-name
+            DeploymentStyle:
+              DeploymentOption: "WITH_TRAFFIC_CONTROL"
+            LoadBalancerInfo:
+              TargetGroupInfoList:
+                - Name: "load_balancer_target_group_name"
+      Outputs: {}
+    _deployment_groups_template_update_revision:
+      Resources:
+        MyAppDeploymentGroup:
+          Type: "AWS::CodeDeploy::DeploymentGroup"
+          Properties:
+            DeploymentGroupName: "ams01-c031-99-dev-master-5-ABCD1"
+            ApplicationName: "ams01-c031-99-dev-master-5-TestComponent"
+            ServiceRoleArn: "CodeDeployExecutionRole-123"
+            Ec2TagFilters:
+              -
+                Key: Name
+                Value: ams01-c031-99-dev-master-5-rhel7-update-revision
+                Type: KEY_AND_VALUE
+      Outputs: {}
+    _deployment_groups_template_update_revision_output:
+      Resources:
+        MyAppDeploymentGroup:
+          Type: "AWS::CodeDeploy::DeploymentGroup"
+          Properties:
+            DeploymentGroupName: "ams01-c031-99-dev-master-5-ABCD1"
+            ApplicationName: "ams01-c031-99-dev-master-5-TestComponent"
+            ServiceRoleArn: "CodeDeployExecutionRole-123"
+            Ec2TagFilters:
+              -
+                Key: Name
+                Value: ams01-c031-99-dev-master-5-rhel7-update-revision
+                Type: KEY_AND_VALUE
+        new-revision-for-build-6:
+            Type: "AWS::CodeDeploy::DeploymentGroup"
+            Properties:
+              DeploymentGroupName: "ams01-c031-99-dev-master-5-ABCD1"
+              ApplicationName: "ams01-c031-99-dev-master-5-TestComponent"
+              ServiceRoleArn: "CodeDeployExecutionRole-123"
+              Ec2TagFilters:
+                -
+                  Key: Name
+                  Value: ams01-c031-99-dev-master-5-rhel7-update-revision
+                  Type: KEY_AND_VALUE
+      Outputs: {}
+    

@@ -1,0 +1,174 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    Configuration:
+      Minimal:
+        Queue:
+          Type: "AWS::SQS::Queue"
+          InboundRules:
+            - Source: test-instance.InstanceRole
+              Allow: [ "sqs:SendMessage", "sqs:DeleteMessage", "sqs:ReceiveMessage" ]
+          Properties:
+            # DelaySeconds: # Auto configured
+            # MaximumMessageSize: # Auto configured
+            # MessageRetentionPeriod: # Auto configured
+            # ReceiveMessageWaitTimeSeconds: # Auto configured
+            # VisibilityTimeout: # Auto configured
+      Versatile:
+        Queue:
+          Type: "AWS::SQS::Queue"
+          InboundRules:
+            - Source: test-instance.InstanceRole
+              Allow: [ "sqs:SendMessage", "sqs:DeleteMessage", "sqs:ReceiveMessage" ]
+          Properties:
+            DelaySeconds: 60 #Picked
+            MaximumMessageSize: 262 #Picked
+            MessageRetentionPeriod: 345 #Picked
+            ReceiveMessageWaitTimeSeconds: 70 #Picked
+            VisibilityTimeout: 80 #Picked
+      DLQ:
+        Queue:
+          Type: "AWS::SQS::Queue"
+          InboundRules:
+            - Source: test-instance.InstanceRole
+              Allow: [ "sqs:SendMessage", "sqs:DeleteMessage", "sqs:ReceiveMessage" ]
+          Properties:
+            DelaySeconds: 60 #Picked
+            MaximumMessageSize: 262 #Picked
+            MessageRetentionPeriod: 345 #Picked
+            ReceiveMessageWaitTimeSeconds: 70 #Picked
+            VisibilityTimeout: 80 #Picked
+            RedrivePolicy:
+              deadLetterTargetArn: "@sqs.QueueArn"
+              maxReceiveCount: 5
+      FIFO:
+        Queue:
+          Type: "AWS::SQS::Queue"
+          InboundRules:
+            - Source: test-instance.InstanceRole
+              Allow: [ "sqs:SendMessage", "sqs:DeleteMessage", "sqs:ReceiveMessage" ]
+          Properties:
+            DelaySeconds: 60
+            MaximumMessageSize: 262
+            MessageRetentionPeriod: 345
+            ReceiveMessageWaitTimeSeconds: 70
+            VisibilityTimeout: 80
+            ContentBasedDeduplication: true
+            FifoQueue: true         
+  Output:
+    _process_queue:
+      Minimal:
+        Resources:
+          Queue:
+            Type: AWS::SQS::Queue
+            Properties:
+              DelaySeconds: 0
+              MaximumMessageSize: 262144
+              MessageRetentionPeriod: 345600
+              ReceiveMessageWaitTimeSeconds: 0
+              VisibilityTimeout: 30
+        Outputs:
+          QueueEndpoint:
+            Description: Queue endpoint URL
+            Value:
+              Ref: Queue
+          QueueQueueName:
+            Description: Queue name
+            Value:
+              Fn::GetAtt:
+              - Queue
+              - QueueName
+          QueueArn:
+            Description: Queue ARN
+            Value:
+              Fn::GetAtt:
+              - Queue
+              - Arn
+      Versatile:
+        Resources:
+          Queue:
+            Type: AWS::SQS::Queue
+            Properties:
+              DelaySeconds: 60
+              MaximumMessageSize: 262
+              MessageRetentionPeriod: 345
+              ReceiveMessageWaitTimeSeconds: 70
+              VisibilityTimeout: 80
+        Outputs:
+          QueueEndpoint:
+            Description: Queue endpoint URL
+            Value:
+              Ref: Queue
+          QueueQueueName:
+            Description: Queue name
+            Value:
+              Fn::GetAtt:
+              - Queue
+              - QueueName
+          QueueArn:
+            Description: Queue ARN
+            Value:
+              Fn::GetAtt:
+              - Queue
+              - Arn
+      DLQ:
+        Resources:
+          Queue:
+            Type: AWS::SQS::Queue
+            Properties:
+              DelaySeconds: 60
+              MaximumMessageSize: 262
+              MessageRetentionPeriod: 345
+              ReceiveMessageWaitTimeSeconds: 70
+              VisibilityTimeout: 80
+              RedrivePolicy:
+                deadLetterTargetArn: arn:aws:sqs:ap-southeast-2:123456789012:queue1
+                maxReceiveCount: 5
+        Outputs:
+          QueueEndpoint:
+            Description: Queue endpoint URL
+            Value:
+              Ref: Queue
+          QueueQueueName:
+            Description: Queue name
+            Value:
+              Fn::GetAtt:
+              - Queue
+              - QueueName
+          QueueArn:
+            Description: Queue ARN
+            Value:
+              Fn::GetAtt:
+              - Queue
+              - Arn
+      FIFO:
+        Resources:
+          Queue:
+            Type: AWS::SQS::Queue
+            Properties:
+              DelaySeconds: 60
+              MaximumMessageSize: 262
+              MessageRetentionPeriod: 345
+              ReceiveMessageWaitTimeSeconds: 70
+              VisibilityTimeout: 80            
+              ContentBasedDeduplication: true
+              FifoQueue: true
+        Outputs:
+          QueueEndpoint:
+            Description: Queue endpoint URL
+            Value:
+              Ref: Queue
+          QueueQueueName:
+            Description: Queue name
+            Value:
+              Fn::GetAtt:
+              - Queue
+              - QueueName
+          QueueArn:
+            Description: Queue ARN
+            Value:
+              Fn::GetAtt:
+              - Queue
+              - Arn

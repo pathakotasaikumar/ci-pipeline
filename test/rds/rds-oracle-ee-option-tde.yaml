@@ -1,0 +1,25 @@
+# SQL server EE with option group
+---
+Type: "aws/rds-oracle"
+Stage: "01-test"
+Persist: false
+
+Configuration:
+  SqlServerEE:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      Engine: oracle-ee
+      EngineVersion: "12.1.0.2.v4"
+      DBName: testdb
+      MasterUserPassword: Pa$$w0rd99
+      MasterUsername: root
+      OptionGroupName:
+        Ref: 'OptionTDE'  
+  OptionTDE:  
+    Type: "AWS::RDS::OptionGroup"
+    Properties:
+      EngineName: oracle-ee
+      MajorEngineVersion: "12.1"
+      OptionGroupDescription: "Encryption Option for Oracle EE 12.1"
+      OptionConfigurations:
+        - OptionName: "TDE"

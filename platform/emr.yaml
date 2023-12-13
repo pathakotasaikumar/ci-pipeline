@@ -1,0 +1,76 @@
+# EMR component
+---
+Type: aws/emr-cluster
+Stage: 01-test
+Persist: true
+
+Configuration:
+  MyCluster:
+    Type: AWS::EMR::Cluster
+    Security:
+      - Source: test-instance.InstanceRole
+        Allow: read
+    Properties:
+      ReleaseLabel: emr-5.3.1
+      Configurations:
+      - Classification: emrfs-site
+        ConfigurationProperties:
+          fs.s3.consistent: true
+          fs.s3.consistent.metadata.tableName: "@dynamo.MyTableName"
+      Applications:
+        - Name: Pig
+        - Name: Spark
+      Instances:
+        Ec2KeyName: pipeline
+        MasterInstanceGroup:
+          InstanceCount: 1
+          InstanceType: m4.xlarge
+          Name: Master
+        CoreInstanceGroup:
+          InstanceCount: 1
+          InstanceType: m4.xlarge
+          Name: Core
+          AutoScalingPolicy:
+            Constraints:
+              MinCapacity: 1
+              MaxCapacity: 2
+            Rules:
+            - Name: Default-scale-out
+              Description: Test Policy
+              Action:
+                SimpleScalingPolicyConfiguration:
+                  AdjustmentType: CHANGE_IN_CAPACITY
+                  ScalingAdjustment: 1
+                  CoolDown: 300
+              Trigger:
+                CloudWatchAlarmDefinition:
+                  ComparisonOperator: LESS_THAN
+                  EvaluationPeriods: 1
+                  MetricName: YARNMemoryAvailablePercentage
+                  Namespace: AWS/ElasticMapReduce
+                  Period: 300
+                  Threshold: 15
+                  Statistic: AVERAGE
+                  Unit: PERCENT
+                  Dimensions:
+                  - Key: JobFlowId
+                    Value: "${emr.clusterId}"
+      BootstrapActions:
+        - Name: BootstrapCluster
+          ScriptBootstrapAction:
+            Path: file:/home/hadoop/payload/bootstrap.sh
+            Args: []
+
+  CoreNodesScheduleUp:
+    Type: Pipeline::EMR::ScheduledAction
+    Properties:
+      InstanceGroup: CORE
+      InstanceCount: 2
+      Recurrence: "15 * * * ?"
+
+  CoreNodesScheduleDown:
+    Type: Pipeline::EMR::ScheduledAction
+    Properties:
+      InstanceGroup: CORE
+      InstanceCount: 1
+      Recurrence: "45 * * * ?"

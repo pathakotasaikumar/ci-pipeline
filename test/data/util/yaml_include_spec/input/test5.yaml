@@ -1,0 +1,12 @@
+---
+Type: aws/amq
+Stage: 01-test
+Persist: true
+
+Configuration:
+  MyAMQConfiguration:
+    Type: "AWS::AmazonMQ::Configuration"
+    Properties:
+      EngineType: ACTIVEMQ
+      EngineVersion: "5.15.0"
+      Data: !include/xml test1.xml

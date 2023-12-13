@@ -1,0 +1,467 @@
+---
+BakeInstance:
+  Type: AWS::EC2::Instance
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::EC2::Instance:
+        CreationPolicy:
+          Configurable: true
+          Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-creationpolicy.html
+          Required: false
+          Type: Common.CreationPolicy
+        Metadata:
+          Configurable: true
+          Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html
+          PrimitiveType: Json
+          Required: false
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Type: List
+          ItemType: Common.SecurityItem
+          Required: false
+        Properties:
+          AvailabilityZone:
+            Configurable: true
+          BlockDeviceMappings:
+            Configurable: true
+          CpuOptions:
+            Required: false
+            ItemType: CpuOptions
+          EbsOptimized:
+            Configurable: true
+          ImageId:
+            Configurable: true
+            Required: false
+          InstanceType:
+            Configurable: true
+            Default: "m3.medium"
+          Tenancy:
+            Configurable: true
+            Type: Enum
+            Required: false
+            EnumValues: [dedicated , default]
+          KeyName:
+            Configurable: true
+          SourceDestCheck:
+            Configurable: true
+          SubnetId:
+            Configurable: true
+            Default: "@private"
+          Pipeline::WindowsOUPath:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+    PropertyTypes:
+      AWS::EC2::Instance.BlockDeviceMapping:
+        Properties:
+          DeviceName:
+            Configurable: true
+          Ebs:
+            Configurable: true
+          VirtualName:
+            Configurable:
+              Unless: [ Ebs ]
+      AWS::EC2::Instance.CpuOptions:
+        Properties:
+          CoreCount:
+            Configurable: true
+            Required: false
+          ThreadsPerCore:
+            Configurable: true
+            Required: false
+      AWS::EC2::Instance.Ebs:
+        Properties:
+          DeleteOnTermination:
+            Configurable: true
+            Required: false
+          Encrypted:
+            Configurable: true
+          Iops:
+            Configurable:
+              If: [ { VolumeType: io1 } ]
+            Required:
+              If: [ { VolumeType: io1 } ]
+          SnapshotId:
+            Configurable: true
+          VolumeSize:
+            Configurable: true
+            Required:
+              Unless: [ SnapshotId ]
+          VolumeType:
+            Configurable: true
+
+LoadBalancer:
+  Type: AWS::ElasticLoadBalancing::LoadBalancer
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::ElasticLoadBalancing::LoadBalancer:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Type: List
+          ItemType: Common.SecurityItem
+          Required: false
+        Properties:
+          AppCookieStickinessPolicy:
+            Configurable: true
+          ConnectionDrainingPolicy:
+            Configurable: true
+          ConnectionSettings:
+            Configurable: true
+          HealthCheck:
+            Configurable: true
+          KeyName:
+            Configurable: true
+          LBCookieStickinessPolicy:
+            Configurable: true
+          Listeners:
+            Configurable: true
+          Policies:
+            Configurable: true
+          Scheme:
+            Configurable: true
+          Subnets:
+            Configurable: true
+    PropertyTypes:
+      AWS::ElasticLoadBalancing::LoadBalancer.AppCookieStickinessPolicy:
+        Properties:
+          CookieName:
+            Configurable: true
+          PolicyName:
+            Configurable: true
+      AWS::ElasticLoadBalancing::LoadBalancer.ConnectionDrainingPolicy:
+        Properties:
+          Enabled:
+            Configurable: true
+          Timeout:
+            Configurable: true
+      AWS::ElasticLoadBalancing::LoadBalancer.ConnectionSettings:
+        Properties:
+          IdleTimeout:
+            Configurable: true
+      AWS::ElasticLoadBalancing::LoadBalancer.HealthCheck:
+        Properties:
+          HealthyThreshold:
+            Configurable: true
+          Interval:
+            Configurable: true
+          Target:
+            Configurable: true
+          Timeout:
+            Configurable: true
+          UnhealthyThreshold:
+            Configurable: true
+      AWS::ElasticLoadBalancing::LoadBalancer.LBCookieStickinessPolicy:
+        Properties:
+          CookieExpirationPeriod:
+            Configurable: true
+          PolicyName:
+            Configurable: true
+      AWS::ElasticLoadBalancing::LoadBalancer.Listeners:
+        Properties:
+          InstancePort:
+            Configurable: true
+          InstanceProtocol:
+            Configurable: true
+          LoadBalancerPort:
+            Configurable: true
+          PolicyNames:
+            Configurable: true
+          Protocol:
+            Configurable: true
+          SSLCertificateId:
+            Configurable: true
+      AWS::ElasticLoadBalancing::LoadBalancer.Policies:
+        Properties:
+          Attributes:
+            Configurable: true
+          InstancePorts:
+            Configurable: true
+          LoadBalancerPorts:
+            Configurable: true
+          PolicyName:
+            Configurable: true
+          PolicyType:
+            Configurable: true
+
+AutoScalingGroup:
+  Type: AWS::AutoScaling::AutoScalingGroup
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::AutoScaling::AutoScalingGroup:
+        CreationPolicy:
+          Configurable: true
+          Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-attribute-creationpolicy.html
+          Required: false
+          Type: Common.CreationPolicy
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Type: List
+          ItemType: Common.SecurityItem
+          Required: false
+        Properties:
+          Cooldown:
+            Configurable: true
+          DesiredCapacity:
+            Configurable: true
+          MaxSize:
+            Configurable: true
+            Required: false
+          MinSize:
+            Configurable: true
+            Required: false
+          TargetGroupARNs:
+            Configurable: true
+          HealthCheckGracePeriod:
+            Configurable: true
+          HealthCheckType:
+            Configurable: true
+            Required: false
+            EnumValues: [EC2 , ELB]
+          VPCZoneIdentifier:
+            Configurable: true
+          NewInstancesProtectedFromScaleIn:
+            configurable: true
+            Required: false
+            PrimitiveType: Boolean
+LaunchConfiguration:
+  Type: AWS::AutoScaling::LaunchConfiguration
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::AutoScaling::LaunchConfiguration:
+        Metadata:
+          Configurable: true
+          Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-init.html
+          PrimitiveType: Json
+          Required: false
+        Properties:
+          BlockDeviceMappings:
+            Configurable: true
+          EbsOptimized:
+            Configurable: true
+          ImageId:
+            # Configurable only if no BakeInstance is specified
+            Configurable:
+              Unless: [ BakeInstance ]
+            Required: false
+          InstanceType:
+            Configurable: true
+          KeyName:
+            Configurable: true
+          PlacementTenancy:
+            Configurable: true
+          Pipeline::CopySourceImage:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=70033441#aws/autoheal-AWS::AutoScaling::LaunchConfiguration"
+            PrimitiveType: Boolean
+            Required: false
+          Pipeline::WindowsOUPath:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=70033441#aws/autoheal-AWS::AutoScaling::LaunchConfiguration"
+            PrimitiveType: String
+            Required: false
+          SpotPrice:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=64163563#aws/autoscale-AWS::AutoScaling::LaunchConfiguration"
+            PrimitiveType: String
+            Required: false
+    PropertyTypes:
+      AWS::AutoScaling::LaunchConfiguration.BlockDeviceMapping:
+        Properties:
+          DeviceName:
+            Configurable: true
+          Ebs:
+            Configurable: true
+          VirtualName:
+            Configurable:
+              Unless: [ Ebs ]
+      AWS::AutoScaling::LaunchConfiguration.BlockDevice:
+        Properties:
+          Encrypted:
+            Configurable: true
+          Iops:
+            Configurable:
+              If: [ { VolumeType: io1 } ]
+            Required:
+              If: [ { VolumeType: io1 } ]
+          SnapshotId:
+            Configurable: true
+          VolumeSize:
+            Configurable: true
+            Required:
+              Unless: [ SnapshotId ]
+          VolumeType:
+            Configurable: true
+Alarm:
+  Type: AWS::CloudWatch::Alarm
+  Cardinality: 0-5
+  Specification:
+    ResourceTypes:
+      AWS::CloudWatch::Alarm:
+        Properties:
+          AlarmActions:
+            Configurable: true
+            AllowSingular: true
+          InsufficientDataActions:
+            Configurable: true
+            AllowSingular: true
+          ComparisonOperator:
+            Configurable: true
+          Dimensions:
+            Configurable: true
+          EvaluationPeriods:
+            Configurable: true
+          MetricName:
+            Configurable: true
+          Namespace:
+            Default: AWS/EC2
+            Configurable: true
+          Period:
+            Configurable: true
+          Statistic:
+            Configurable: true
+          Threshold:
+            Configurable: true
+          Units:
+            Configurable: true
+    PropertyTypes:
+      AWS::CloudWatch::Alarm.Dimension:
+        Properties:
+          Name:
+            Configurable: true
+          Value:
+            Configurable: true
+
+ScheduledAction:
+  Type: AWS::AutoScaling::ScheduledAction
+  Cardinality: 0-10
+  Specification:
+    ResourceTypes:
+      AWS::AutoScaling::ScheduledAction:
+        Properties:
+          DesiredCapacity:
+            Configurable: true
+          EndTime:
+            Configurable: true
+          MaxSize:
+            Configurable: true
+          MinSize:
+            Configurable: true
+          Recurrence:
+            Configurable: true
+          StartTime:
+            Configurable: true
+
+VolumeAttachment:
+  Type: Pipeline::Autoheal::VolumeAttachment
+  Cardinality: 0-10
+  Specification:
+    ResourceTypes:
+      Pipeline::Autoheal::VolumeAttachment:
+        Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=70033441#aws/autoheal-Pipeline::Autoheal::VolumeAttachment"
+        Properties:
+          Device:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+            Regex: ^(/dev/[sh]d[a-z][0-9]{0,2})|(/dev/xvd[a-z])$
+          VolumeId:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+
+NetworkInterfaceAttachment:
+  Type: Pipeline::Autoheal::NetworkInterfaceAttachment
+  Cardinality: 0-10
+  Specification:
+    ResourceTypes:
+      Pipeline::Autoheal::NetworkInterfaceAttachment:
+        Documentation: "https://confluence.qantas.com.au/pages/viewpage.action?pageId=70033441#aws/autoheal-Pipeline::Autoheal::NetworkInterfaceAttachment"
+        Properties:
+          DeviceIndex:
+            Configurable: true
+            Documenation: "http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-network-iface-embedded.html#aws-properties-ec2-network-iface-embedded-deviceindex"
+            PrimitiveType: Integer
+            Required: true
+          NetworkInterfaceId:
+            Configurable: true
+            Documentation: "http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-network-iface-embedded.html#aws-properties-ec2-network-iface-embedded-network-iface"
+            PrimitiveType: String
+            Required: true
+
+LifecycleHook:
+  Type: AWS::AutoScaling::LifecycleHook
+  Cardinality: 0-10
+  Specification:
+    ResourceTypes:
+      AWS::AutoScaling::LifecycleHook:
+        Properties:
+          DefaultResult:
+            Configurable: true
+            Type: Enum
+            EnumValues: [ CONTINUE, ABANDON ]
+            Required: true
+          HeartbeatTimeout:
+            Configurable: true
+          LifecycleTransition:
+            Configurable: true
+            Required: true
+            Type: Enum
+            EnumValues:
+            - autoscaling:EC2_INSTANCE_LAUNCHING
+            - autoscaling:EC2_INSTANCE_TERMINATING
+          NotificationMetadata:
+            Configurable: true
+          NotificationTargetARN:
+            Configurable: true
+            Regex: ^@[a-zA-Z0-9\-_]+\.\w+Arn$
+            Required: true
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features
+
+BackupPolicy:
+  Type: Pipeline::Instance::BackupPolicy
+  Cardinality: 0-10
+  Specification:
+    ResourceTypes:
+      Pipeline::Instance::BackupPolicy:
+        Properties:
+          Consistent:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+          Recurrence:
+            Configurable: true
+            PrimitiveType: String
+            Regex: ^([0-9,\-*\/]+) ([0-9,\-*\/]+) ([0-9,\-*?\/LW]+) ([0-9A-Z,\-*?\/]+) ([1-7A-Z,\-*?\/L]+)$
+            Required: true
+          Target:
+            Configurable: true
+            Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+            PrimitiveType: String
+            Regex: ^@origin|@dr|@nonp|@ams[0-9]{2}-(origin|dr([0-9])?)-(prod|nonp|dev)$
+            Required: false
+          RetentionPeriod:
+            Configurable: true
+            PrimitiveType: String
+            Regex: ^PT|[0-9]+Y|[0-9]+D|[0-9]+H|[0-9]+M|[0-9]+S$
+            Required: true
+          CopyTargets:
+            Configurable: true
+            Type: List
+            ItemType: Common.CopyTarget

@@ -1,0 +1,279 @@
+---
+UnitTest:
+  AuroraMinimal:
+    Type: "aws/rds-aurora"
+    Stage: "01-test"
+    Persist: true
+    IngressPoint: false
+    Configuration:
+      Cluster:
+        Type: "AWS::RDS::DBCluster"
+      MyDBInstance1:
+        Type: "AWS::RDS::DBInstance"
+      MyDBInstance2:
+        Type: "AWS::RDS::DBInstance"
+      MyDBInstance3:
+        Type: "AWS::RDS::DBInstance"
+  AuroraOldGen:
+    Type: "aws/rds-aurora"
+    Stage: "01-test"
+    Persist: true
+    IngressPoint: false
+    Configuration:
+      Cluster:
+        Type: "AWS::RDS::DBCluster"
+      MyDBInstance1:
+        Type: "AWS::RDS::DBInstance"
+        Properties:
+          DBInstanceClass: db.r3.large
+      MyDBInstance2:
+        Type: "AWS::RDS::DBInstance"
+        Properties:
+          DBInstanceClass: db.r4.large
+      MyDBInstance3:
+        Type: "AWS::RDS::DBInstance"
+        Properties:
+          DBInstanceClass: db.m3.large
+      MyDBInstance4:
+        Type: "AWS::RDS::DBInstance"
+        Properties:
+          DBInstanceClass: db.m4.large
+  TestResult:
+    _process_db_instances:
+      AuroraMinimal:
+        Resources:
+          MyDBInstance1:
+            Type: AWS::RDS::DBInstance
+            Properties:
+              DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-mydbinstance1
+              Engine: aurora
+              CopyTagsToSnapshot: true
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              DBClusterIdentifier:
+                Ref: Cluster
+              DBInstanceClass: db.t3.medium
+          MyDBInstance2:
+            Type: AWS::RDS::DBInstance
+            Properties:
+              DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-mydbinstance2
+              Engine: aurora
+              CopyTagsToSnapshot: true
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              DBClusterIdentifier:
+                Ref: Cluster
+              DBInstanceClass: db.t3.medium
+          MyDBInstance3:
+            Type: AWS::RDS::DBInstance
+            Properties:
+              DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-mydbinstance3
+              Engine: aurora
+              CopyTagsToSnapshot: true
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              DBClusterIdentifier:
+                Ref: Cluster
+              DBInstanceClass: db.t3.medium
+        Outputs:
+          MyDBInstance1EndpointAddress:
+            Description: RDS instance MyDBInstance1 endpoint
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance1
+              - Endpoint.Address
+          MyDBInstance1Port:
+            Description: RDS instance MyDBInstance1 port
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance1
+              - Endpoint.Port
+          MyDBInstance1Arn:
+            Description: RDS instance MyDBInstance1 ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: MyDBInstance1
+          MyDBInstance2EndpointAddress:
+            Description: RDS instance MyDBInstance2 endpoint
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance2
+              - Endpoint.Address
+          MyDBInstance2Port:
+            Description: RDS instance MyDBInstance2 port
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance2
+              - Endpoint.Port
+          MyDBInstance2Arn:
+            Description: RDS instance MyDBInstance2 ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: MyDBInstance2
+          MyDBInstance3EndpointAddress:
+            Description: RDS instance MyDBInstance3 endpoint
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance3
+              - Endpoint.Address
+          MyDBInstance3Port:
+            Description: RDS instance MyDBInstance3 port
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance3
+              - Endpoint.Port
+          MyDBInstance3Arn:
+            Description: RDS instance MyDBInstance3 ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: MyDBInstance3
+      AuroraOldGen:
+        Resources:
+          MyDBInstance1:
+            Type: AWS::RDS::DBInstance
+            Properties:
+              DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-mydbinstance1
+              Engine: aurora
+              CopyTagsToSnapshot: true
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              DBClusterIdentifier:
+                Ref: Cluster
+              DBInstanceClass: db.r5.large
+          MyDBInstance2:
+            Type: AWS::RDS::DBInstance
+            Properties:
+              DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-mydbinstance2
+              Engine: aurora
+              CopyTagsToSnapshot: true
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              DBClusterIdentifier:
+                Ref: Cluster
+              DBInstanceClass: db.r5.large
+          MyDBInstance3:
+            Type: AWS::RDS::DBInstance
+            Properties:
+              DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-mydbinstance3
+              Engine: aurora
+              CopyTagsToSnapshot: true
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              DBClusterIdentifier:
+                Ref: Cluster
+              DBInstanceClass: db.m5.large
+          MyDBInstance4:
+            Type: AWS::RDS::DBInstance
+            Properties:
+              DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-mydbinstance4
+              Engine: aurora
+              CopyTagsToSnapshot: true
+              DBSubnetGroupName:
+                Ref: DBSubnetGroup
+              DBClusterIdentifier:
+                Ref: Cluster
+              DBInstanceClass: db.m5.large
+        Outputs:
+          MyDBInstance1EndpointAddress:
+            Description: RDS instance MyDBInstance1 endpoint
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance1
+              - Endpoint.Address
+          MyDBInstance1Port:
+            Description: RDS instance MyDBInstance1 port
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance1
+              - Endpoint.Port
+          MyDBInstance1Arn:
+            Description: RDS instance MyDBInstance1 ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: MyDBInstance1
+          MyDBInstance2EndpointAddress:
+            Description: RDS instance MyDBInstance2 endpoint
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance2
+              - Endpoint.Address
+          MyDBInstance2Port:
+            Description: RDS instance MyDBInstance2 port
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance2
+              - Endpoint.Port
+          MyDBInstance2Arn:
+            Description: RDS instance MyDBInstance2 ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: MyDBInstance2
+          MyDBInstance3EndpointAddress:
+            Description: RDS instance MyDBInstance3 endpoint
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance3
+              - Endpoint.Address
+          MyDBInstance3Port:
+            Description: RDS instance MyDBInstance3 port
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance3
+              - Endpoint.Port
+          MyDBInstance3Arn:
+            Description: RDS instance MyDBInstance3 ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: MyDBInstance3
+          MyDBInstance4EndpointAddress:
+            Description: RDS instance MyDBInstance4 endpoint
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance4
+              - Endpoint.Address
+          MyDBInstance4Port:
+            Description: RDS instance MyDBInstance4 port
+            Value:
+              Fn::GetAtt:
+              - MyDBInstance4
+              - Endpoint.Port
+          MyDBInstance4Arn:
+            Description: RDS instance MyDBInstance4 ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: MyDBInstance4

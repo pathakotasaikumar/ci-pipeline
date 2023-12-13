@@ -1,0 +1,107 @@
+UnitTest:
+  Input:
+    ComponentName: TestComponent
+    Initialize:
+      Valid:
+        Type: "aws/sns-factory"
+        Stage: "02-test"
+        Persist: true
+        Configuration:
+          Factory:
+            Type: "Pipeline::SNS::Factory"
+            Security:
+              - Allow: "write"
+                Source: "my-app.InstanceRole"
+      Invalid:
+        Type: "aws/sns-factory"
+        Stage: "02-test"
+        Persist: true
+        Configuration:
+          Factory:
+            Type: "Pipeline::SNS::Factory"
+            Security:
+              - Allow: "read"
+                Source: "my-app.InstanceRole"
+          Factory2:
+            Type: "Pipeline::SNS::Factory"
+            Security:
+              - Allow: "write"
+                Source: "my-app.InstanceRole"
+  Output:
+    SecurityItems:
+      -
+        Name: "LambdaExecutionRole"
+        Type: "Role"
+        Component: "TestComponent"
+        Service: "lambda.amazonaws.com"
+    SecurityRules:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - my-app.InstanceRole
+        resources:
+        - arn:aws:sns:ap-southeast-2:111111111111:ams01-c031-99-dev-master-5-TestComponent*
+        actions:
+        - sns:ListSubscriptionsByTopic
+        - sns:Subscribe
+        - sns:Unsubscribe
+        - sns:Publish
+        - sns:CreateTopic
+        - sns:DeleteTopic
+        - sns:GetTopicAttributes
+        - sns:SetTopicAttributes
+        - sns:ConfirmSubscription
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - my-app.InstanceRole
+        resources:
+        - '*'
+        actions:
+        - sns:ListTopics
+        - sns:ListSubscriptions
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - my-app.InstanceRole
+        resources:
+        - arn:aws:sns:ap-southeast-2:111111111111:app/*/ams01-c031*
+        actions:
+        - sns:CreatePlatformEndpoint
+        - sns:DeleteEndpoint
+        - sns:Publish
+        - sns:SetEndpointAttributes
+        - sns:ListEndpointsByPlatformApplication
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - my-app.InstanceRole
+        resources:
+        - arn:aws:sns:ap-southeast-2:111111111111:endpoint/*/ams01-c031*
+        actions:
+        - sns:Publish
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - TestComponent.LambdaExecutionRole
+        resources:
+        - arn:aws:sns:ap-southeast-2:111111111111:ams01-c031-99-dev-master-5-TestComponent*
+        actions:
+        - sns:DeleteTopic
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - TestComponent.LambdaExecutionRole
+        resources:
+        - '*'
+        actions:
+        - sns:ListTopics
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+        - TestComponent.LambdaExecutionRole
+        resources:
+        - arn:aws:logs:*:*:*
+        actions:
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+        condition:

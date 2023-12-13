@@ -1,0 +1,16 @@
+# SQS Queue component
+---
+Type: aws/sqs
+Stage: 00-test
+Persist: true
+
+Configuration:
+  MyQueue:
+    Type: AWS::SQS::Queue
+    Security:
+      - Source: test-instance.InstanceRole
+        Allow: write
+      - Source: ecs-task-event.TaskRole
+        Allow: write
+    Properties:
+      MessageRetentionPeriod: 600

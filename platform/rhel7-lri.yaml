@@ -1,0 +1,30 @@
+---
+Type: "aws/instance"
+Stage: "01-sample"
+Persist: false
+IngressPoint: true
+
+Configuration:
+  Features:
+    Type: "Pipeline::Features"
+    Properties:
+      Features:
+        Datadog: enabled
+        Longlived:
+          Enabled: true
+
+  Instance:
+    Type: "AWS::EC2::Instance"
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          commands:
+            01-testing:
+              command: "touch /tmp/blah"
+    Properties:
+      AvailabilityZone: "@a"
+      EbsOptimized: true
+      ImageId: "@rhel7-latest"
+      InstanceType: "m4.xlarge"
+      SubnetId: "@private"
+      KeyName: pipeline

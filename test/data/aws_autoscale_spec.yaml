@@ -1,0 +1,1712 @@
+UnitTest:
+  Input:
+    ComponentName: TestComponent
+    Initialize:
+      Invalid:
+        - Type: "aws/autoscale"
+          Stage: "002-apptier"
+          Configuration:
+            BakeInstanceOne:
+              Type: "AWS::EC2::Instance"
+            BakeInstanceTwo:
+              Type: "AWS::EC2::Instance"
+        - Type: "aws/autoscale"
+          Stage: "002-apptier"
+          Configuration:
+            LoadBalancerOne:
+              Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+            LoadBalancerTwo:
+              Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+        - Type: "aws/autoscale"
+          Stage: "002-apptier"
+          Configuration:
+            LaunchConfigurationOne:
+              Type: "AWS::AutoScaling::LaunchConfiguration"
+            LaunchConfigurationTwo:
+              Type: "AWS::AutoScaling::LaunchConfiguration"
+        - Type: "aws/autoscale"
+          Stage: "002-apptier"
+          Configuration:
+            AutoScalingGroupOne:
+              Type: "AWS::AutoScaling::AutoScalingGroup"
+            AutoScalingGroupTwo:
+              Type: "AWS::AutoScaling::AutoScalingGroup"
+        - Type: "aws/autoscale"
+          Stage: "002-apptier"
+          Configuration:
+            LaunchTemplateOne:
+              Type: "AWS::EC2::LaunchTemplate"
+            LaunchTemplateTwo:
+              Type: "AWS::EC2::LaunchTemplate"
+        - Type: "aws/autoscale"
+          Stage: "002-apptier"
+          Configuration:
+            LaunchConfigurationOne:
+              Type: "AWS::AutoScaling::LaunchConfiguration"
+            LaunchTemplateTwo:
+              Type: "AWS::EC2::LaunchTemplate"
+        - Type: "aws/autoscale"
+          Stage: "002-apptier"
+          Configuration:
+            LaunchTemplateOne:
+              Type: "AWS::EC2::LaunchTemplate"
+
+      Valid:
+        Type: "aws/autoscale"
+        Stage: "01-all"
+        IngressPoint: true
+
+        Configuration:
+          LoadBalancer:
+            Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+            Properties:
+              Scheme: "internal"
+              Listeners:
+                - LoadBalancerPort: "80"
+                  InstancePort: "8080"
+                  Protocol: "HTTP"
+                - LoadBalancerPort: "443"
+                  InstancePort: "443"
+                  Protocol: "HTTPS"
+              HealthCheck:
+                HealthyThreshold: "2"
+                Interval: "10"
+                Target: "HTTP:8080/fpetest/health"
+                Timeout: "5"
+                UnhealthyThreshold: "2"
+
+          AutoScalingGroup:
+            Type: "AWS::AutoScaling::AutoScalingGroup"
+            Properties:
+              MinInstances: 1
+              MaxInstances: 1
+              HealthCheckGracePeriod: 600
+
+          BakeInstance:
+            Type: "AWS::EC2::Instance"
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Deploy: ["Configure"]
+                Configure:
+                  commands:
+                    bootstrap:
+                      command: "bash bootstrap.sh"
+                      cwd: "/root/payload"
+            Properties:
+              InstanceType: "t2.medium"
+              KeyName: "191027"
+
+          LaunchConfiguration:
+            Type: "AWS::AutoScaling::LaunchConfiguration"
+            Properties:
+              InstanceType: "t2.medium"
+              KeyName: "191027"
+
+          AlarmHighCpu:
+            Type: "AWS::CloudWatch::Alarm"
+            Properties:
+              AlarmActions:
+                - "ScaleUpPolicy"
+              ComparisonOperator: "GreaterThanThreshold"
+              EvaluationPeriods: 2
+              MetricName: "CPUUtilization"
+              Period: 60
+              Statistic: "Average"
+              Threshold: 75
+
+          ScaleUpPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              ScalingAdjustment: 2
+              Cooldown: 300
+
+          AlarmLowCpu:
+            Type: "AWS::CloudWatch::Alarm"
+            Properties:
+              AlarmActions:
+                - "ScaleDownPolicy"
+              ComparisonOperator: "LessThanThreshold"
+              EvaluationPeriods: 4
+              MetricName: "CPUUtilization"
+              Period: 60
+              Statistic: "Average"
+              Threshold: 35
+
+          ScaleDownPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              ScalingAdjustment: -2
+              Cooldown: 60
+      ValidCustomAMI:
+        Type: "aws/autoscale"
+        Stage: "01-all"
+        IngressPoint: true
+
+        Configuration:
+          LoadBalancer:
+            Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+            Properties:
+              Scheme: "internal"
+              Listeners:
+                - LoadBalancerPort: "80"
+                  InstancePort: "8080"
+                  Protocol: "HTTP"
+                - LoadBalancerPort: "443"
+                  InstancePort: "443"
+                  Protocol: "HTTPS"
+              HealthCheck:
+                HealthyThreshold: "2"
+                Interval: "10"
+                Target: "HTTP:8080/fpetest/health"
+                Timeout: "5"
+                UnhealthyThreshold: "2"
+
+          AutoScalingGroup:
+            Type: "AWS::AutoScaling::AutoScalingGroup"
+            Properties:
+              MinInstances: 1
+              MaxInstances: 1
+              HealthCheckGracePeriod: 600
+
+          LaunchConfiguration:
+            Type: "AWS::AutoScaling::LaunchConfiguration"
+            Properties:
+              InstanceType: "m3.medium"
+              ImageId: "custom-ami-id"
+
+          AlarmHighCpu:
+            Type: "AWS::CloudWatch::Alarm"
+            Properties:
+              AlarmActions:
+                - "ScaleUpPolicy"
+              ComparisonOperator: "GreaterThanThreshold"
+              EvaluationPeriods: 2
+              MetricName: "CPUUtilization"
+              Period: 60
+              Statistic: "Average"
+              Threshold: 75
+
+          ScaleUpPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              ScalingAdjustment: 2
+              Cooldown: 300
+
+          AlarmLowCpu:
+            Type: "AWS::CloudWatch::Alarm"
+            Properties:
+              AlarmActions:
+                - "ScaleDownPolicy"
+              ComparisonOperator: "LessThanThreshold"
+              EvaluationPeriods: 4
+              MetricName: "CPUUtilization"
+              Period: 60
+              Statistic: "Average"
+              Threshold: 35
+
+          ScaleDownPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              ScalingAdjustment: -2
+              Cooldown: 60
+
+      ValidCustomAMIWithoutCopyImage:
+        Type: "aws/autoscale"
+        Stage: "01-all"
+        IngressPoint: true
+
+        Configuration:
+          LoadBalancer:
+            Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+            Properties:
+              Scheme: "internal"
+              Listeners:
+                - LoadBalancerPort: "80"
+                  InstancePort: "8080"
+                  Protocol: "HTTP"
+                - LoadBalancerPort: "443"
+                  InstancePort: "443"
+                  Protocol: "HTTPS"
+              HealthCheck:
+                HealthyThreshold: "2"
+                Interval: "10"
+                Target: "HTTP:8080/fpetest/health"
+                Timeout: "5"
+                UnhealthyThreshold: "2"
+
+          AutoScalingGroup:
+            Type: "AWS::AutoScaling::AutoScalingGroup"
+            Properties:
+              MinInstances: 1
+              MaxInstances: 1
+              HealthCheckGracePeriod: 600
+
+          LaunchConfiguration:
+            Type: "AWS::AutoScaling::LaunchConfiguration"
+            Properties:
+              InstanceType: "m3.medium"
+              ImageId: "custom-ami-id"
+              Pipeline::CopySourceImage: false
+
+          AlarmHighCpu:
+            Type: "AWS::CloudWatch::Alarm"
+            Properties:
+              AlarmActions:
+                - "ScaleUpPolicy"
+              ComparisonOperator: "GreaterThanThreshold"
+              EvaluationPeriods: 2
+              MetricName: "CPUUtilization"
+              Period: 60
+              Statistic: "Average"
+              Threshold: 75
+
+          ScaleUpPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              ScalingAdjustment: 2
+              Cooldown: 300
+
+          AlarmLowCpu:
+            Type: "AWS::CloudWatch::Alarm"
+            Properties:
+              AlarmActions:
+                - "ScaleDownPolicy"
+              ComparisonOperator: "LessThanThreshold"
+              EvaluationPeriods: 4
+              MetricName: "CPUUtilization"
+              Period: 60
+              Statistic: "Average"
+              Threshold: 35
+
+          ScaleDownPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              ScalingAdjustment: -2
+              Cooldown: 60
+      ValidWithWildcard-qcpaws:
+        Type: "aws/autoscale"
+        Stage: "01-all"
+        IngressPoint: true
+
+        Configuration:
+          LoadBalancer:
+            Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+            Properties:
+              Scheme: "internal"
+              Listeners:
+                - LoadBalancerPort: "80"
+                  InstancePort: "8080"
+                  Protocol: "HTTP"
+                - LoadBalancerPort: "443"
+                  InstancePort: "443"
+                  Protocol: "HTTPS"
+                  SSLCertificateId: "@wildcard-qcpaws"
+              HealthCheck:
+                HealthyThreshold: "2"
+                Interval: "10"
+                Target: "HTTP:8080/fpetest/health"
+                Timeout: "5"
+                UnhealthyThreshold: "2"
+
+          AutoScalingGroup:
+            Type: "AWS::AutoScaling::AutoScalingGroup"
+            Properties:
+              MinInstances: 1
+              MaxInstances: 1
+              HealthCheckGracePeriod: 600
+
+          LaunchConfiguration:
+            Type: "AWS::AutoScaling::LaunchConfiguration"
+            Properties:
+              InstanceType: "m3.medium"
+              ImageId: "custom-ami-id"
+              Pipeline::CopySourceImage: false
+
+          AlarmHighCpu:
+            Type: "AWS::CloudWatch::Alarm"
+            Properties:
+              AlarmActions:
+                - "ScaleUpPolicy"
+              ComparisonOperator: "GreaterThanThreshold"
+              EvaluationPeriods: 2
+              MetricName: "CPUUtilization"
+              Period: 60
+              Statistic: "Average"
+              Threshold: 75
+
+          ScaleUpPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              ScalingAdjustment: 2
+              Cooldown: 300
+
+          AlarmLowCpu:
+            Type: "AWS::CloudWatch::Alarm"
+            Properties:
+              AlarmActions:
+                - "ScaleDownPolicy"
+              ComparisonOperator: "LessThanThreshold"
+              EvaluationPeriods: 4
+              MetricName: "CPUUtilization"
+              Period: 60
+              Statistic: "Average"
+              Threshold: 35
+
+          ScaleDownPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              ScalingAdjustment: -2
+              Cooldown: 60
+
+      ValidWithLaunchTemplate:
+        Type: "aws/autoscale"
+        Stage: "01-all"
+        IngressPoint: true
+
+        Configuration:
+          LoadBalancer:
+            Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+            Properties:
+              Scheme: "internal"
+              Listeners:
+                - LoadBalancerPort: "80"
+                  InstancePort: "8080"
+                  Protocol: "HTTP"
+                - LoadBalancerPort: "443"
+                  InstancePort: "443"
+                  Protocol: "HTTPS"
+              HealthCheck:
+                HealthyThreshold: "2"
+                Interval: "10"
+                Target: "HTTP:8080/fpetest/health"
+                Timeout: "5"
+                UnhealthyThreshold: "2"
+
+          AutoScalingGroup:
+            Type: "AWS::AutoScaling::AutoScalingGroup"
+            Properties:
+              MinInstances: 1
+              MaxInstances: 1
+              HealthCheckGracePeriod: 600
+
+          BakeInstance:
+            Type: "AWS::EC2::Instance"
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Deploy: ["Configure"]
+                Configure:
+                  commands:
+                    bootstrap:
+                      command: "bash bootstrap.sh"
+                      cwd: "/root/payload"
+            Properties:
+              InstanceType: "t2.medium"
+              KeyName: "191027"
+
+          LaunchTemplate:
+            Type: "AWS::EC2::LaunchTemplate"
+            Properties:
+              LaunchTemplateData:
+                InstanceType: "t2.medium"
+                KeyName: "191027"
+
+          AlarmHighCpu:
+            Type: "AWS::CloudWatch::Alarm"
+            Properties:
+              AlarmActions:
+                - "ScaleUpPolicy"
+              ComparisonOperator: "GreaterThanThreshold"
+              EvaluationPeriods: 2
+              MetricName: "CPUUtilization"
+              Period: 60
+              Statistic: "Average"
+              Threshold: 75
+
+          ScaleUpPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              ScalingAdjustment: 2
+              Cooldown: 300
+
+          AlarmLowCpu:
+            Type: "AWS::CloudWatch::Alarm"
+            Properties:
+              AlarmActions:
+                - "ScaleDownPolicy"
+              ComparisonOperator: "LessThanThreshold"
+              EvaluationPeriods: 4
+              MetricName: "CPUUtilization"
+              Period: 60
+              Statistic: "Average"
+              Threshold: 35
+
+          ScaleDownPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              ScalingAdjustment: -2
+              Cooldown: 60
+
+      ValidWithMixedinstanceType:
+        Type: "aws/autoscale"
+        Stage: "01-all"
+        IngressPoint: true
+
+        Configuration:
+          LoadBalancer:
+            Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+            Properties:
+              Scheme: "internal"
+              Listeners:
+                - LoadBalancerPort: "80"
+                  InstancePort: "8080"
+                  Protocol: "HTTP"
+                - LoadBalancerPort: "443"
+                  InstancePort: "443"
+                  Protocol: "HTTPS"
+              HealthCheck:
+                HealthyThreshold: "2"
+                Interval: "10"
+                Target: "HTTP:8080/fpetest/health"
+                Timeout: "5"
+                UnhealthyThreshold: "2"
+
+          AutoScalingGroup:
+            Type: "AWS::AutoScaling::AutoScalingGroup"
+            Properties:
+              MinInstances: 1
+              MaxInstances: 1
+              HealthCheckGracePeriod: 600
+              MixedInstancesPolicy:
+                LaunchTemplate:
+                  Overrides:
+                    - InstanceType: m4.large
+                    - InstanceType: m4.xlarge
+                InstancesDistribution:
+                  OnDemandAllocationStrategy: "prioritized"
+                  OnDemandBaseCapacity: 1
+                  OnDemandPercentageAboveBaseCapacity: 10
+                  SpotAllocationStrategy: "lowest-price"
+                  SpotInstancePools: 2
+                  SpotMaxPrice: "0.08"
+
+          BakeInstance:
+            Type: "AWS::EC2::Instance"
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Deploy: ["Configure"]
+                Configure:
+                  commands:
+                    bootstrap:
+                      command: "bash bootstrap.sh"
+                      cwd: "/root/payload"
+            Properties:
+              InstanceType: "t2.medium"
+              KeyName: "191027"
+
+          LaunchTemplate:
+            Type: "AWS::EC2::LaunchTemplate"
+            Properties:
+              LaunchTemplateData:
+                InstanceType: "t2.medium"
+                KeyName: "191027"
+
+          AlarmHighCpu:
+            Type: "AWS::CloudWatch::Alarm"
+            Properties:
+              AlarmActions:
+                - "ScaleUpPolicy"
+              ComparisonOperator: "GreaterThanThreshold"
+              EvaluationPeriods: 2
+              MetricName: "CPUUtilization"
+              Period: 60
+              Statistic: "Average"
+              Threshold: 75
+
+          ScaleUpPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              ScalingAdjustment: 2
+              Cooldown: 300
+
+          AlarmLowCpu:
+            Type: "AWS::CloudWatch::Alarm"
+            Properties:
+              AlarmActions:
+                - "ScaleDownPolicy"
+              ComparisonOperator: "LessThanThreshold"
+              EvaluationPeriods: 4
+              MetricName: "CPUUtilization"
+              Period: 60
+              Statistic: "Average"
+              Threshold: 35
+
+          ScaleDownPolicy:
+            Type: "AWS::AutoScaling::ScalingPolicy"
+            Properties:
+              AdjustmentType: "ChangeInCapacity"
+              ScalingAdjustment: -2
+              Cooldown: 60
+    Mock:
+      - Object: Context
+        MessageChain: component.set_variables
+        Return : 0
+      - Object: Context
+        MessageChain: component.replace_variables
+        Return: {}
+      - Object: Context
+        MessageChain: component.stack_id
+        Return : "stack-123"
+      - Object: Context
+        MessageChain: kms.secrets_key_arn
+        Return : "arn:/secrets_key_arn"
+      - Object: Context
+        MessageChain: environment.variable
+        Return : "dummy_env_var"
+      - Object: Context
+        MessageChain: environment.subnet_ids
+        With: [ "@private" ]
+        Return: [ "subnet-123", "subnet-456" ]
+      - Object: Context
+        MessageChain: component.role_arn
+        With: [ "TestComponent", "VolumeTaggerExecutionRole" ]
+        Return : "arn:::VolumeTaggerExecutionRole"
+      - Object: Context
+        MessageChain: component.role_arn
+        With: [ "TestComponent", "VolumeTaggerNotificationRole" ]
+        Return : "arn:::VolumeTaggerNotificationRole"
+      - Object: Context
+        MessageChain: component.role_name
+        With: [ "TestComponent", "InstanceRole" ]
+        Return : "InstanceRoleName-123"
+      - Object: Context
+        MessageChain: component.variable
+        With: [ "TestComponent", "ImageId" ]
+        Return : "ami-123"
+      - Object: Context
+        MessageChain: component.variable
+        With: [ "TestComponent", "Endpoint" ]
+        Return : "endpoint.aws.com"
+      - Object: Context
+        MessageChain: s3.artefact_bucket_name
+        Return : "artefact_bucket"
+      - Object: Context
+        MessageChain: s3.legacy_bucket_arn
+        Return : "arn:/legacy_bucket_arn"
+      - Object: Context
+        MessageChain: s3.artefact_bucket_arn
+        Return: "arn:/s3.artefact_bucket_arn"
+      - Object: Context
+        MessageChain: s3.ams_bucket_arn
+        Return: "arn:/s3.ams_bucket_arn"
+      - Object: Context
+        MessageChain: s3.qda_bucket_arn
+        Return: "arn:/s3.qda_bucket_arn"
+      - Object: Context
+        MessageChain: s3.as_bucket_arn
+        Return: "arn:/s3.as_bucket_arn"
+      - Object: Defaults
+        MessageChain: cd_artefact_path
+        Return: "/payload"
+      - Object: Context
+        MessageChain: component.sg_id
+        Return : "sg-123"
+      - Object: Context
+        MessageChain: asir.destination_sg_id
+        Return : "sg-asir-dest"
+      - Object: Context
+        MessageChain: asir.source_sg_id
+        Return : "sg-asir-source"
+      - Object: Context
+        MessageChain: asir.managed_policy_arn_list
+        Return :
+          - "arn::policy/managed-policy"
+          - "arn:aws:iam::894961276425:policy/qcp-iam-ams-test-stack-QCPAMSManagedPolicy-LAEJIBY6GDP7"
+      - Object: Defaults
+        MessageChain: soe_ami_id
+        Return: "ami-1234"
+      - Object: Context
+        MessageChain: environment.region
+        Return: "test-region"
+      - Object: Context
+        MessageChain: environment.account_id
+        Return: "1234567"
+      - Object: AwsHelper
+        MessageChain: s3_copy_object
+      - Object: AwsHelper
+        MessageChain: s3_put_object
+      - Object: AwsHelper
+        MessageChain: s3_upload_file
+      - Object: AwsHelper
+        MessageChain: s3_download_objects
+      - Object: AwsHelper
+        MessageChain: ec2_get_image_details
+        Return:
+          :id: "ami-12345"
+          :name: "qf-rhel-soe"
+          :platform: :rhel
+          :description: "RHEL SOE"
+      - Object: AwsHelper
+        MessageChain: cfn_create_stack
+        Return: { "StackId": "Test-Stack", "InstanceId": "ins-123" }
+      - Object: AwsHelper
+        MessageChain: cfn_update_stack
+        Return: {"StackName": "StackName-123", "StackId": "StackId-123"}
+      - Object: AwsHelper
+        MessageChain: ec2_shutdown_instance_and_create_image
+        Return: {"ImageName": "name", "ImageId": "image_id"}
+      - Object: AwsHelper
+        MessageChain: kms_encrypt_data
+        Return: "encrypted_message"
+      - Object: Util::Nsupdate
+        MessageChain: create_dns_record
+      - Object: Defaults
+        MessageChain: dns_zone
+        Return: "qcpaws.qantas.com.au"
+      - Object: Context
+        MessageChain: component.replace_variables
+  Output:
+    Initialize:
+      Invalid:
+        - Error: "This component does not support multiple AWS::EC2::Instance resources"
+        - Error: "This component does not support multiple AWS::ElasticLoadBalancing::LoadBalancer resources"
+        - Error: "This component does not support multiple AWS::AutoScaling::LaunchConfiguration resources"
+        - Error: "This component does not support multiple AWS::AutoScaling::AutoScalingGroup resources"
+        - Error: "This component does not support multiple AWS::EC2::LaunchTemplate resources"
+        - Error: "Should use either LaunchConfiguration or LaunchTemplate resources in component: TestComponent."
+        - Error: "Must specify AWS::AutoScaling::AutoScalingGroup resource for component: TestComponent"
+
+      Valid:
+        SecurityItems:
+          - Name: ElbSecurityGroup
+            Type: SecurityGroup
+            Component: TestComponent
+          - Name: AsgSecurityGroup
+            Type: SecurityGroup
+            Component: TestComponent
+          - Name: InstanceRole
+            Type: Role
+            Component: TestComponent
+            ManagedPolicyArns:
+              - "arn::policy/managed-policy"
+              - "arn:aws:iam::894961276425:policy/qcp-iam-ams-test-stack-QCPAMSManagedPolicy-LAEJIBY6GDP7"
+          - Name: LambdaSecretManagementExecutionRole
+            Type: Role
+            Component: TestComponent
+            Service: lambda.amazonaws.com
+          - Name: AutoscalingNotificationRole
+            Type: Role
+            Component: TestComponent
+            Service: autoscaling.amazonaws.com
+        SecurityRules:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - "*"
+            actions:
+              - cloudwatch:PutMetricData
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - arn:aws:ssm:ap-southeast-2:111111111111:parameter/platform/ams01/c031/99/dev/master/5/*
+            actions:
+              - ssm:DeleteParameter
+              - ssm:DeleteParameters
+              - ssm:DescribeParameters
+              - ssm:GetParameter
+              - ssm:GetParameters
+              - ssm:GetParametersByPath
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - arn:aws:ssm:ap-southeast-2:111111111111:parameter/ams01-c031-99-dev-master-5-autoscale-pwd-*
+            actions:
+              - ssm:PutParameter
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - "*"
+            actions:
+              - ec2messages:AcknowledgeMessage
+              - ec2messages:DeleteMessage
+              - ec2messages:FailMessage
+              - ec2messages:GetEndpoint
+              - ec2messages:GetMessages
+              - ec2messages:SendReply
+              - ssm:UpdateInstanceInformation
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+            actions:
+              - kms:Decrypt
+              - kms:Describe*
+              - kms:Encrypt
+              - kms:GenerateDataKey
+              - kms:GenerateDataKeyWithoutPlaintext
+              - kms:GenerateRandom
+              - kms:ReEncrypt*
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - arn:aws:s3:::bucket-ams-test
+              - arn:aws:s3:::bucket-qda-test
+              - arn:aws:s3:::bucket-as-test
+              - arn:aws:s3:::pipeline-artefact-store
+              - arn:aws:s3:::qcp-pipeline-artefacts
+            actions:
+              - s3:GetBucketLocation
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - arn:aws:s3:::bucket-ams-test
+              - arn:aws:s3:::bucket-qda-test
+              - arn:aws:s3:::bucket-as-test
+              - arn:aws:s3:::pipeline-artefact-store
+            actions:
+              - s3:ListBucket
+              - s3:ListBucketVersions
+              - s3:ListBucketMultipartUploads
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - arn:aws:s3:::bucket-ams-test/*
+              - arn:aws:s3:::bucket-qda-test/*
+              - arn:aws:s3:::bucket-as-test/*
+              - arn:aws:s3:::pipeline-artefact-store/*
+              - arn:aws:s3:::qcp-pipeline-artefacts/cd/ams01/c031/99/dev/master/5/*
+              - arn:aws:s3:::qcp-pipeline-artefacts/cd/ams01/c031/99/dev/master/00/*
+            actions:
+              - s3:GetObject
+              - s3:GetObjectVersion
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - arn:aws:s3:::bucket-qda-test/*
+              - arn:aws:s3:::bucket-as-test/*
+            actions:
+              - s3:PutObject
+              - s3:PutObjectAcl
+              - s3:DeleteObject
+              - s3:DeleteObjectVersion
+              - s3:RestoreObject
+              - s3:ListMultipartUploadParts
+              - s3:AbortMultipartUpload
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - arn:aws:s3:::bucket-as-test
+            actions:
+              - s3:GetBucketVersioning
+              - s3:PutBucketVersioning
+              - s3:GetLifecycleConfiguration
+              - s3:PutLifecycleConfiguration
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - arn:aws:s3:::bucket-as-test
+            actions:
+              - s3:GetBucketNotification
+              - s3:PutBucketNotification
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - "*"
+            actions:
+              - ec2:DescribeAvailabilityZones
+              - ec2:DescribeImageAttribute
+              - ec2:DescribeImages
+              - ec2:DescribeInstances
+              - ec2:DescribeInstanceStatus
+              - ec2:DescribeNetworkInterfaces
+              - ec2:DescribeNetworkInterfaceAttribute
+              - ec2:DescribeRegions
+              - ec2:DescribeSecurityGroups
+              - ec2:DescribeSnapshotAttribute
+              - ec2:DescribeSnapshots
+              - ec2:DescribeTags
+              - ec2:DescribeVolumeAttribute
+              - ec2:DescribeVolumes
+              - ec2:DescribeVolumeStatus
+            condition:
+          - !ruby/object:IpSecurityRule
+            sources:
+              - sg-123456
+              - sg-654321
+            destination: autoscale.AsgSecurityGroup
+            ports:
+              - !ruby/object:IpPort
+                spec: TCP:22
+                protocol: tcp
+                from: "22"
+                to: "22"
+              - !ruby/object:IpPort
+                spec: TCP:3389
+                protocol: tcp
+                from: "3389"
+                to: "3389"
+            name:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - arn:aws:s3:::qcp-pipeline-artefacts/logs/ams01/c031/99/dev/master/5/autoscale/bake/*
+            actions:
+              - s3:PutObject
+              - s3:PutObjectAcl
+            condition:
+          - !ruby/object:IpSecurityRule
+            sources:
+              - autoscale.ElbSecurityGroup
+            destination: autoscale.AsgSecurityGroup
+            ports:
+              - !ruby/object:IpPort
+                spec: TCP:*
+                protocol: tcp
+                from: 0
+                to: 65535
+            name:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.AutoscalingNotificationRole
+            resources:
+              - "*"
+            actions:
+              - sns:Publish
+              - sqs:GetQueueUrl
+              - sqs:SendMessage
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaExecutionRole
+              - autoscale.InstanceRole
+            resources:
+              - "*"
+            actions:
+              - autoscaling:CompleteLifecycleAction
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaExecutionRole
+            resources:
+              - "*"
+            actions:
+              - tag:addResourceTags
+              - tag:getTagKeys
+              - tag:getTagValues
+              - ec2:DescribeInstanceAttribute
+              - ec2:CreateTags
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaExecutionRole
+            resources:
+              - arn:aws:logs:*:*:*
+            actions:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaExecutionRole
+            resources:
+              - arn:aws:logs:*:*:*
+            actions:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaExecutionRole
+            resources:
+              - arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+            actions:
+              - kms:CreateGrant
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaExecutionRole
+            resources:
+              - "*"
+            actions:
+              - ec2:AttachNetworkInterface
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaExecutionRole
+            resources:
+              - arn:aws:logs:*:*:*
+            actions:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaSecretManagementExecutionRole
+            resources:
+              - arn:aws:s3:::qcp-secret-management-bucket/*
+            actions:
+              - s3:GetObject
+              - s3:GetObjectVersion
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaSecretManagementExecutionRole
+            resources:
+              - arn:aws:ssm:ap-southeast-2:111111111111:parameter/platform/ams01/c031/99/dev/master/5/*
+            actions:
+              - ssm:PutParameter
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaSecretManagementExecutionRole
+            resources:
+              - arn:aws:ssm:ap-southeast-2:111111111111:parameter/platform/ams01/c031/99/dev/master/5/*
+            actions:
+              - ssm:DeleteParameter
+              - ssm:DeleteParameters
+              - ssm:DescribeParameters
+              - ssm:GetParameter
+              - ssm:GetParameters
+              - ssm:GetParametersByPath
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaSecretManagementExecutionRole
+            resources:
+              - "*"
+            actions:
+              - ec2:CreateNetworkInterface
+              - ec2:DescribeNetworkInterfaces
+              - ec2:DeleteNetworkInterface
+              - ec2:DescribeInstances
+              - ec2:AttachNetworkInterface
+              - ec2:DetachNetworkInterface
+              - ec2:ModifyNetworkInterfaceAttribute
+              - ec2:ResetNetworkInterfaceAttribute
+              - autoscaling:CompleteLifecycleAction
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaSecretManagementExecutionRole
+            resources:
+              - arn:aws:logs:*:*:*
+            actions:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.LambdaSecretManagementExecutionRole
+            resources:
+              - arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+            actions:
+              - kms:Describe*
+              - kms:Encrypt
+              - kms:GenerateDataKey
+              - kms:GenerateDataKeyWithoutPlaintext
+              - kms:GenerateRandom
+              - kms:ReEncrypt*
+            condition:
+          - !ruby/object:IamSecurityRule
+            roles:
+              - autoscale.InstanceRole
+            resources:
+              - "*"
+            actions:
+              - autoscaling:PutScheduledUpdateGroupAction
+            condition:
+              StringLike:
+                autoscaling:ResourceTag/Name: ams01-c031-99-dev-master-*
+    BakeInstanceTemplate:
+      Resources:
+        InstanceProfile:
+          Type: AWS::IAM::InstanceProfile
+          Properties:
+            Path: "/"
+            Roles:
+              - "InstanceRoleName-123"
+      Outputs:
+        InstanceProfileArn:
+          Description: Instance profile ARN
+          Value: { "Fn::GetAtt": ["InstanceProfile", "Arn"] }
+        InstanceProfileName:
+          Description: Instance profile Name
+          Value: { "Ref": "InstanceProfile" }
+    FullTemplate:
+      Stubbed:
+        Resources:
+          InstanceProfile:
+            Type: AWS::IAM::InstanceProfile
+            Properties:
+              Path: "/"
+              Roles:
+                - InstanceRoleName-123
+          LoadBalancer:
+            Type: AWS::ElasticLoadBalancing::LoadBalancer
+            Properties:
+              ConnectionDrainingPolicy:
+                Enabled: "true"
+                Timeout: "60"
+              CrossZone: "true"
+              HealthCheck:
+                HealthyThreshold: "2"
+                Interval: "10"
+                Target: HTTP:8080/fpetest/health
+                Timeout: "5"
+                UnhealthyThreshold: "2"
+              Listeners:
+                - LoadBalancerPort: "80"
+                  InstancePort: "8080"
+                  Protocol: HTTP
+                - LoadBalancerPort: "443"
+                  InstancePort: "443"
+                  Protocol: HTTPS
+              Scheme: internal
+              SecurityGroups:
+                - sg-123
+                - sg-asir-dest
+              Subnets: &1
+                - subnet-123
+                - subnet-456
+              Policies: []
+          LaunchConfiguration:
+            Type: AWS::AutoScaling::LaunchConfiguration
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Prepare: []
+                  Deploy:
+                    - PreDeploy
+                PreDeploy:
+                  commands:
+                    01-prospero-deploy:
+                      command:
+                        prospero -vr deploy 2>&1 | tee -a /var/log/prospero_deploy.$(date
+                        '+%d_%m_%Y').log
+                      cwd: "/usr/local/sbin"
+                    02-prospero-enforce:
+                      command:
+                        prospero -v 2>&1 | tee -a /var/log/prospero_enforce.$(date
+                        '+%d_%m_%Y').log
+                      cwd: "/usr/local/sbin"
+            Properties:
+              IamInstanceProfile:
+                Ref: InstanceProfile
+              ImageId: ami-123
+              InstanceType: t2.medium
+              SecurityGroups:
+                - sg-123
+                - sg-asir-source
+                - sg-asir-dest
+              KeyName: "191027"
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Metadata:
+              WAIT_CONDITION: WaitAt1479637640
+            Properties:
+              HealthCheckGracePeriod: 600
+              HealthCheckType: ELB
+              LaunchConfigurationName:
+                Ref: LaunchConfiguration
+              MinSize: 1
+              MaxSize: 1
+              DesiredCapacity: 1
+              VPCZoneIdentifier: *1
+              LoadBalancerNames:
+                - Ref: LoadBalancer
+          WaitAt1479637640:
+            Type: AWS::CloudFormation::WaitCondition
+            Properties: {}
+            CreationPolicy:
+              ResourceSignal:
+                Count: 1
+                Timeout: PT45M
+          ScaleUpPolicy:
+            Type: AWS::AutoScaling::ScalingPolicy
+            Properties:
+              AdjustmentType: ChangeInCapacity
+              AutoScalingGroupName:
+                Ref: AutoScalingGroup
+              Cooldown: "300"
+              ScalingAdjustment: "2"
+          ScaleDownPolicy:
+            Type: AWS::AutoScaling::ScalingPolicy
+            Properties:
+              AdjustmentType: ChangeInCapacity
+              AutoScalingGroupName:
+                Ref: AutoScalingGroup
+              Cooldown: "60"
+              ScalingAdjustment: "-2"
+          AlarmHighCpu:
+            Type: AWS::CloudWatch::Alarm
+            Properties:
+              ActionsEnabled: true
+              AlarmActions:
+                - Ref: ScaleUpPolicy
+              AlarmDescription: Alarm AlarmHighCpu
+              ComparisonOperator: GreaterThanThreshold
+              Dimensions:
+                - Name: AutoScalingGroupName
+                  Value:
+                    Ref: AutoScalingGroup
+              EvaluationPeriods: 2
+              MetricName: CPUUtilization
+              Namespace: AWS/EC2
+              Period: 60
+              Statistic: Average
+              Threshold: 75
+          AlarmLowCpu:
+            Type: AWS::CloudWatch::Alarm
+            Properties:
+              ActionsEnabled: true
+              AlarmActions:
+                - Ref: ScaleDownPolicy
+              AlarmDescription: Alarm AlarmLowCpu
+              ComparisonOperator: LessThanThreshold
+              Dimensions:
+                - Name: AutoScalingGroupName
+                  Value:
+                    Ref: AutoScalingGroup
+              EvaluationPeriods: 4
+              MetricName: CPUUtilization
+              Namespace: AWS/EC2
+              Period: 60
+              Statistic: Average
+              Threshold: 35
+        Outputs:
+          InstanceProfileName:
+            Description: Instance profile Name
+            Value:
+              Ref: InstanceProfile
+          InstanceProfileArn:
+            Description: Instance profile ARN
+            Value:
+              Fn::GetAtt:
+                - InstanceProfile
+                - Arn
+          LoadBalancerDNSName:
+            Description: ELB endpoint address
+            Value:
+              Fn::GetAtt:
+                - LoadBalancer
+                - DNSName
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup
+      Unstubbed:
+        Resources:
+          InstanceProfile:
+            Type: AWS::IAM::InstanceProfile
+            Properties:
+              Path: "/"
+              Roles:
+                - InstanceRoleName-123
+          LoadBalancer:
+            Type: AWS::ElasticLoadBalancing::LoadBalancer
+            Properties:
+              ConnectionDrainingPolicy:
+                Enabled: "true"
+                Timeout: "60"
+              CrossZone: "true"
+              HealthCheck:
+                HealthyThreshold: "2"
+                Interval: "10"
+                Target: HTTP:8080/fpetest/health
+                Timeout: "5"
+                UnhealthyThreshold: "2"
+              Listeners:
+                - LoadBalancerPort: "80"
+                  InstancePort: "8080"
+                  Protocol: HTTP
+                - LoadBalancerPort: "443"
+                  InstancePort: "443"
+                  Protocol: HTTPS
+              Scheme: internal
+              SecurityGroups:
+                - sg-123
+                - sg-asir-dest
+              Subnets: &1
+                - subnet-123
+                - subnet-456
+              Policies: []
+          LaunchConfiguration:
+            Type: AWS::AutoScaling::LaunchConfiguration
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Prepare: []
+                  Deploy:
+                    - PreDeploy
+                    - PostDeploy
+                PreDeploy:
+                  commands:
+                    01-prospero-deploy:
+                      command:
+                        prospero -vr deploy 2>&1 | tee -a /var/log/prospero_deploy.$(date
+                        '+%d_%m_%Y').log
+                      cwd: "/usr/local/sbin"
+                    02-prospero-enforce:
+                      command:
+                        prospero -v 2>&1 | tee -a /var/log/prospero_enforce.$(date
+                        '+%d_%m_%Y').log
+                      cwd: "/usr/local/sbin"
+                PostDeploy:
+                  commands:
+                    01-cleanup:
+                      command: rm -rf /root/payload
+                    02-list-installed-packages:
+                      command: rpm -qa | sort
+                    03-yum-repolist:
+                      command: yum repolist
+                    #04-adflush:
+                    #  command: adflush -f && service centrifydc restart
+            Properties:
+              IamInstanceProfile:
+                Ref: InstanceProfile
+              ImageId: ami-123
+              SecurityGroups:
+                - sg-123
+                - sg-asir-source
+                - sg-asir-dest
+              KeyName: "191027"
+              InstanceType: t2.medium
+          Wait1111111:
+            Type: AWS::CloudFormation::WaitCondition
+            Properties: {}
+            CreationPolicy:
+              ResourceSignal:
+                Count: 0
+                Timeout: PT45M
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Metadata:
+              WAIT_CONDITION: Wait1111111
+            Properties:
+              HealthCheckGracePeriod: 600
+              HealthCheckType: ELB
+              LaunchConfigurationName:
+                Ref: LaunchConfiguration
+              MinSize: 0
+              MaxSize: 0
+              DesiredCapacity: 0
+              VPCZoneIdentifier: *1
+              LoadBalancerNames:
+                - Ref: LoadBalancer
+              MetricsCollection:
+                - Granularity: 1Minute
+          ScaleUpPolicy:
+            Type: AWS::AutoScaling::ScalingPolicy
+            Properties:
+              AdjustmentType: ChangeInCapacity
+              AutoScalingGroupName:
+                Ref: AutoScalingGroup
+              Cooldown: "300"
+              PolicyType: SimpleScaling
+              ScalingAdjustment: "2"
+          ScaleDownPolicy:
+            Type: AWS::AutoScaling::ScalingPolicy
+            Properties:
+              AdjustmentType: ChangeInCapacity
+              AutoScalingGroupName:
+                Ref: AutoScalingGroup
+              Cooldown: "60"
+              PolicyType: SimpleScaling
+              ScalingAdjustment: "-2"
+          AlarmHighCpu:
+            Type: AWS::CloudWatch::Alarm
+            Properties:
+              ActionsEnabled: true
+              AlarmDescription: Alarm AlarmHighCpu
+              ComparisonOperator: GreaterThanThreshold
+              EvaluationPeriods: 2
+              MetricName: CPUUtilization
+              Namespace: AWS/EC2
+              Period: 60
+              Statistic: Average
+              Threshold: 75
+              AlarmActions:
+                - Ref: ScaleUpPolicy
+              Dimensions:
+                - Name: AutoScalingGroupName
+                  Value:
+                    Ref: AutoScalingGroup
+          AlarmLowCpu:
+            Type: AWS::CloudWatch::Alarm
+            Properties:
+              ActionsEnabled: true
+              AlarmDescription: Alarm AlarmLowCpu
+              ComparisonOperator: LessThanThreshold
+              EvaluationPeriods: 4
+              MetricName: CPUUtilization
+              Namespace: AWS/EC2
+              Period: 60
+              Statistic: Average
+              Threshold: 35
+              AlarmActions:
+                - Ref: ScaleDownPolicy
+              Dimensions:
+                - Name: AutoScalingGroupName
+                  Value:
+                    Ref: AutoScalingGroup
+        Outputs:
+          InstanceProfileName:
+            Description: Instance profile Name
+            Value:
+              Ref: InstanceProfile
+          InstanceProfileArn:
+            Description: Instance profile ARN
+            Value:
+              Fn::GetAtt:
+                - InstanceProfile
+                - Arn
+          LoadBalancerDNSName:
+            Description: ELB endpoint address
+            Value:
+              Fn::GetAtt:
+                - LoadBalancer
+                - DNSName
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup
+          AlarmHighCpuName:
+            Description: Alarm name
+            Value:
+              Ref: AlarmHighCpu
+          AlarmLowCpuName:
+            Description: Alarm name
+            Value:
+              Ref: AlarmLowCpu
+
+      Unstubbed-Route53:
+        Resources:
+          InstanceProfile:
+            Type: AWS::IAM::InstanceProfile
+            Properties:
+              Path: "/"
+              Roles:
+                - InstanceRoleName-123
+          LoadBalancer:
+            Type: AWS::ElasticLoadBalancing::LoadBalancer
+            Properties:
+              ConnectionDrainingPolicy:
+                Enabled: "true"
+                Timeout: "60"
+              CrossZone: "true"
+              HealthCheck:
+                HealthyThreshold: "2"
+                Interval: "10"
+                Target: HTTP:8080/fpetest/health
+                Timeout: "5"
+                UnhealthyThreshold: "2"
+              Listeners:
+                - LoadBalancerPort: "80"
+                  InstancePort: "8080"
+                  Protocol: HTTP
+                - LoadBalancerPort: "443"
+                  InstancePort: "443"
+                  Protocol: HTTPS
+              Scheme: internal
+              SecurityGroups:
+                - sg-123
+                - sg-asir-dest
+              Subnets: &1
+                - subnet-123
+                - subnet-456
+              Policies: []
+          LaunchConfiguration:
+            Type: AWS::AutoScaling::LaunchConfiguration
+            Metadata:
+              AWS::CloudFormation::Init:
+                configSets:
+                  Prepare: []
+                  Deploy:
+                    - PreDeploy
+                    - PostDeploy
+                PreDeploy:
+                  commands:
+                    01-prospero-deploy:
+                      command:
+                        prospero -vr deploy 2>&1 | tee -a /var/log/prospero_deploy.$(date
+                        '+%d_%m_%Y').log
+                      cwd: "/usr/local/sbin"
+                    02-prospero-enforce:
+                      command:
+                        prospero -v 2>&1 | tee -a /var/log/prospero_enforce.$(date
+                        '+%d_%m_%Y').log
+                      cwd: "/usr/local/sbin"
+                PostDeploy:
+                  commands:
+                    01-cleanup:
+                      command: rm -rf /root/payload
+                    02-list-installed-packages:
+                      command: rpm -qa | sort
+                    03-yum-repolist:
+                      command: yum repolist
+                    #04-adflush:
+                    #  command: adflush -f && service centrifydc restart
+            Properties:
+              IamInstanceProfile:
+                Ref: InstanceProfile
+              ImageId: ami-123
+              SecurityGroups:
+                - sg-123
+                - sg-asir-source
+                - sg-asir-dest
+              KeyName: "191027"
+              InstanceType: t2.medium
+          Wait1111111:
+            Type: AWS::CloudFormation::WaitCondition
+            Properties: {}
+            CreationPolicy:
+              ResourceSignal:
+                Count: 0
+                Timeout: PT45M
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Metadata:
+              WAIT_CONDITION: Wait1111111
+            Properties:
+              HealthCheckGracePeriod: 600
+              HealthCheckType: ELB
+              LaunchConfigurationName:
+                Ref: LaunchConfiguration
+              MinSize: 0
+              MaxSize: 0
+              DesiredCapacity: 0
+              VPCZoneIdentifier: *1
+              LoadBalancerNames:
+                - Ref: LoadBalancer
+              MetricsCollection:
+                - Granularity: 1Minute
+          ScaleUpPolicy:
+            Type: AWS::AutoScaling::ScalingPolicy
+            Properties:
+              AdjustmentType: ChangeInCapacity
+              AutoScalingGroupName:
+                Ref: AutoScalingGroup
+              Cooldown: "300"
+              PolicyType: SimpleScaling
+              ScalingAdjustment: "2"
+          ScaleDownPolicy:
+            Type: AWS::AutoScaling::ScalingPolicy
+            Properties:
+              PolicyType: SimpleScaling
+              AdjustmentType: ChangeInCapacity
+              AutoScalingGroupName:
+                Ref: AutoScalingGroup
+              Cooldown: "60"
+              ScalingAdjustment: "-2"
+          AlarmHighCpu:
+            Type: AWS::CloudWatch::Alarm
+            Properties:
+              ActionsEnabled: true
+              AlarmDescription: Alarm AlarmHighCpu
+              ComparisonOperator: GreaterThanThreshold
+              EvaluationPeriods: 2
+              MetricName: CPUUtilization
+              Namespace: AWS/EC2
+              Period: 60
+              Statistic: Average
+              Threshold: 75
+              AlarmActions:
+                - Ref: ScaleUpPolicy
+              Dimensions:
+                - Name: AutoScalingGroupName
+                  Value:
+                    Ref: AutoScalingGroup
+          AlarmLowCpu:
+            Type: AWS::CloudWatch::Alarm
+            Properties:
+              ActionsEnabled: true
+              AlarmDescription: Alarm AlarmLowCpu
+              ComparisonOperator: LessThanThreshold
+              EvaluationPeriods: 4
+              MetricName: CPUUtilization
+              Namespace: AWS/EC2
+              Period: 60
+              Statistic: Average
+              Threshold: 35
+              AlarmActions:
+                - Ref: ScaleDownPolicy
+              Dimensions:
+                - Name: AutoScalingGroupName
+                  Value:
+                    Ref: AutoScalingGroup
+          DeployDns:
+            Type: AWS::Route53::RecordSet
+            Properties:
+              Name: testcomponent.master-5.dev.c031-99.ams01.nonp.aws.qcp
+              Type: CNAME
+              TTL: "60"
+              ResourceRecords:
+                - Fn::GetAtt:
+                    - LoadBalancer
+                    - DNSName
+              HostedZoneName: ams01.nonp.aws.qcp.
+        Outputs:
+          InstanceProfileName:
+            Description: Instance profile Name
+            Value:
+              Ref: InstanceProfile
+          InstanceProfileArn:
+            Description: Instance profile ARN
+            Value:
+              Fn::GetAtt:
+                - InstanceProfile
+                - Arn
+          LoadBalancerDNSName:
+            Description: ELB endpoint address
+            Value:
+              Fn::GetAtt:
+                - LoadBalancer
+                - DNSName
+          AutoScalingGroupName:
+            Description: Autoscaling group name
+            Value:
+              Ref: AutoScalingGroup
+          AlarmHighCpuName:
+            Description: Alarm name
+            Value:
+              Ref: AlarmHighCpu
+          AlarmLowCpuName:
+            Description: Alarm name
+            Value:
+              Ref: AlarmLowCpu
+
+IntegrationTest:
+  Input:
+    ComponentName: autoscale
+    Valid:
+      Type: "aws/autoscale"
+      Stage: "01-all"
+      IngressPoint: true
+
+      Configuration:
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+          Properties:
+            Scheme: "internal"
+            Listeners:
+              - LoadBalancerPort: "80"
+                InstancePort: "8080"
+                Protocol: "HTTP"
+            HealthCheck:
+              HealthyThreshold: "2"
+              Interval: "10"
+              Target: "HTTP:8080/fpetest/health"
+              Timeout: "5"
+              UnhealthyThreshold: "2"
+
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+          Properties:
+            MinInstances: 1
+            MaxInstances: 1
+            HealthCheckGracePeriod: 600
+
+        BakeInstance:
+          Type: "AWS::EC2::Instance"
+          Metadata:
+            AWS::CloudFormation::Init:
+              configSets:
+                Deploy: ["Configure"]
+              Configure:
+                commands:
+                  bootstrap:
+                    command: "ls"
+                    cwd: "/root/payload"
+          Properties:
+            InstanceType: "t2.medium"
+
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: "t2.medium"
+
+        AlarmHighCpu:
+          Type: "AWS::CloudWatch::Alarm"
+          Properties:
+            AlarmActions:
+              - "ScaleUpPolicy"
+            ComparisonOperator: "GreaterThanThreshold"
+            EvaluationPeriods: 2
+            MetricName: "CPUUtilization"
+            Period: 60
+            Statistic: "Average"
+            Threshold: 75
+
+        ScaleUpPolicy:
+          Type: "AWS::AutoScaling::ScalingPolicy"
+          Properties:
+            PolicyType: SimpleScaling
+            AdjustmentType: "ChangeInCapacity"
+            ScalingAdjustment: 2
+            Cooldown: 300
+
+        AlarmLowCpu:
+          Type: "AWS::CloudWatch::Alarm"
+          Properties:
+            AlarmActions:
+              - "ScaleDownPolicy"
+            ComparisonOperator: "LessThanThreshold"
+            EvaluationPeriods: 4
+            MetricName: "CPUUtilization"
+            Period: 60
+            Statistic: "Average"
+            Threshold: 35
+
+        ScaleDownPolicy:
+          Type: "AWS::AutoScaling::ScalingPolicy"
+          Properties:
+            AdjustmentType: "ChangeInCapacity"
+            PolicyType: SimpleScaling
+            ScalingAdjustment: -2
+            Cooldown: 60
+
+        InstanceRole:
+          Type: "AWS::IAM::Role"
+          Properties:
+            AssumeRolePolicyDocument: {}
+            ManagedPolicyArns: []
+            Path: "/"
+            PermissionsBoundary: !Sub "arn:aws:iam::${AWS::AccountId}:policy/PermissionBoundaryPolicy"
+            Policies: []

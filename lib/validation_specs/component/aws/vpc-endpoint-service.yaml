@@ -1,0 +1,14 @@
+---
+VPCEndpointService:
+  Type: AWS::EC2::VPCEndpointService
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::EC2::VPCEndpointService:
+        Properties:
+          AcceptanceRequired:
+            Configurable: false
+          NetworkLoadBalancerArns:
+            Configurable: true
+            Type: List
+            PrimitiveItemType: String

@@ -1,0 +1,8 @@
+rules:
+  ApiTag::Presence:
+    enabled: false
+    exclude: []
+  ExampleTag:
+    enabled: false
+    exclude: []
+    

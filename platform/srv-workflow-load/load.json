@@ -1,0 +1,30 @@
+{
+  "Comment": "LoadDynamoDBData",
+  "StartAt": "LoadData",
+  "States": {
+    "LoadData": {
+      "Type": "Task",
+      "Resource": "@srv-func-load.ReleaseArn",
+      "Next": "ItemCount"
+    },
+    "ItemCount": {
+      "Type" : "Choice",
+      "Choices": [
+        {
+          "Variable": "$.ItemCount",
+          "NumericGreaterThanEquals": 0,
+          "Next": "LoadData"
+        },
+        {
+          "Variable": "$.ItemCount",
+          "NumericLessThan": 0,
+          "Next" : "Finish"
+        }
+      ]
+    },
+    "Finish": {
+      "Type": "Pass",
+      "End" : true
+    }
+  }
+}

@@ -1,0 +1,136 @@
+name: 'QCP Pipeline CI'
+description: 'Runs the Pipeline CI step and uploads produced artefacts'
+author: 'Qantas Cloud Platform Team <cloud@qantas.com.au>'
+
+inputs:
+  SKIP_RUBY_INSTALL:
+    description: 'Flag to skip Ruby installation on the runner'
+    type: boolean
+    required: false
+    default: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get pipeline app info
+      uses: actions/github-script@v6
+      id: app-info
+      env:
+        # Pass github.action_ref here otherwise it will refer to github-script ref if done inline below.
+        ACTION_REF: ${{ github.action_ref }}
+      with:
+        script: |
+          const path = require('path');
+          const { data } = await github.rest.repos.getAllTopics(context.repo);
+          const actionPath = String.raw`${{ github.action_path }}`;
+          const pipelineRepo = 'c031-pipeline';
+          const workspace = String.raw`${{ github.workspace }}`;
+          const pipelineDir = context.repo.repo === pipelineRepo ? workspace : path.join(actionPath.split(pipelineRepo)[0] + pipelineRepo, process.env.ACTION_REF);
+          let ams, qda, as;
+          for (let topic of data.names) {
+            if (topic.startsWith('ams')) {
+              ams = topic.toUpperCase();
+            } else if (topic.startsWith('qda-')) {
+              qda = topic.replace('qda-', '').toUpperCase();
+            } else if (topic.startsWith('as-')) {
+              as = topic.replace('as-', '');
+            }
+          }
+          if (!ams || !qda || !as) {
+            throw new Error('Pipeline related topics are missing from Github repository. Please request for them to be added by QCP in the #cloud channel. Include the Github repository and the link to the application service in the QCP Console.');
+          }
+
+          let splunkTokenPassword;
+          try {
+            let stsOutput = '';
+            const awsEnv = { AWS_REGION: 'ap-southeast-2', AWS_DEFAULT_REGION: 'ap-southeast-2'};
+            await exec.exec('aws', ['sts', 'assume-role', '--role-arn', 'arn:aws:iam::221295517176:role/CD-Control', '--role-session-name', 'get-ssm-parameters', '--duration-seconds', '900'], {
+              silent: true,
+              listeners: {
+                stdout: (data) => { stsOutput += data.toString(); },
+              },
+              env: awsEnv,
+            });
+            const credentials = JSON.parse(stsOutput);
+            let ssmOutput = '';
+            await exec.exec('aws', ['ssm', 'get-parameter', '--with-decryption', '--name', '/pipeline/splunk_token_password'], {
+              silent: true,
+              listeners: {
+                stdout: (data) => { ssmOutput += data.toString(); },
+              },
+              env: {
+                ...awsEnv,
+                AWS_ACCESS_KEY_ID: credentials.Credentials.AccessKeyId,
+                AWS_SECRET_ACCESS_KEY: credentials.Credentials.SecretAccessKey,
+                AWS_SESSION_TOKEN: credentials.Credentials.SessionToken,
+              }
+            });
+            const result = JSON.parse(ssmOutput);
+            splunkTokenPassword = result.Parameter.Value;
+          } catch (err) {
+            console.error(err);
+            splunkTokenPassword = '';
+          }
+
+          return {
+            ams,
+            qda,
+            as,
+            pipelineDir,
+            workspace,
+            platformDir: path.join(workspace, 'platform'),
+            buildKey: `${ams}-${qda}S${as}CI-BUILDARTEFACTS`,
+            planKey: `${ams}-${qda}S${as}CI`,
+            splunkTokenPassword,
+          };
+
+    - name: Configure ruby for pipeline
+      uses: ruby/setup-ruby@v1
+      if: ${{ inputs.SKIP_RUBY_INSTALL == 'false' }}
+      with:
+        working-directory: '${{ fromJSON(steps.app-info.outputs.result).pipelineDir }}'
+        bundler-cache: ${{ runner.os == 'Linux' }}
+
+    - name: Windows Ruby setup
+      shell: powershell
+      if: runner.os == 'Windows'
+      run: |
+        cd ${{ fromJSON(steps.app-info.outputs.result).pipelineDir }}
+        bundle config set --local path .\bundle\vendor
+        bundle config set --local without development test
+        bundle config set --local bin .\bundle\vendor\bin
+        bundle config set path .\bundle\vendor
+        bundle config set without development test
+        bundle config set bin .\bundle\vendor\bin
+
+    - name: pipeline upload
+      shell: ${{ runner.os == 'Windows' && 'powershell' || 'bash' }}
+      run: |
+        cd ${{ fromJSON(steps.app-info.outputs.result).pipelineDir }}
+        bundle install
+        bundle exec rake upload
+      env:
+        APP_DIR: '${{ github.workspace }}'
+        AWS_REGION: ap-southeast-2
+        AWS_DEFAULT_REGION: ap-southeast-2
+        AWS_STS_REGIONAL_ENDPOINTS: 'regional'
+        PLATFORM_DIR: '${{ fromJSON(steps.app-info.outputs.result).platformDir }}'
+        bamboo_buildKey: ${{ fromJSON(steps.app-info.outputs.result).buildKey }}
+        bamboo_buildNumber: "${{ github.run_id }}"
+        bamboo_planKey: ${{ fromJSON(steps.app-info.outputs.result).planKey }}
+        bamboo_planRepository_branchName: "${{ github.ref_name }}"
+        bamboo_repository_git_branch: "${{ github.ref_name }}"
+        
+        bamboo_aws_control_role: arn:aws:iam::221295517176:role/CI-Control
+        bamboo_aws_provisioning_role_name: qcp-platform-provision
+        bamboo_aws_proxy: http://proxy.qcpaws.qantas.com.au:3128
+        bamboo_aws_region: ap-southeast-2
+        bamboo_deployment_env: Production
+        bamboo_invoke_bamboocd_enable: disabled
+        bamboo_nexus_docker_registry: nexus.qcpaws.qantas.com.au:9443
+        bamboo_nexus_docker_repository: nexus.qcpaws.qantas.com.au:9443
+        bamboo_pipeline_user: bamboo-pipeline
+        bamboo_shortJobKey: BUILDARTEFACTS
+        bamboo_splunk_url: https://splunk-hec.qcpaws.qantas.com.au:8087/services/collector/event
+        bamboo_splunk_token_password: "${{ fromJSON(steps.app-info.outputs.result).splunkTokenPassword }}"
+        bamboo_avos_release_arn: "arn:aws:lambda:ap-southeast-2:221295517176:function:ams01-c047-01-prod-release-avos-scanproxy-Function-5Ifb8jzOMI9P:release"

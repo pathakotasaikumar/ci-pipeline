@@ -1,0 +1,58 @@
+_process_logs_subscription_filter:
+  Input:
+    -
+      Basic:
+        Type: AWS::Logs::SubscriptionFilter
+        Properties:
+          DestinationArn: dummy-arn
+    -
+      ContextSub:
+        Type: AWS::Logs::SubscriptionFilter
+        Properties:
+          DestinationArn: "@logger.DestinationArn"
+    -
+      LambdaDestination:
+        Type: AWS::Logs::SubscriptionFilter
+        Properties:
+          DestinationArn: "arn:aws:lambda:us-east-1:123456789012:function:my-function:PROD"
+
+  Output:
+    -
+      Resources:
+        Basic:
+          Type: AWS::Logs::SubscriptionFilter
+          Properties:
+            DestinationArn: dummy-arn
+            FilterPattern: ''
+            LogGroupName: dummy-log-group
+      Outputs: {}
+    -
+      Resources:
+        ContextSub:
+          Type: AWS::Logs::SubscriptionFilter
+          Properties:
+            DestinationArn: logger-arn
+            FilterPattern: ''
+            LogGroupName: dummy-log-group
+      Outputs: {}
+    -
+      Resources:
+        LambdaDestination:
+          Type: AWS::Logs::SubscriptionFilter
+          DependsOn: LambdaDestinationLambdaPermission
+          Properties:
+            DestinationArn: "arn:aws:lambda:us-east-1:123456789012:function:my-function:PROD"
+            FilterPattern: ''
+            LogGroupName: dummy-log-group
+        LambdaDestinationLambdaPermission:
+          Type: AWS::Lambda::Permission
+          Properties:
+            Action: lambda:InvokeFunction
+            FunctionName: "arn:aws:lambda:us-east-1:123456789012:function:my-function:PROD"
+            Principal:
+              Fn::Sub: "logs.${AWS::Region}.amazonaws.com"
+            SourceArn:
+              Fn::Sub:
+                - "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${log_group}:*"
+                - log_group: dummy-log-group
+      Outputs: {}

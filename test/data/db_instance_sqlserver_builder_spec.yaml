@@ -1,0 +1,550 @@
+---
+UnitTest:
+  ComponentName: Test-Component
+  ComponentDefinition:
+    Valid:
+      SqlserverMinimal:
+        Type: "aws/rds-sqlserver"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              MasterUsername: sa
+              MasterUserPassword: Pa$$w0rd99
+      SqlserverMinimalEX:
+        Type: "aws/rds-sqlserver"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              MasterUsername: sa
+              MasterUserPassword: Pa$$w0rd99
+              Engine: sqlserver-ex
+      SqlserverMinimalEE:
+        Type: "aws/rds-sqlserver"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              MasterUsername: sa
+              MasterUserPassword: Pa$$w0rd99
+              Engine: sqlserver-ee
+      SqlserverSnap:
+        Type: "aws/rds-sqlserver"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              MasterUsername: sa
+              MasterUserPassword: Pa$$w0rd99
+              DBSnapshotIdentifier: 'dummy-snap'
+      SqlserverPersist:
+        Type: "aws/rds-sqlserver"
+        Stage: "01-test"
+        Persist: true
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            DeletionPolicy: Snapshot
+            Properties:
+              MasterUsername: sa
+              MasterUserPassword: Pa$$w0rd99
+      SqlserverSEOverride:
+        Type: "aws/rds-sqlserver"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              Engine: sqlserver-se
+              MasterUsername: sa
+              MasterUserPassword: Pa$$w0rd99
+              AllocatedStorage: 90
+              AllowMajorVersionUpgrade: true
+              AutoMinorVersionUpgrade: false
+              BackupRetentionPeriod: 60
+              DBInstanceClass: db.m3.large
+              EngineVersion: 1.23
+              Port: 1444
+              PreferredBackupWindow: '15:00-17:00'
+              PreferredMaintenanceWindow: 'Mon:17:00-Mon:20:00'
+              StorageType: io
+        Environments:
+          STG:
+            Configuration:
+              Database:
+                Properties:
+                  DBInstanceClass: "db.m3.large"
+                  BackupRetentionPeriod: "7"
+          PROD:
+            Configuration:
+              Database:
+                Properties:
+                  DBInstanceClass: "db.m3.large"
+                  AllocatedStorage: 50
+                  MultiAZ: true
+                  BackupRetentionPeriod: "14"
+      SqlserverFullBuild:
+        Type: "aws/rds-sqlserver"
+        Stage: "01-test"
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              MasterUsername: sa
+      MSSQLrdsTimezone:
+        Type: "aws/rds-sqlserver"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              Engine: sqlserver-se
+              MasterUsername: sa
+              MasterUserPassword: Pa$$w0rd99
+              DBInstanceClass: "db.m5.large"
+              Timezone: "E. Australia Standard Time"
+    Invalid:
+      BadEngine:
+        Type: "aws/rds-sqlserver"
+        Stage: "01-test"
+        Persist: false
+        Configuration:
+          Database:
+            Type: "AWS::RDS::DBInstance"
+            Properties:
+              Engine: unknown
+  TestResult:
+    SqlserverMinimal:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            Engine: sqlserver-se
+            LicenseModel: license-included
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            AllocatedStorage: '200'
+            StorageType: gp2
+            DBInstanceClass: db.t3.medium
+            Port: '1433'
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            MultiAZ: true
+            StorageEncrypted: true
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            BackupRetentionPeriod: '30'
+            KmsKeyId: kms-dummy
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+    SqlserverSnap:
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            Engine: sqlserver-se
+            StorageEncrypted: true
+            LicenseModel: license-included
+            Port: '1433'
+            StorageType: gp2
+            DBSnapshotIdentifier: dummy-snap
+            BackupRetentionPeriod: '30'
+            MultiAZ: true
+          DeletionPolicy: Snapshot
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+          Description: RDS instance Database ARN
+          Value:
+            Fn::Join:
+            - ":"
+            - - arn:aws:rds
+              - Ref: AWS::Region
+              - Ref: AWS::AccountId
+              - db
+              - Ref: Database
+    SqlserverMinimalEX:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            Engine: sqlserver-ex
+            LicenseModel: license-included
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            AllocatedStorage: '200'
+            StorageType: gp2
+            DBInstanceClass: db.t3.medium
+            Port: '1433'
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            MultiAZ: true
+            StorageEncrypted: true
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            BackupRetentionPeriod: '30'
+            KmsKeyId: kms-dummy
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+    SqlserverMinimalEE:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            Engine: sqlserver-ee
+            LicenseModel: bring-your-own-license
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            AllocatedStorage: '200'
+            StorageType: gp2
+            DBInstanceClass: db.t3.medium
+            Port: '1433'
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            MultiAZ: true
+            StorageEncrypted: true
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            BackupRetentionPeriod: '30'
+            KmsKeyId: kms-dummy
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+
+    SqlserverPersist:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            Engine: sqlserver-se
+            LicenseModel: license-included
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            AllocatedStorage: '200'
+            StorageType: gp2
+            DBInstanceClass: db.t3.medium
+            Port: '1433'
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            MultiAZ: true
+            StorageEncrypted: true
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            BackupRetentionPeriod: '30'
+            KmsKeyId: kms-dummy
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+    SqlserverSEOverride:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            Engine: sqlserver-se
+            LicenseModel: license-included
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            MultiAZ: true
+            AllocatedStorage: 90
+            AllowMajorVersionUpgrade: true
+            AutoMinorVersionUpgrade: false
+            BackupRetentionPeriod: 60
+            DBInstanceClass: db.m3.large
+            EngineVersion: 1.23
+            Port: 1444
+            PreferredBackupWindow: '15:00-17:00'
+            PreferredMaintenanceWindow: 'Mon:17:00-Mon:20:00'
+            StorageEncrypted: true
+            StorageType: io
+            KmsKeyId: kms-dummy
+
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database
+    SqlserverFullBuild:
+      SecurityItems:
+      - Type: SecurityGroup
+        Name: SecurityGroup
+        Component: Test-Component
+        DefaultIpIngress: true
+      SecurityRules: []
+    MSSQLrdsTimezone:
+      Parameters:
+        DatabaseMasterUsername:
+          NoEcho: true
+          Description: 'The database admin account username'
+          Type: 'String'
+        DatabaseMasterUserPassword:
+          NoEcho: true
+          Description: 'The database admin account password'
+          Type: 'String'
+      Resources:
+        Database:
+          Type: AWS::RDS::DBInstance
+          DeletionPolicy: Snapshot
+          Properties:
+            DBInstanceIdentifier: ams01-c031-99-dev-master-5-dbinstance-database
+            CopyTagsToSnapshot: true
+            PubliclyAccessible: false
+            VPCSecurityGroups:
+            - sg123
+            Engine: sqlserver-se
+            LicenseModel: license-included
+            DBSubnetGroupName:
+              Ref: DBSubnetGroup
+            AllocatedStorage: '200'
+            StorageType: gp2
+            DBInstanceClass: "db.m5.large"
+            Port: '1433'
+            Timezone: "E. Australia Standard Time"
+            MasterUsername:
+              Ref: DatabaseMasterUsername
+            MasterUserPassword:
+              Ref: DatabaseMasterUserPassword
+            MultiAZ: true
+            StorageEncrypted: true
+            AllowMajorVersionUpgrade: false
+            AutoMinorVersionUpgrade: true
+            BackupRetentionPeriod: '30'
+            KmsKeyId: kms-dummy
+      Outputs:
+        DatabaseEndpointAddress:
+          Description: RDS instance Database endpoint
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Address
+        DatabaseEndpointPort:
+          Description: RDS instance Database port
+          Value:
+            Fn::GetAtt:
+            - Database
+            - Endpoint.Port
+        DatabaseArn:
+            Description: RDS instance Database ARN
+            Value:
+              Fn::Join:
+              - ":"
+              - - arn:aws:rds
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - db
+                - Ref: Database

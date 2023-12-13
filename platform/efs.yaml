@@ -1,0 +1,12 @@
+# EFS file system component
+---
+Type: aws/efs
+Stage: 01-test
+Persist: true
+
+Configuration:
+  FileSystem:
+    Type: AWS::EFS::FileSystem
+    Security:
+      - Source: test-instance.SecurityGroup
+        Allow: TCP:2049

@@ -1,0 +1,60 @@
+Type: aws/rds-aurora
+Stage: 01-test
+Persist: true
+IngressPoint: false
+
+Configuration:
+  Features:
+    Type: Pipeline::Features
+    Properties:
+      Features:
+        Datadog : enabled
+
+  MyDBCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      Engine: aurora-mysql
+      EngineVersion: 5.7.mysql_aurora.2.12.0
+      PerformanceInsightsEnabled: true
+      EnableCloudwatchLogExports:
+        - audit
+        - error
+        - slowquery
+        - general
+    Security:
+      # Allow access by test-instance
+      - Source: test-instance.SecurityGroup
+        Allow: ALL:*
+
+  MyDBInstance1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: aurora-mysql
+      DBInstanceClass: db.r5.large
+      EnablePerformanceInsights: true
+
+  MyClusterParams:
+    Type: AWS::RDS::DBClusterParameterGroup
+    Properties:
+      Family: aurora-mysql5.7
+      Parameters:
+        character_set_database: "utf32"
+        server_audit_logging: "on"
+        server_audit_events: "CONNECT,QUERY,QUERY_DCL,QUERY_DDL,QUERY_DML,TABLE"
+
+  MyInstanceParams:
+      Type: AWS::RDS::DBParameterGroup
+      Properties:
+        Description: Regression Application Parameter Group
+        Family: aurora-mysql5.7
+        Parameters:
+          slow_query_log: 1
+          general_log: 1
+
+
+# Subscription filters for each audit log type
+
+  SubscriptionFilter:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: "@kinesis.LogCollectorArn"

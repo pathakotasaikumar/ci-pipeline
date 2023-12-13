@@ -1,0 +1,77 @@
+---
+Definition:
+  Valid:
+    AutoScale:
+      Type: "aws/autoscale"
+      Stage: "002-apptier"
+      Configuration:
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+    RdsMysql:
+      Type: "aws/rds-mysql"
+      Stage: "001-datatier"
+      Configuration:
+        Database:
+          Type: "AWS::RDS::DBInstance"
+    RdsSqlserver:
+      Type: "aws/rds-sqlserver"
+      Stage: "001-datatier"
+      Configuration:
+        Database:
+          Type: "AWS::RDS::DBInstance"
+    RdsOracle:
+      Type: "aws/rds-oracle"
+      Stage: "001-datatier"
+      Configuration:
+        Database:
+          Type: "AWS::RDS::DBInstance"
+    RdsPostgresql:
+      Type: "aws/rds-postgresql"
+      Stage: "001-datatier"
+      Configuration:
+        Database:
+          Type: "AWS::RDS::DBInstance"
+    Sqs:
+      Type: "aws/sqs"
+      Stage: "001-datatier"
+      Configuration:
+        Queue:
+          Type: "AWS::SQS::Queue"
+          Properties: {}
+
+    AutoScaleWithFeatures:
+      Type: "aws/autoscale"
+      Stage: "002-apptier"
+      Configuration:
+        Features:
+          Type: 'Pipeline::Features'
+          Properties:
+            Features:
+              Datadog: enabled
+              CodeDeploy: enabled
+              Qualys:
+                Enabled: true
+                Recipients: test@example.com
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+  Invalid:
+    NoStage:
+      Type: "aws/sqs"
+      Stager: "001-datatier"
+    Type:
+      Type: "aws/grrr"
+      Stage: "001-datatier"
+    Stage:
+      Type: "aws/sqs"
+      Stage: 001
+    Stage00:
+      Type: "aws/sqs"
+      Stage: "00"

@@ -1,0 +1,56 @@
+---
+LambdaLayers:
+  Type: AWS::Lambda::LayerVersion
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::Lambda::LayerVersion:
+        Properties:
+          CompatibleRuntimes:
+            Configurable: true
+            Required: true
+            Type: List
+            PrimitiveItemType: String
+          Content:
+            Configurable: true
+            Required: true
+            TypeOverride: true
+          Description:
+            Configurable: true
+            Required: false
+            PrimitiveItemType: String
+          LicenseInfo:
+            Configurable: false
+            Required: false
+            Type: String
+          LayerName:
+            Configurable: true
+            Required: false
+            Type: String
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Required: false
+          Type: List
+          ItemType: Common.SecurityItem
+    PropertyTypes:
+      AWS::Lambda::LayerVersion.Content:
+        Properties:
+          S3Bucket:
+            Configurable: true
+            Required: true
+          S3Key:
+            Configurable: true
+            Required: true
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features

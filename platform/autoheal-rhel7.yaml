@@ -1,0 +1,110 @@
+---
+Type: aws/autoheal
+Stage: 02-test
+Persist: false
+Configuration:
+  Features:
+    Type: Pipeline::Features
+    Properties:
+      Features:
+        Datadog: enabled
+        Qualys:
+          Enabled: true
+          Recipients: ["csi@qantas.com.au"]
+        IPS:
+          Enabled: false
+  Volume:
+    Type: Pipeline::Autoheal::VolumeAttachment
+    Properties:
+      VolumeId: "@autoheal-volume.MyVolumeId"
+      Device: /dev/xvdm
+  Eni:
+    Type: Pipeline::Autoheal::NetworkInterfaceAttachment
+    Properties:
+      NetworkInterfaceId: "@autoheal-eni.MyEniId"
+      DeviceIndex: 1
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Security:
+      # Allow access by test-instance
+      - Source: test-instance.SecurityGroup
+        Allow: "@listeners"
+      - Source: lambda.SecurityGroup
+        Allow: "@listeners"
+    Properties:
+      Scheme: internal
+      Listeners:
+        - LoadBalancerPort: 22
+          InstancePort: 22
+          Protocol: TCP
+      HealthCheck:
+        HealthyThreshold: 2
+        Interval: 10
+        Target: TCP:22
+        Timeout: 5
+        UnhealthyThreshold: 2
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MinSize: 0
+      MaxSize: 0
+      HealthCheckGracePeriod: 600
+      VPCZoneIdentifier: "@a-private"
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          Deploy: [ Mount ]
+        Mount:
+          commands:
+            01-mount:
+              command: bash mount.sh /dev/xvdm /app
+              cwd: /root/app
+            # This should run from deploy time artefacts
+            02-bootstrap:
+              command: bash bootstrap.sh
+              cwd: /root/payload
+            03-InstanceProtection:
+              command: bash instanceProtection.sh
+              cwd: /root/payload
+            04-APIGatewayAPITesting:
+              command: bash apigatewayAPItesting.sh
+              cwd: /root/payload
+            05-SuspendResumeProcesses:
+              command: bash suspend_resume-processes.sh
+              cwd: /root/payload
+    Properties:
+      InstanceType: m5a.large
+      ImageId: "@image.ImageId"
+      Pipeline::CopySourceImage: 'false'
+Actions:
+  PreRelease:
+    - Action: SetDesiredCapacity
+      Stage: "00"
+      Parameters:
+        MinSize: 0
+        MaxSize: 0
+        Target: "@released"
+    - Action: SetDesiredCapacity
+      Stage: "03"
+      Parameters:
+        MinSize: 1
+        MaxSize: 1
+        Target: "@deployed"
+
+  # test if we can still target n-1 (@released) build with PostRelease
+  # should simply succeed without executing scaling
+  PostRelease:
+    - Action: SetDesiredCapacity
+      Stage: "00"
+      Parameters:
+        MinSize: 0
+        MaxSize: 0
+        Target: "@released"
+    - Action: SetDesiredCapacity
+      Stage: "02"
+      Parameters:
+        MinSize: 1
+        MaxSize: 1
+        Target: "@deployed"

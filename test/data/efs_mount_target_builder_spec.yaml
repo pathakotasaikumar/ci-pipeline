@@ -1,0 +1,34 @@
+UnitTest:
+  Input:
+    Template:
+      Resources: {}
+      Outputs: {}
+    Configuration:
+      Minimal:
+        MountTarget:
+          Type: AWS::EFS::MountTarget
+          Properties:
+            FileSystemId:
+              Ref: my-efs,
+            SubnetId: test-subnet-private
+            SecurityGroups:
+              - sg-123456
+              - sg-234567
+  Output:
+    _process_queue:
+      Minimal:
+        Resources:
+          MountTarget:
+            Type: AWS::EFS::MountTarget
+            Properties:
+              FileSystemId:
+                Ref: my-efs,
+              SubnetId: test-subnet-private
+              SecurityGroups:
+              - sg-123456
+              - sg-234567
+        Outputs:
+          MountTargetId:
+            Description: EFS mount target id
+            Value:
+              Ref: MountTarget

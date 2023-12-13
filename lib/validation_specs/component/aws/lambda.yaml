@@ -1,0 +1,187 @@
+---
+Lambda:
+  Type: AWS::Lambda::Function
+  Cardinality: 1
+  Specification:
+    ResourceTypes:
+      AWS::Lambda::Function:
+        Security:
+          Configurable: true
+          Documentation: "https://confluence.qantas.com.au/display/DTS/Component+Security"
+          Type: List
+          ItemType: Common.SecurityItem
+          Required: false
+        Properties:
+          Code:
+            Configurable: true
+            Required: true
+            TypeOverride: true
+          Layers:
+            Configurable: true
+            Required: false
+            Type: List
+            PrimitiveType: String
+          Handler:
+            Configurable: true
+            Required: true
+          Environment:
+            Configurable: true
+            Type: Environment
+            Required: false
+          DeadLetterConfig:
+            Configurable: true
+            Required: false
+          MemorySize:
+            Configurable: true
+            Required: true
+          ReservedConcurrentExecutions:
+            Configurable: true
+            Required: false
+          Runtime:
+            Configurable: true
+            Required: true
+          Timeout:
+            Configurable: true
+            Required: true
+          EphemeralStorage:
+            Configurable: true
+            Required: false
+            PrimitiveType: Json
+          TracingConfig:
+            Configurable: true
+            Required: false
+            Type: Enum
+            EnumValues: [Active, PassThrough]
+    PropertyTypes:
+      AWS::Lambda::Function.Environment:
+        Properties:
+          Variables:
+            Configurable: true
+            PrimitiveType: Json
+            Required: true
+      AWS::Lambda::Function.Code:
+        Properties:
+          S3Bucket:
+            Configurable: false
+            Required: false
+      AWS::Lambda::Function.EphemeralStorage:
+        Properties:
+          Size:
+            Configurable: true
+            Required: false
+            PrimitiveType: String
+
+
+EventRule:
+  Type: AWS::Events::Rule
+  Cardinality: 0-20
+  Specification:
+    ResourceTypes:
+      AWS::Events::Rule:
+        Properties:
+          EventPattern:
+            Configurable: true
+            Required: false
+          ScheduleExpression:
+            Configurable: true
+            Required: false
+          Pipeline::EventTarget:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+            EnumValues: ["@deployed", "@released"]
+          Pipeline::EventInput:
+            Configurable: true
+            PrimitiveType: Map
+            Required: false
+
+NotifySNS:
+  Type: AWS::SNS::Subscription
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::SNS::Subscription:
+        Properties:
+          Pipeline::EventTarget:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+            EnumValues: ["@deployed", "@released"]
+          Protocol:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+          TopicArn:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+          DeliveryPolicy:
+            Configurable: true
+            PrimitiveType: Json
+            Required: false
+          FilterPolicy:
+            Configurable: true
+            PrimitiveType: Json
+            Required: false
+
+EventSourceMapping:
+  Type: AWS::Lambda::EventSourceMapping
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::Lambda::EventSourceMapping:
+        Properties:
+          Pipeline::EventTarget:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+            EnumValues: ["@deployed", "@released"]
+          BatchSize:
+            Configurable: true
+            PrimitiveType: Integer
+            Required: false
+          Enabled:
+            Configurable: true
+            PrimitiveType: Boolean
+            Required: false
+          EventSourceArn:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+          StartingPosition:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+            EnumValues: [TRIM_HORIZON, LATEST, AT_TIMESTAMP]
+
+SubscriptionFilter:
+  Type: AWS::Logs::SubscriptionFilter
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      AWS::Logs::SubscriptionFilter:
+        Properties:
+          DestinationArn:
+            Configurable: true
+            PrimitiveType: String
+            Required: true
+          FilterPattern:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+          LogGroupName:
+            Configurable: true
+            PrimitiveType: String
+            Required: false
+
+Features:
+  Type: Pipeline::Features
+  Cardinality: 0-1
+  Specification:
+    ResourceTypes:
+      Pipeline::Features:
+        Properties:
+          Features:
+            Configurable: true
+            Required: false
+            Type: Common.Pipeline.Features

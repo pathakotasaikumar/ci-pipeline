@@ -1,0 +1,7 @@
+---
+veracode:
+  crit: Medium
+  recipients:
+    - csi@qantas.com.au
+  promote_branch:
+    - master

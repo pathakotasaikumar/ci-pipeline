@@ -1,0 +1,32 @@
+Input:
+  Resources:
+    PrimaryApi:
+      Type: "AWS::Route53::RecordSet"
+      Properties:
+        Name: "dns.test.qcpaws.com.au"
+        Type: "CNAME"
+        Weight: 0
+        SetIdentifier: "PrimaryApi"
+        HealthCheckId:
+          Ref: "PrimaryHealthCheck"
+Output:
+  Resources:
+    PrimaryApi:
+      Type: "AWS::Route53::RecordSet"
+      Properties:
+        Name: "dns.test.qcpaws.com.au"
+        Type: "CNAME"
+        Weight: 5
+        SetIdentifier: "PrimaryApi"
+        HealthCheckId:
+          Ref: "PrimaryHealthCheck"
+ErrorInput:
+  Resources:
+    PrimaryApi:
+      Type: "AWS::Route53::RecordSet"
+      Properties:
+        Name: "dns.test.qcpaws.com.au"
+        Type: "CNAME"
+        SetIdentifier: "PrimaryApi"
+        HealthCheckId:
+          Ref: "PrimaryHealthCheck"

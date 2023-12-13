@@ -1,0 +1,198 @@
+UnitTest:
+  CardinalityTest:
+    Valid:
+      BakeInstance:
+        BakeInstance:
+          Type: AWS::EC2::Instance
+          Metadata:
+            AWS::CloudFormation::Init:
+              configSets:
+                Deploy:
+                - Configure
+              Configure:
+                commands:
+                  bootstrap:
+                    command: bash bootstrap.sh
+                    cwd: "/root/payload"
+          CreationPolicy:
+            ResourceSignal:
+              Timeout: PT45M
+          Properties:
+            ImageId: "@amazon-latest"
+            InstanceType: m4.large
+      LoadBalancer:
+        LoadBalancer:
+          Type: AWS::ElasticLoadBalancing::LoadBalancer
+          Security:
+          - Source: test-instance.SecurityGroup
+            Allow: TCP:80
+          - Source: lambda.SecurityGroup
+            Allow: TCP:80
+          Properties:
+            Scheme: internal
+            Listeners:
+            - LoadBalancerPort: 80
+              InstancePort: 80
+              Protocol: HTTP
+            HealthCheck:
+              HealthyThreshold: 2
+              Interval: 10
+              Target: HTTP:80/health
+              Timeout: 5
+              UnhealthyThreshold: 2
+      AutoScalingGroup:
+        AutoScalingGroup:
+          Type: AWS::AutoScaling::AutoScalingGroup
+          CreationPolicy:
+            ResourceSignal:
+              Timeout: PT15M
+          Properties:
+            MinSize: 1
+            MaxSize: 1
+            HealthCheckGracePeriod: 900
+      LaunchConfiguration:
+        LaunchConfiguration:
+          Type: AWS::AutoScaling::LaunchConfiguration
+          Properties:
+            InstanceType: m4.large
+            SpotPrice: "@ondemand"
+      BackupPolicy:
+        CardinalityBackupPolicy:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy2:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy3:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@nonp"
+              RetentionPeriod: PT15M
+    Invalid:
+      BakeInstance:
+        Type: AWS::EC2::Instance
+        Metadata:
+          AWS::CloudFormation::Init:
+            configSets:
+              Deploy:
+              - Configure
+            Configure:
+              commands:
+                bootstrap:
+                  command: bash bootstrap.sh
+                  cwd: "/root/payload"
+        CreationPolicy:
+          ResourceSignal:
+            Timeout: PT45M
+        Properties:
+          ImageId: "@amazon-latest"
+          InstanceType: m4.large
+      LoadBalancer:
+        LoadBalancerOne:
+          Type: AWS::ElasticLoadBalancing::LoadBalancer
+        LoadBalancerTwo:
+          Type: AWS::ElasticLoadBalancing::LoadBalancer
+      BackupPolicy:
+        CardinalityBackupPolicy1:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+  PolicyTest:
+    Valid:
+      Type: "aws/autoscale"
+      Stage: "02-test"
+      Persist: false
+      IngressPoint: true
+      Configuration:
+        BakeInstance:
+          Type: AWS::EC2::Instance
+          Metadata:
+            AWS::CloudFormation::Init:
+              configSets:
+                Deploy:
+                - Configure
+              Configure:
+                commands:
+                  bootstrap:
+                    command: bash bootstrap.sh
+                    cwd: "/root/payload"
+          CreationPolicy:
+            ResourceSignal:
+              Timeout: PT45M
+          Properties:
+            ImageId: "@amazon-latest"
+            InstanceType: m4.large
+        LoadBalancer:
+          Type: AWS::ElasticLoadBalancing::LoadBalancer
+          Security:
+          - Source: test-instance.SecurityGroup
+            Allow: TCP:80
+          - Source: lambda.SecurityGroup
+            Allow: TCP:80
+          Properties:
+            Scheme: internal
+            Listeners:
+            - LoadBalancerPort: 80
+              InstancePort: 80
+              Protocol: HTTP
+            HealthCheck:
+              HealthyThreshold: 2
+              Interval: 10
+              Target: HTTP:80/health
+              Timeout: 5
+              UnhealthyThreshold: 2
+        LaunchConfiguration:
+          Type: AWS::AutoScaling::LaunchConfiguration
+          Properties:
+            InstanceType: m4.large
+            SpotPrice: "@ondemand"
+        AutoScalingGroup:
+          Type: AWS::AutoScaling::AutoScalingGroup
+          CreationPolicy:
+            ResourceSignal:
+              Timeout: PT15M
+          Properties:
+            MinSize: 1
+            MaxSize: 1
+            HealthCheckGracePeriod: 900
+        CardinalityBackupPolicy:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy2:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@dr"
+              RetentionPeriod: PT15M
+        CardinalityBackupPolicy3:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0/15 * ? * *
+            RetentionPeriod: PT15M
+            CopyTargets:
+            - Target: "@nonp"
+              RetentionPeriod: PT15M

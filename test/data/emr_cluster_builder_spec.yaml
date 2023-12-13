@@ -1,0 +1,187 @@
+_process_emr_cluster:
+  cluster_definition:
+    MyCluster:
+      Type: "AWS::EMR::Cluster"
+      Properties:
+        ReleaseLabel: "emr-4.2.0"
+        Applications:
+          - Name: Pig
+        Configurations:
+        - Classification: "emrfs-site"
+          ConfigurationProperties:
+            fs.s3.consistent: 'true'
+            fs.s3.consistent.metadata.tableName: "@emrfs-db.TableName"
+        - Classification: hadoop-env
+          Configurations:
+          - Classification: export
+            ConfigurationProperties:
+              HADOOP_OPTS: "-Xmx2048m -Debug"
+        - Classification: test
+          ConfigurationProperties:
+            TEST_PROPERTY: "test"
+        BootstrapActions:
+          - Name: UserBootstrap
+            ScriptBootstrapAction:
+              Path: "file:/home/hadoop/payload/bootstrap.sh"
+        Instances:
+          MasterInstanceGroup:
+            InstanceCount: 1
+            InstanceType: "m3.xlarge"
+            Market: "ON_DEMAND"
+            Name: "Master"
+          CoreInstanceGroup:
+            InstanceCount: 2
+            InstanceType: "m3.xlarge"
+            Market: "ON_DEMAND"
+            Name: "Core"
+          TerminationProtected: true
+  component_name: "cluster"
+  job_role:
+    Ref: "TestJobRole"
+  master_security_group_id: "sg-master"
+  slave_security_group_id: "sg-slave"
+  service_security_group_id: "sg-service"
+  additional_master_security_group_ids:
+    - "sg-master-1"
+    - "sg-master-2"
+  additional_slave_security_group_ids:
+    - "sg-slave-1"
+    - "sg-slave-2"
+
+  OutputTemplate:
+    Resources:
+      MyCluster:
+        Type: AWS::EMR::Cluster
+        Properties:
+          Applications:
+          - Name: Pig
+          AutoScalingRole: EMR_AutoScaling_DefaultRole
+          Instances:
+            MasterInstanceGroup:
+              InstanceCount: 1
+              InstanceType: m3.xlarge
+              Market: ON_DEMAND
+              Name: Master
+            CoreInstanceGroup:
+              InstanceCount: 2
+              InstanceType: m3.xlarge
+              Market: ON_DEMAND
+              Name: Core
+            TerminationProtected: false
+            AdditionalMasterSecurityGroups:
+            - sg-master-1
+            - sg-master-2
+            AdditionalSlaveSecurityGroups:
+            - sg-slave-1
+            - sg-slave-2
+            EmrManagedMasterSecurityGroup: sg-master
+            EmrManagedSlaveSecurityGroup: sg-slave
+            ServiceAccessSecurityGroup: sg-service
+            Ec2SubnetId: subnet-123
+          JobFlowRole:
+            Ref: TestJobRole
+          LogUri: s3://bucket-as-test/emr_logs/dev/master/5/cluster
+          Name: ams01-c031-99-dev-master-5-cluster-MyCluster
+          ReleaseLabel: emr-4.2.0
+          ServiceRole: EMR_DefaultRole
+          VisibleToAllUsers: true
+          Configurations:
+          - Classification: emrfs-site
+            ConfigurationProperties:
+              fs.s3.consistent: 'true'
+              fs.s3.consistent.metadata.tableName: emrfs-db-TableName
+              fs.s3.enableServerSideEncryption: 'true'
+          - Classification: hadoop-env
+            Configurations:
+            - Classification: export
+              ConfigurationProperties:
+                HADOOP_OPTS: '"-Xmx2048m -Debug -Dhttp.proxyHost=proxy.test.com -Dhttp.proxyPort=1234
+                  -Dhttp.nonProxyHosts=localhost\\|no-proxy-test -Dhttps.proxyHost=proxy.test.com
+                  -Dhttps.proxyPort=1234"'
+                YARN_OPTS: '"-Dhttp.proxyHost=proxy.test.com -Dhttp.proxyPort=1234 -Dhttp.nonProxyHosts=localhost\\|no-proxy-test
+                  -Dhttps.proxyHost=proxy.test.com -Dhttps.proxyPort=1234"'
+          - Classification: test
+            ConfigurationProperties:
+              TEST_PROPERTY: test
+          - Classification: mapred-site
+            ConfigurationProperties:
+              mapreduce.map.java.opts: "-Dhttp.proxyHost=proxy.test.com -Dhttp.proxyPort=1234
+                -Dhttp.nonProxyHosts=localhost\\|no-proxy-test -Dhttps.proxyHost=proxy.test.com
+                -Dhttps.proxyPort=1234"
+              mapreduce.reduce.java.opts: "-Dhttp.proxyHost=proxy.test.com -Dhttp.proxyPort=1234
+                -Dhttp.nonProxyHosts=localhost\\|no-proxy-test -Dhttps.proxyHost=proxy.test.com
+                -Dhttps.proxyPort=1234"
+          BootstrapActions:
+          - Name: PipelineBootstrap
+            ScriptBootstrapAction:
+              Args:
+              - s3://qcp-pipeline-artefacts/cd/ams01/c031/99/dev/master/5/cluster
+              Path: s3://qcp-pipeline-artefacts/cd/ams01/c031/99/dev/master/5/cluster/bootstrap.sh
+          - Name: UserBootstrap
+            ScriptBootstrapAction:
+              Path: file:/home/hadoop/payload/bootstrap.sh
+    Outputs:
+      MyClusterId:
+        Description: EMR cluster id
+        Value:
+          Ref: MyCluster
+      MyClusterMasterPublicDNS:
+        Description: EMR master public DNS
+        Value:
+          Fn::GetAtt:
+          - MyCluster
+          - MasterPublicDNS
+      MyClusterMasterPrivateIp:
+        Description: EMR Master Private Ip
+        Value:
+          Fn::Sub:
+          - "${Oct1}.${Oct2}.${Oct3}.${Oct4}"
+          - Oct1:
+              Fn::Select:
+              - 1
+              - Fn::Split:
+                - "-"
+                - Fn::Select:
+                  - 0
+                  - Fn::Split:
+                    - "."
+                    - Fn::GetAtt:
+                      - MyCluster
+                      - MasterPublicDNS
+            Oct2:
+              Fn::Select:
+              - 2
+              - Fn::Split:
+                - "-"
+                - Fn::Select:
+                  - 0
+                  - Fn::Split:
+                    - "."
+                    - Fn::GetAtt:
+                      - MyCluster
+                      - MasterPublicDNS
+            Oct3:
+              Fn::Select:
+              - 3
+              - Fn::Split:
+                - "-"
+                - Fn::Select:
+                  - 0
+                  - Fn::Split:
+                    - "."
+                    - Fn::GetAtt:
+                      - MyCluster
+                      - MasterPublicDNS
+            Oct4:
+              Fn::Select:
+              - 4
+              - Fn::Split:
+                - "-"
+                - Fn::Select:
+                  - 0
+                  - Fn::Split:
+                    - "."
+                    - Fn::GetAtt:
+                      - MyCluster
+                      - MasterPublicDNS
+

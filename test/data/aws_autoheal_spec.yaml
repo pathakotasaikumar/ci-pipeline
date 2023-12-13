@@ -1,0 +1,658 @@
+IntegrationTest:
+  Input:
+    ComponentName: autoheal
+    Valid:
+      Type: "aws/autoheal"
+      Stage: "02-test"
+      Persist: false
+      Configuration:
+        VolumeAttachment1:
+          Type: "Pipeline::Autoheal::VolumeAttachment"
+          Properties:
+            VolumeId: "@volume1.MyVolumeId"
+            Device: "/dev/xvdm"
+        VolumeAttachment2:
+          Type: "Pipeline::Autoheal::VolumeAttachment"
+          Properties:
+            VolumeId: "@volume2.MyVolumeId"
+            Device: "/dev/xvdn"
+        Interface1:
+          Type: "Pipeline::Autoheal::NetworkInterfaceAttachment"
+          Properties:
+            NetworkInterfaceId: "@eni1.MyEniId"
+            DeviceIndex: 1
+        BakeInstance:
+          Type: "AWS::EC2::Instance"
+          Properties:
+            ImageId: "@rhel6-latest"
+            InstanceType: "m3.medium"
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+          Properties:
+            Scheme: "internal"
+            Listeners:
+              - LoadBalancerPort: "80"
+                InstancePort: "80"
+                Protocol: "HTTP"
+            HealthCheck:
+              HealthyThreshold: "2"
+              Interval: "10"
+              Target: "TCP:22"
+              Timeout: "5"
+              UnhealthyThreshold: "2"
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+          Properties:
+            MinSize: 0
+            MaxSize: 1
+            HealthCheckGracePeriod: 600
+            VPCZoneIdentifier: "@a-private"
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: "m3.medium"
+            ImageId: "@test"
+        TerminatingHook:
+          Type: AWS::AutoScaling::LifecycleHook
+          Properties:
+            DefaultResult: CONTINUE
+            HeartbeatTimeout: 30
+            LifecycleTransition: autoscaling:EC2_INSTANCE_TERMINATING
+            NotificationTargetARN: "@lifecycle-queue.QueueArn"
+        AlarmLowCpu:
+          Type: AWS::CloudWatch::Alarm
+          Properties:
+            AlarmActions:
+              - ScaleDownPolicy
+            ComparisonOperator: LessThanThreshold
+            EvaluationPeriods: 4
+            MetricName: CPUUtilization
+            Period: 60
+            Statistic: Average
+            Threshold: 35
+        HalfHourlyBackupPolicy:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0 0 ? * *
+            RetentionPeriod: PT1H
+            CopyTargets:
+              - Target: "@dr"
+                RetentionPeriod: PT1H
+        Features:
+          Type: Pipeline::Features
+          Properties:
+            Features:
+              Datadog: enabled
+        ScheduledActionUp:
+          Type: "AWS::AutoScaling::ScheduledAction"
+          Properties:
+          MinSize: 1
+          MaxSize: 1
+          Recurrence: "0 20 * * 0-4"
+    ValidWithWildcard-qcpaws:
+      Type: "aws/autoheal"
+      Stage: "02-test"
+      Persist: false
+      Configuration:
+        VolumeAttachment1:
+          Type: "Pipeline::Autoheal::VolumeAttachment"
+          Properties:
+            VolumeId: "@volume1.MyVolumeId"
+            Device: "/dev/xvdm"
+        VolumeAttachment2:
+          Type: "Pipeline::Autoheal::VolumeAttachment"
+          Properties:
+            VolumeId: "@volume2.MyVolumeId"
+            Device: "/dev/xvdn"
+        Interface1:
+          Type: "Pipeline::Autoheal::NetworkInterfaceAttachment"
+          Properties:
+            NetworkInterfaceId: "@eni1.MyEniId"
+            DeviceIndex: 1
+        BakeInstance:
+          Type: "AWS::EC2::Instance"
+          Properties:
+            ImageId: "@rhel6-latest"
+            InstanceType: "m3.medium"
+        LoadBalancer:
+          Type: "AWS::ElasticLoadBalancing::LoadBalancer"
+          Properties:
+            Scheme: "internal"
+            Listeners:
+              - LoadBalancerPort: "80"
+                InstancePort: "80"
+                Protocol: "HTTP"
+                SSLCertificateId: "@wildcard-qcpaws"
+            HealthCheck:
+              HealthyThreshold: "2"
+              Interval: "10"
+              Target: "TCP:22"
+              Timeout: "5"
+              UnhealthyThreshold: "2"
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+          Properties:
+            MinSize: 0
+            MaxSize: 1
+            HealthCheckGracePeriod: 600
+            VPCZoneIdentifier: "@a-private"
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: "m3.medium"
+            ImageId: "@test"
+        TerminatingHook:
+          Type: AWS::AutoScaling::LifecycleHook
+          Properties:
+            DefaultResult: CONTINUE
+            HeartbeatTimeout: 30
+            LifecycleTransition: autoscaling:EC2_INSTANCE_TERMINATING
+            NotificationTargetARN: "@lifecycle-queue.QueueArn"
+        AlarmLowCpu:
+          Type: AWS::CloudWatch::Alarm
+          Properties:
+            AlarmActions:
+              - ScaleDownPolicy
+            ComparisonOperator: LessThanThreshold
+            EvaluationPeriods: 4
+            MetricName: CPUUtilization
+            Period: 60
+            Statistic: Average
+            Threshold: 35
+        HalfHourlyBackupPolicy:
+          Type: Pipeline::Instance::BackupPolicy
+          Properties:
+            Recurrence: 0 0 ? * *
+            RetentionPeriod: PT1H
+            CopyTargets:
+              - Target: "@dr"
+                RetentionPeriod: PT1H
+        Features:
+          Type: Pipeline::Features
+          Properties:
+            Features:
+              Datadog: enabled
+        ScheduledActionUp:
+          Type: "AWS::AutoScaling::ScheduledAction"
+          Properties:
+          MinSize: 1
+          MaxSize: 1
+          Recurrence: "0 20 * * 0-4"
+    ValidWithSOE:
+      Type: "aws/autoheal"
+      Stage: "02-test"
+      Persist: false
+      Configuration:
+        VolumeAttachment1:
+          Type: "Pipeline::Autoheal::VolumeAttachment"
+          Properties:
+            VolumeId: "@volume1.MyVolumeId"
+            Device: "/dev/xvdm"
+        VolumeAttachment2:
+          Type: "Pipeline::Autoheal::VolumeAttachment"
+          Properties:
+            VolumeId: "@volume2.MyVolumeId"
+            Device: "/dev/xvdn"
+        Interface1:
+          Type: "Pipeline::Autoheal::NetworkInterfaceAttachment"
+          Properties:
+            NetworkInterfaceId: "@eni1.MyEniId"
+            DeviceIndex: 1
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: "m3.medium"
+            ImageId: "custom-ami-id"
+    ValidWithSOEWithoutCopy:
+      Type: "aws/autoheal"
+      Stage: "02-test"
+      Persist: false
+      Configuration:
+        VolumeAttachment1:
+          Type: "Pipeline::Autoheal::VolumeAttachment"
+          Properties:
+            VolumeId: "@volume1.MyVolumeId"
+            Device: "/dev/xvdm"
+        VolumeAttachment2:
+          Type: "Pipeline::Autoheal::VolumeAttachment"
+          Properties:
+            VolumeId: "@volume2.MyVolumeId"
+            Device: "/dev/xvdn"
+        Interface1:
+          Type: "Pipeline::Autoheal::NetworkInterfaceAttachment"
+          Properties:
+            NetworkInterfaceId: "@eni1.MyEniId"
+            DeviceIndex: 1
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: "m3.medium"
+            ImageId: "custom-ami-id"
+            Pipeline::CopySourceImage: false
+    InvalidNilType:
+      Type: "aws/autoheal"
+      Stage: "02-test"
+      Persist: false
+      Configuration:
+        VolumeAttachment1:
+          Type: Null
+          Properties:
+            VolumeId: "@volume1.MyVolumeId"
+            Device: "/dev/xvdm"
+    InvalidCustomType:
+      Type: "aws/autoheal"
+      Stage: "02-test"
+      Persist: false
+      Configuration:
+        VolumeAttachment1:
+          Type: Pipeline::CustomType
+          Properties:
+            VolumeId: "@volume1.MyVolumeId"
+            Device: "/dev/xvdm"
+    InvalidBackupTags:
+      Type: "aws/autoheal"
+      Stage: "02-test"
+      Persist: false
+      Configuration:
+        LaunchConfiguration:
+          Type: "AWS::AutoScaling::LaunchConfiguration"
+          Properties:
+            InstanceType: "m3.medium"
+            ImageId: "@test"
+
+    MixedInstanceTypeNotSupported:
+      Type: "aws/autoheal"
+      Stage: "02-test"
+      Persist: false
+      Configuration:
+        AutoScalingGroup:
+          Type: "AWS::AutoScaling::AutoScalingGroup"
+          Properties:
+            MixedInstancesPolicy:
+              LaunchTemplate:
+                Overrides:
+                  - InstanceType: m4.large
+                  - InstanceType: m4.xlarge
+              InstancesDistribution:
+                OnDemandAllocationStrategy: "prioritized"
+                OnDemandBaseCapacity: 1
+                OnDemandPercentageAboveBaseCapacity: 10
+                SpotAllocationStrategy: "lowest-price"
+                SpotInstancePools: 2
+                SpotMaxPrice: "0.08"
+            MinSize: 0
+            MaxSize: 1
+            HealthCheckGracePeriod: 600
+            VPCZoneIdentifier: "@a-private"
+
+  Output:
+    SecurityItems:
+      - Name: ElbSecurityGroup
+        Type: SecurityGroup
+        Component: autoheal
+      - Name: AsgSecurityGroup
+        Type: SecurityGroup
+        Component: autoheal
+      - Name: InstanceRole
+        Type: Role
+        Component: autoheal
+        ManagedPolicyArns:
+          - Null
+          - "arn:aws:iam::894961276425:policy/qcp-iam-ams-test-stack-QCPAMSManagedPolicy-LAEJIBY6GDP7"
+      - Name: LambdaExecutionRole
+        Type: Role
+        Component: autoheal
+        Service: lambda.amazonaws.com
+      - Name: AutoscalingNotificationRole
+        Type: Role
+        Component: autoheal
+        Service: autoscaling.amazonaws.com
+      - Name: LambdaSecretManagementExecutionRole
+        Type: Role
+        Component: autoheal
+        Service: lambda.amazonaws.com
+    SecurityRules:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.InstanceRole
+        resources:
+          - arn:aws:ssm:ap-southeast-2:111111111111:parameter/platform/ams01/c031/99/dev/master/5/*
+        actions:
+          - ssm:DeleteParameter
+          - ssm:DeleteParameters
+          - ssm:DescribeParameters
+          - ssm:GetParameter
+          - ssm:GetParameters
+          - ssm:GetParametersByPath
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.InstanceRole
+        resources:
+          - arn:aws:ssm:ap-southeast-2:111111111111:parameter/ams01-c031-99-dev-master-5-autoheal-pwd-*
+          - arn:aws:ssm:ap-southeast-2:111111111111:parameter/ams01-c031-99-dev-master-5-autoheal-Qualys-*
+        actions:
+          - ssm:PutParameter
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.InstanceRole
+        resources:
+          - arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+        actions:
+          - kms:Decrypt
+          - kms:Describe*
+          - kms:Encrypt
+          - kms:GenerateDataKey
+          - kms:GenerateDataKeyWithoutPlaintext
+          - kms:GenerateRandom
+          - kms:ReEncrypt*
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.InstanceRole
+        resources:
+          - arn:aws:s3:::bucket-ams-test
+          - arn:aws:s3:::bucket-qda-test
+          - arn:aws:s3:::bucket-as-test
+          - arn:aws:s3:::pipeline-artefact-store
+          - arn:aws:s3:::qcp-pipeline-artefacts
+        actions:
+          - s3:GetBucketLocation
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.InstanceRole
+        resources:
+          - arn:aws:s3:::bucket-ams-test
+          - arn:aws:s3:::bucket-qda-test
+          - arn:aws:s3:::bucket-as-test
+          - arn:aws:s3:::pipeline-artefact-store
+        actions:
+          - s3:ListBucket
+          - s3:ListBucketVersions
+          - s3:ListBucketMultipartUploads
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.InstanceRole
+        resources:
+          - arn:aws:s3:::bucket-ams-test/*
+          - arn:aws:s3:::bucket-qda-test/*
+          - arn:aws:s3:::bucket-as-test/*
+          - arn:aws:s3:::pipeline-artefact-store/*
+          - arn:aws:s3:::qcp-pipeline-artefacts/cd/ams01/c031/99/dev/master/5/*
+          - arn:aws:s3:::qcp-pipeline-artefacts/cd/ams01/c031/99/dev/master/00/*
+        actions:
+          - s3:GetObject
+          - s3:GetObjectVersion
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.InstanceRole
+        resources:
+          - arn:aws:s3:::bucket-qda-test/*
+          - arn:aws:s3:::bucket-as-test/*
+        actions:
+          - s3:PutObject
+          - s3:PutObjectAcl
+          - s3:DeleteObject
+          - s3:DeleteObjectVersion
+          - s3:RestoreObject
+          - s3:ListMultipartUploadParts
+          - s3:AbortMultipartUpload
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.InstanceRole
+        resources:
+          - arn:aws:s3:::bucket-as-test
+        actions:
+          - s3:GetBucketVersioning
+          - s3:PutBucketVersioning
+          - s3:GetLifecycleConfiguration
+          - s3:PutLifecycleConfiguration
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.InstanceRole
+        resources:
+          - arn:aws:s3:::bucket-as-test
+        actions:
+          - s3:GetBucketNotification
+          - s3:PutBucketNotification
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.InstanceRole
+        resources:
+          - arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+        actions:
+          - kms:Encrypt
+        condition:
+      - !ruby/object:IpSecurityRule
+        sources:
+          - sg-123456
+          - sg-654321
+        destination: autoheal.AsgSecurityGroup
+        ports:
+          - !ruby/object:IpPort
+            spec: TCP:22
+            protocol: tcp
+            from: "22"
+            to: "22"
+          - !ruby/object:IpPort
+            spec: TCP:3389
+            protocol: tcp
+            from: "3389"
+            to: "3389"
+        name:
+      - !ruby/object:IpSecurityRule
+        sources:
+          - sg-2468
+        destination: autoheal.AsgSecurityGroup
+        ports:
+          - !ruby/object:IpPort
+            spec: ALL:0-65535
+            protocol: "-1"
+            from: "0"
+            to: "65535"
+        name:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.InstanceRole
+        resources:
+          - arn:aws:s3:::qcp-pipeline-artefacts/logs/ams01/c031/99/dev/master/5/autoheal/bake/*
+        actions:
+          - s3:PutObject
+          - s3:PutObjectAcl
+        condition:
+      - !ruby/object:IpSecurityRule
+        sources:
+          - autoheal.ElbSecurityGroup
+        destination: autoheal.AsgSecurityGroup
+        ports:
+          - !ruby/object:IpPort
+            spec: TCP:*
+            protocol: tcp
+            from: 0
+            to: 65535
+        name:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.AutoscalingNotificationRole
+        resources:
+          - "*"
+        actions:
+          - sns:Publish
+          - sqs:GetQueueUrl
+          - sqs:SendMessage
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaExecutionRole
+          - autoheal.InstanceRole
+        resources:
+          - "*"
+        actions:
+          - autoscaling:CompleteLifecycleAction
+          - autoscaling:RecordLifecycleActionHeartbeat
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaExecutionRole
+        resources:
+          - "*"
+        actions:
+          - tag:addResourceTags
+          - tag:getTagKeys
+          - tag:getTagValues
+          - ec2:DescribeInstanceAttribute
+          - ec2:CreateTags
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaExecutionRole
+        resources:
+          - arn:aws:logs:*:*:*
+        actions:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaExecutionRole
+        resources:
+          - arn:aws:ec2:ap-southeast-2:111111111111:volume/vol-123456780
+          - arn:aws:ec2:ap-southeast-2:111111111111:volume/vol-123456780
+          - arn:aws:ec2:ap-southeast-2:111111111111:instance/*
+        actions:
+          - ec2:AttachVolume
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaExecutionRole
+        resources:
+          - arn:aws:logs:*:*:*
+        actions:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaExecutionRole
+        resources:
+          - arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+        actions:
+          - kms:CreateGrant
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaExecutionRole
+        resources:
+          - "*"
+        actions:
+          - ec2:AttachNetworkInterface
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaExecutionRole
+        resources:
+          - arn:aws:logs:*:*:*
+        actions:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaSecretManagementExecutionRole
+        resources:
+          - arn:aws:s3:::qcp-secret-management-bucket/*
+        actions:
+          - s3:GetObject
+          - s3:GetObjectVersion
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaSecretManagementExecutionRole
+        resources:
+          - arn:aws:ssm:ap-southeast-2:111111111111:parameter/platform/ams01/c031/99/dev/master/5/*
+        actions:
+          - ssm:PutParameter
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaSecretManagementExecutionRole
+        resources:
+          - arn:aws:ssm:ap-southeast-2:111111111111:parameter/platform/ams01/c031/99/dev/master/5/*
+        actions:
+          - ssm:DeleteParameter
+          - ssm:DeleteParameters
+          - ssm:DescribeParameters
+          - ssm:GetParameter
+          - ssm:GetParameters
+          - ssm:GetParametersByPath
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaSecretManagementExecutionRole
+        resources:
+          - "*"
+        actions:
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+          - ec2:DescribeInstances
+          - ec2:AttachNetworkInterface
+          - ec2:DetachNetworkInterface
+          - ec2:ModifyNetworkInterfaceAttribute
+          - ec2:ResetNetworkInterfaceAttribute
+          - autoscaling:CompleteLifecycleAction
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaSecretManagementExecutionRole
+        resources:
+          - arn:aws:logs:*:*:*
+        actions:
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.LambdaSecretManagementExecutionRole
+        resources:
+          - arn:aws:kms:ap-southeast-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab
+        actions:
+          - kms:Describe*
+          - kms:Encrypt
+          - kms:GenerateDataKey
+          - kms:GenerateDataKeyWithoutPlaintext
+          - kms:GenerateRandom
+          - kms:ReEncrypt*
+        condition:
+      - !ruby/object:IamSecurityRule
+        roles:
+          - autoheal.InstanceRole
+        resources:
+          - "*"
+        actions:
+          - autoscaling:PutScheduledUpdateGroupAction
+          - autoscaling:SetInstanceProtection
+          - autoscaling:SuspendProcesses
+          - autoscaling:ResumeProcesses
+        condition:
+          StringLike:
+            autoscaling:ResourceTag/Name: ams01-c031-99-dev-master-*
+Actions:
+  PreRelease:
+    - Action: SetDesiredCapacity
+      Stage: "01"
+      Parameters:
+        Capacity: 0
+        Target: "@released"
+    - Action: SetDesiredCapacity
+      Stage: "03"
+      Parameters:
+        Capacity: 1
+        Target: "@deployed"
