@@ -26,31 +26,7 @@ runs:
           const pipelineRepo = 'c031-pipeline';
           const workspace = String.raw`${{ github.workspace }}`;
           const pipelineDir = context.repo.repo === pipelineRepo ? workspace : path.join(actionPath.split(pipelineRepo)[0] + pipelineRepo, process.env.ACTION_REF);
-          let ams, qda, as;
-          for (let topic of data.names) {
-            if (topic.startsWith('ams')) {
-              ams = topic.toUpperCase();
-            } else if (topic.startsWith('qda-')) {
-              qda = topic.replace('qda-', '').toUpperCase();
-            } else if (topic.startsWith('as-')) {
-              as = topic.replace('as-', '');
-            }
-          }
-          if (!ams || !qda || !as) {
-            throw new Error('Pipeline related topics are missing from Github repository. Please request for them to be added by QCP in the #cloud channel. Include the Github repository and the link to the application service in the QCP Console.');
-          }
-
-          let splunkTokenPassword;
-          try {
-            let stsOutput = '';
-            const awsEnv = { AWS_REGION: 'ap-southeast-2', AWS_DEFAULT_REGION: 'ap-southeast-2'};
-            await exec.exec('aws', ['sts', 'assume-role', '--role-arn', 'arn:aws:iam::221295517176:role/CD-Control', '--role-session-name', 'get-ssm-parameters', '--duration-seconds', '900'], {
-              silent: true,
-              listeners: {
-                stdout: (data) => { stsOutput += data.toString(); },
-              },
-              env: awsEnv,
-            });
+          
             const credentials = JSON.parse(stsOutput);
             let ssmOutput = '';
             await exec.exec('aws', ['ssm', 'get-parameter', '--with-decryption', '--name', '/pipeline/splunk_token_password'], {
