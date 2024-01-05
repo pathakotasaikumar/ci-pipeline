@@ -5,9 +5,9 @@ author: 'Qantas Cloud Platform Team <cloud@qantas.com.au>'
 inputs:
   SKIP_RUBY_INSTALL:
     description: 'Flag to skip Ruby installation on the runner'
-    type: boolean
+    #type: boolean
     required: false
-    default: false
+    #default: false
 
 runs:
   using: "composite"
